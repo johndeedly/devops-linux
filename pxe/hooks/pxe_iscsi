@@ -1,0 +1,70 @@
+#!/usr/bin/ash
+
+run_hook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_iscsi_srv}" ]; then
+        pxe_iscsi_srv=$(eval echo "${pxe_iscsi_srv}")
+
+        # enable chained iscsi mount handler
+        export mount_handler="pxe_iscsi_mount_handler"
+    fi
+}
+
+pxe_iscsi_mount_handler() {
+    newroot="${1}"
+    [ -z "${pxe_iscsi_cli}" ] && pxe_iscsi_cli="iqn.2018-12.internal.pxe:client"
+    [ -z "${pxe_iscsi_tgt}" ] && pxe_iscsi_tgt="iqn.2018-12.internal.pxe:arch"
+    
+    msg ":: Boot PXE over iSCSI"
+
+    # 1st: setup the iscsi filesystem
+    msg ":: Setup iSCSI with '${pxe_iscsi_srv}', target '${pxe_iscsi_tgt}'"
+    mkdir -p /etc/iscsi /var/lib/iscsi /run/lock/iscsi
+    iscsiuio
+    tee /etc/iscsi/initiatorname.iscsi <<EOF
+InitiatorName=${pxe_iscsi_cli}
+EOF
+    iscsid
+    iscsiadm -m discovery -t sendtargets -p "${pxe_iscsi_srv}"
+    iscsiadm -m node -T "${pxe_iscsi_tgt}" -p "${pxe_iscsi_srv}" -l
+    
+    # 2nd: check the copy to RAM filesystem is present
+    if ! mountpoint -q "${copytoram_mnt}"; then
+        msg ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
+        mount --mkdir -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram "${copytoram_mnt}"
+    fi
+
+    # 3rd: place the iSCSI filesystem as softlink inside the RAM filesystem
+    mkdir -p "${copytoram_mnt}/arch/x86_64"
+    msg ":: Wait for iSCSI device"
+    matched=""
+    while [ -z "${matched}" ]; do
+        for i in /dev/disk/by-path/*; do
+            if [ "${i//-lun-}" != "${i}" ]; then
+                matched="${i}"
+                break
+            fi
+        done
+        sleep 2
+    done
+    msg ":: Link ${matched} into the RAM filesystem"
+    ln -s "${matched}" "${copytoram_mnt}/arch/x86_64/pxeboot.img"
+
+    # 4th: mount the RAM filesystem as boot mount
+    msg ":: Bindmount '${copytoram_mnt}' as '${boot_mnt}'"
+    if ! mount --mkdir -o bind "${copytoram_mnt}" "${boot_mnt}"; then
+        echo "!! ERROR: failed to mount '${copytoram_mnt}'"
+        launch_interactive_shell
+    fi
+
+    pxe_mount_handler "${newroot}"
+
+    # last: when the image is copied to RAM, the iSCSI connection needs to be
+    #       closed as the boot process will hang (#bug)
+    if [ "${copytoram}" = "y" ]; then
+        msg ":: Disconnect iSCSI from '${pxe_iscsi_srv}', target '${pxe_iscsi_tgt}'"
+        iscsiadm -m node -T "${pxe_iscsi_tgt}" -p "${pxe_iscsi_srv}" -u
+        iscsiadm -m node -o delete -T "${pxe_iscsi_tgt}"
+        killall iscsid
+        killall iscsiuio
+    fi
+}

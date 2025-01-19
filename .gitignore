@@ -1,0 +1,4 @@
+build/
+output/
+*.qcow2
+*.iso

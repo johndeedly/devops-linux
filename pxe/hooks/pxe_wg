@@ -1,0 +1,72 @@
+#!/usr/bin/ash
+
+run_earlyhook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_wg_srv}" ]; then
+        # Module autoloading
+        modprobe wireguard 2>/dev/null
+    fi
+}
+
+run_hook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_wg_srv}" ]; then
+        pxe_wg_srv=$(eval echo "${pxe_wg_srv}")
+
+        # enable chained wireguard mount handler
+        export mount_handler="pxe_wg_mount_handler"
+    fi
+}
+
+pxe_wg_mount_handler() {
+    newroot="${1}"
+    
+    msg ":: Hook up Wireguard before PXE Boot"
+    if [ -n "${pxe_wg_cli_ip}" ]; then
+        mkdir -p /etc/wireguard
+        echo -en "${pxe_wg_cli_ip}" > /etc/wireguard/client.ip
+    elif ! [ -f /etc/wireguard/client.ip ]; then
+        echo "!! ERROR: no client ip address option 'pxe_wg_cli_ip' provided"
+        launch_interactive_shell
+    fi
+    
+    if [ -n "${pxe_wg_cli_key}" ]; then
+        mkdir -p /etc/wireguard
+        echo -en "${pxe_wg_cli_key}" > /etc/wireguard/client.key
+    elif ! [ -f /etc/wireguard/client.key ]; then
+        echo "!! ERROR: no client private key option 'pxe_wg_cli_key' provided"
+        launch_interactive_shell
+    fi
+
+    if [ -n "${pxe_wg_srv_ip}" ]; then
+        mkdir -p /etc/wireguard
+        echo -en "${pxe_wg_srv_ip}" > /etc/wireguard/server.ip
+    elif ! [ -f /etc/wireguard/server.ip ]; then
+        echo "!! ERROR: no server ip address option 'pxe_wg_srv_ip' provided"
+        launch_interactive_shell
+    fi
+    
+    if [ -n "${pxe_wg_srv_pub}" ]; then
+        mkdir -p /etc/wireguard
+        echo -en "${pxe_wg_srv_pub}" > /etc/wireguard/server.pub
+    elif ! [ -f /etc/wireguard/server.pub ]; then
+        echo "!! ERROR: no server public key option 'pxe_wg_srv_pub' provided"
+        launch_interactive_shell
+    fi
+
+    msg ":: Connect Wireguard tunnel to '${pxe_wg_srv}', ip address '$(</etc/wireguard/server.ip)', public key '$(</etc/wireguard/server.pub)'"
+    local wg_status ip_status
+    ip link add dev wg0 type wireguard
+    ip addr add dev wg0 "$(</etc/wireguard/client.ip)" peer "$(</etc/wireguard/server.ip)"
+    wg set wg0 listen-port 51820 private-key /etc/wireguard/client.key peer "$(</etc/wireguard/server.pub)" \
+        allowed-ips "$(</etc/wireguard/server.ip)" endpoint "${pxe_wg_srv}"
+    wg_status=$?
+    ip link set up dev wg0
+    ip_status=$?
+    if [ "$wg_status" -gt 0 ] || [ "$ip_status" -gt 0 ]; then
+        echo "!! ERROR: failed to connect to '${pxe_wg_srv}'"
+        wg
+        ip addr
+        launch_interactive_shell
+    fi
+
+    pxe_mount_handler "${newroot}"
+}

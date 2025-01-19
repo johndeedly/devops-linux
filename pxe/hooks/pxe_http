@@ -1,0 +1,46 @@
+#!/usr/bin/ash
+
+run_hook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_http_srv}" ]; then
+        # copy to RAM logic is disabled, as the image will be downloaded to RAM
+        export copytoram="n"
+
+        pxe_http_srv=$(eval echo "${pxe_http_srv}")
+
+        # enable chained http mount handler
+        export mount_handler="pxe_http_mount_handler"
+    fi
+}
+
+# args: /path/to/newroot
+pxe_http_mount_handler() {
+    newroot="${1}"
+    local http_img="${pxe_http_srv%/}/arch/${arch}/pxeboot.img"
+
+    msg ":: Boot PXE with HTTP"
+
+    # 1st: check the copy to RAM filesystem is present
+    if ! mountpoint -q "${copytoram_mnt}"; then
+        msg ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
+        mount --mkdir -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram "${copytoram_mnt}"
+    fi
+
+    local local_img="${copytoram_mnt}/arch/${arch}/pxeboot.img"
+
+    # 2nd: download the image
+    msg ":: Download '${http_img}' to '${local_img}'"
+    mkdir -p "${local_img%/pxeboot.img}"
+    if ! curl -L -f -o "${local_img}" "${http_img}"; then
+        echo "!! ERROR: could not download '${http_img}' to '${local_img}'"
+        launch_interactive_shell
+    fi
+
+    # 3rd: create the boot mount point for pxe_mount_handler with correct image placement
+    msg ":: Bindmount '${copytoram_mnt}' as '${boot_mnt}'"
+    if ! mount --mkdir -o bind "${copytoram_mnt}" "${boot_mnt}"; then
+        echo "!! ERROR: failed to mount '${copytoram_mnt}'"
+        launch_interactive_shell
+    fi
+
+    pxe_mount_handler "${newroot}"
+}

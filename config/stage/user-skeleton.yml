@@ -1,0 +1,516 @@
+#cloud-config
+merge_how:
+  - name: list
+    settings:
+      - append
+  - name: dict
+    settings:
+      - no_replace
+      - recurse_list
+
+write_files:
+  - path: /etc/skel/.bash_profile
+    content: |
+      [[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc
+
+      [[ -f ~/.bashrc ]] && source ~/.bashrc
+
+      if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ] && [ -f /bin/startx ]; then
+        exec startx
+      fi
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.bashrc
+    content: |
+      # general global definitions
+      export EDITOR=nano
+      export DOTNET_CLI_TELEMETRY_OPTOUT=1
+      export WINEPREFIX="$HOME/.local/wine"
+      export WINEDEBUG=fixme-all,warn-all,err-all
+
+      # append dotnet tools to user paths
+      if ! [[ "$PATH" =~ ":$HOME/.dotnet/tools" ]]; then
+        export PATH="$PATH:$HOME/.dotnet/tools"
+      fi
+
+      # append local bin to user paths
+      if ! [[ "$PATH" =~ ":$HOME/.local/bin" ]]; then
+        export PATH="$PATH:$HOME/.local/bin"
+      fi
+
+      # append sbin to user paths #1
+      if ! [[ "$PATH" =~ ":/sbin" ]]; then
+        export PATH="$PATH:/sbin"
+      fi
+
+      # append sbin to user paths #2
+      if ! [[ "$PATH" =~ ":/usr/sbin" ]]; then
+        export PATH="$PATH:/usr/sbin"
+      fi
+
+      # append sbin to user paths #3
+      if ! [[ "$PATH" =~ ":/usr/local/sbin" ]]; then
+        export PATH="$PATH:/usr/local/sbin"
+      fi
+
+      # include XDG homedirs
+      if [ -f "$HOME/.config/user-dirs.dirs" ]; then
+        source "$HOME/.config/user-dirs.dirs"
+      fi
+
+      function fasthash() {
+        if test -n "$1"; then
+          # parameter(s) given
+          while (( "$#" )); do
+            if [ -d "$1" ]; then
+              # is directory
+              echo -e "$(find "$1" -type f -xtype f -print0 \
+                | sort -z | xargs -0 -I {} pv {} | gzip -c \
+                | tail -c8 | od -t x4 -N 4 -A n \
+                | xargs)\t$(realpath "$1")/*"
+            elif [ -f "$1" ]; then
+              # is file
+              echo -e "$(pv "$1" \
+                | gzip -c | tail -c8 | od -t x4 -N 4 -A n \
+                | xargs)\t$(realpath "$1")"
+            else
+              # is string
+              echo -e "$(echo -en "$1" \
+                | gzip -c | tail -c8 | od -t x4 -N 4 -A n \
+                | xargs)\t\"$(printf "%q" "$1")\""
+            fi
+            shift
+          done
+        elif test ! -t 0; then
+          # read from stdin
+          echo -e "$(cat - | pv \
+            | gzip -c | tail -c8 | od -t x4 -N 4 -A n \
+            | xargs)\t-"
+        else
+          echo "no data" 1>&2
+        fi
+      }
+      export -f fasthash
+
+      # configure completion for doas
+      complete -F _root_command doas
+      complete -F _longopt ls
+      complete -F _longopt ll
+      complete -F _longopt la
+      complete -F _longopt diff
+      complete -F _longopt grep
+      complete -F _longopt trash
+      complete -F _longopt trashdir
+      complete -F _longopt du
+      complete -F _longopt ncdu
+
+      # alias and color stuff
+      function ls() {
+          command ls --color=auto "$@"
+      }
+      export -f ls
+
+      function ll() {
+          command ls -l --color=auto "$@"
+      }
+      export -f ll
+
+      function la() {
+          command ls -la --color=auto "$@"
+      }
+      export -f la
+
+      function diff() {
+          command diff --color=auto "$@"
+      }
+      export -f diff
+
+      function grep() {
+          command grep --color=auto "$@"
+      }
+      export -f grep
+
+      function ip() {
+          command ip -color=auto "$@"
+      }
+      export -f ip
+
+      function cifscopy() {
+          command rsync -rtvus --size-only --stats --no-links --progress "$@"
+      }
+      export -f cifscopy
+
+      function du() {
+          command ncdu "$@"
+      }
+      export -f du
+
+      if command -v starship >/dev/null; then
+        eval "$(starship init bash)"
+      else
+        if [ $(id -u) -eq 0 ]; then
+          PS1='\[\e[;31m\][\u@\h \W]\$\[\e[m\]${?#0} '
+        else
+          PS1='\[\e[;32m\][\u@\h \W]\$\[\e[m\]${?#0} '
+        fi
+      fi
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.inputrc
+    content: |
+      set enable-keypad on
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/htop/htoprc
+    content: |
+      # Beware! This file is rewritten by htop when settings are changed in the interface.
+      # The parser is also very primitive, and not human-friendly.
+      fields=0 48 17 18 38 39 40 2 46 47 49 1
+      sort_key=46
+      sort_direction=1
+      tree_sort_key=48
+      tree_sort_direction=1
+      hide_kernel_threads=1
+      hide_userland_threads=1
+      shadow_other_users=1
+      show_thread_names=0
+      show_program_path=1
+      highlight_base_name=0
+      highlight_megabytes=1
+      highlight_threads=1
+      highlight_changes=0
+      highlight_changes_delay_secs=5
+      find_comm_in_cmdline=1
+      strip_exe_from_cmdline=1
+      show_merged_command=0
+      tree_view=1
+      tree_view_always_by_pid=0
+      header_margin=1
+      detailed_cpu_time=0
+      cpu_count_from_one=1
+      show_cpu_usage=1
+      show_cpu_frequency=0
+      show_cpu_temperature=0
+      degree_fahrenheit=0
+      update_process_names=0
+      account_guest_in_cpu_meter=0
+      color_scheme=1
+      enable_mouse=1
+      delay=15
+      left_meters=AllCPUs Memory Swap
+      left_meter_modes=1 1 1
+      right_meters=Tasks LoadAverage Uptime
+      right_meter_modes=2 2 2
+      hide_function_bar=0
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/starship.toml
+    content: |
+      add_newline = false
+
+      [character]
+      success_symbol = "[➜](bold green)"
+      error_symbol = "[✗](bold red)"
+
+      [directory]
+      fish_style_pwd_dir_length = 1
+      format = " in [$path]($style)[$read_only]($read_only_style) "
+      truncation_length = 1
+
+      [hostname]
+      format = " on [$hostname]($style)"
+
+      [dotnet]
+      symbol = "👾 "
+
+      [python]
+      python_binary = "python3"
+
+      [username]
+      format = "[$user]($style)"
+      show_always = true
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/powershell/Microsoft.PowerShell_profile.ps1
+    content: |
+      Invoke-Expression (&starship init powershell)
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/init.lua
+    content: |
+      vim.g.base46_cache = vim.fn.stdpath "data" .. "/base46/"
+      vim.g.mapleader = " "
+
+      -- bootstrap lazy and all plugins
+      local lazypath = vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
+
+      if not vim.uv.fs_stat(lazypath) then
+        local repo = "https://github.com/folke/lazy.nvim.git"
+        vim.fn.system { "git", "clone", "--filter=blob:none", repo, "--branch=stable", lazypath }
+      end
+
+      vim.opt.rtp:prepend(lazypath)
+
+      local lazy_config = require "configs.lazy"
+
+      -- load plugins
+      require("lazy").setup({
+        {
+          "NvChad/NvChad",
+          lazy = false,
+          branch = "v2.5",
+          import = "nvchad.plugins",
+        },
+
+        { import = "plugins" },
+      }, lazy_config)
+
+      -- load theme
+      dofile(vim.g.base46_cache .. "defaults")
+      dofile(vim.g.base46_cache .. "statusline")
+
+      require "options"
+      require "nvchad.autocmds"
+
+      vim.schedule(function()
+        require "mappings"
+      end)
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/lua/chadrc.lua
+    content: |
+      -- This file needs to have same structure as nvconfig.lua 
+      -- https://github.com/NvChad/ui/blob/v2.5/lua/nvconfig.lua
+      -- Please read that file to know all available options :( 
+
+      ---@type ChadrcConfig
+      local M = {}
+
+      M.base46 = {
+        theme = "catppuccin",
+
+        -- hl_override = {
+        -- 	Comment = { italic = true },
+        -- 	["@comment"] = { italic = true },
+        -- },
+      }
+
+      return M
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/lua/mappings.lua
+    content: |
+      require "nvchad.mappings"
+
+      -- add yours here
+
+      local map = vim.keymap.set
+
+      map("n", ";", ":", { desc = "CMD enter command mode" })
+      map("i", "jk", "<ESC>")
+
+      -- map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
+      map ("n", "<S-Left>", "<C-w>h", { desc = "Window left" })
+      map ("n", "<S-Right>", "<C-w>l", { desc = "Window right" })
+      map ("n", "<S-Down>", "<C-w>j", { desc = "Window down" })
+      map ("n", "<S-Up>", "<C-w>k", { desc = "Window up" })
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/lua/options.lua
+    content: |
+      require "nvchad.options"
+
+      -- add yours here!
+
+      -- local o = vim.o
+      -- o.cursorlineopt ='both' -- to enable cursorline!
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/lua/configs/conform.lua
+    content: |
+      local options = {
+        formatters_by_ft = {
+          lua = { "stylua" },
+          -- css = { "prettier" },
+          -- html = { "prettier" },
+        },
+
+        -- format_on_save = {
+        --   -- These options will be passed to conform.format()
+        --   timeout_ms = 500,
+        --   lsp_fallback = true,
+        -- },
+      }
+
+      return options
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/lua/configs/lazy.lua
+    content: |
+      return {
+        defaults = { lazy = true },
+        install = { colorscheme = { "nvchad" } },
+
+        ui = {
+          icons = {
+            ft = "",
+            lazy = "󰂠 ",
+            loaded = "",
+            not_loaded = "",
+          },
+        },
+
+        performance = {
+          rtp = {
+            disabled_plugins = {
+              "2html_plugin",
+              "tohtml",
+              "getscript",
+              "getscriptPlugin",
+              "gzip",
+              "logipat",
+              "netrw",
+              "netrwPlugin",
+              "netrwSettings",
+              "netrwFileHandlers",
+              "matchit",
+              "tar",
+              "tarPlugin",
+              "rrhelper",
+              "spellfile_plugin",
+              "vimball",
+              "vimballPlugin",
+              "zip",
+              "zipPlugin",
+              "tutor",
+              "rplugin",
+              "syntax",
+              "synmenu",
+              "optwin",
+              "compiler",
+              "bugreport",
+              "ftplugin",
+            },
+          },
+        },
+      }
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/lua/configs/lspconfig.lua
+    content: |
+      -- load defaults i.e lua_lsp
+      require("nvchad.configs.lspconfig").defaults()
+
+      local lspconfig = require "lspconfig"
+
+      -- EXAMPLE
+      local servers = { "html", "cssls", "tsserver", "clangd", "omnisharp", "pyright", "dockerls", "texlab", "marksman" }
+      local nvlsp = require "nvchad.configs.lspconfig"
+
+      -- lsps with default config
+      for _, lsp in ipairs(servers) do
+        lspconfig[lsp].setup {
+          on_attach = nvlsp.on_attach,
+          on_init = nvlsp.on_init,
+          capabilities = nvlsp.capabilities,
+        }
+      end
+
+      -- configuring single server, example: typescript
+      lspconfig.ts_ls.setup {
+        on_attach = nvlsp.on_attach,
+        on_init = nvlsp.on_init,
+        capabilities = nvlsp.capabilities,
+      }
+    owner: 'root:root'
+    permissions: '0644'
+  - path: /etc/skel/.config/nvim/lua/plugins/init.lua
+    content: |
+      return {
+        {
+          "stevearc/conform.nvim",
+          -- event = 'BufWritePre', -- uncomment for format on save
+          opts = require "configs.conform",
+        },
+
+        -- These are some examples, uncomment them if you want to see them work!
+        {
+          "neovim/nvim-lspconfig",
+          config = function()
+            require "configs.lspconfig"
+          end,
+        },
+
+        {
+          "williamboman/mason.nvim",
+          opts = {
+            ensure_installed = {
+              -- bash
+              "beautysh",
+              
+              -- dotnet
+              "omnisharp",
+              "netcoredbg",
+              "csharpier",
+              
+              -- python
+              "pyright",
+              "debugpy",
+              "pylint",
+              
+              -- docker
+              "dockerfile-language-server",
+              
+              -- latex
+              "texlab",
+              "latexindent",
+              
+              -- markdown
+              "marksman",
+              "markdownlint",
+
+              -- cpp
+              "clangd",
+              "cpplint",
+              
+              -- lua stuff
+              "lua-language-server",
+              "stylua",
+
+              -- web dev stuff
+              "css-lsp",
+              "htmlhint",
+              "html-lsp",
+              "typescript-language-server",
+              "deno",
+              "prettier",
+              "jsonlint",
+
+              -- c/cpp stuff
+              "clangd",
+              "clang-format"
+            },
+          },
+        },
+
+        {
+          "nvim-treesitter/nvim-treesitter",
+          opts = {
+            ensure_installed = {
+              "vim",
+              "lua",
+              "vimdoc",
+              "html",
+              "css",
+              "javascript",
+              "typescript",
+              "tsx",
+              "c",
+              "markdown",
+              "markdown_inline"
+            },
+          },
+        },
+      }
+    owner: 'root:root'
+    permissions: '0644'

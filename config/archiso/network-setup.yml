@@ -1,0 +1,54 @@
+#cloud-config
+merge_how:
+  - name: list
+    settings:
+      - append
+  - name: dict
+    settings:
+      - no_replace
+      - recurse_list
+
+disable_ec2_metadata: true
+
+write_files:
+  - path: /etc/cloud/cloud.cfg.d/99-custom-networking.cfg
+    content: |
+      network:
+        config: disabled
+    owner: 'root:root'
+    permissions: '0644'
+  # all interfaces perform a dhcp lookup
+  # breaking change bug
+  # see: https://github.com/canonical/cloud-init/issues/5809
+  # see: https://github.com/AOSC-Dev/aosc-os-abbs/pull/8090
+  - path: /etc/systemd/network/05-wired.network
+    content: |
+      [Match]
+      Name=en* eth*
+      Type=ether
+
+      [Network]
+      DHCP=yes
+      MulticastDNS=yes
+
+      [DHCPv4]
+      RouteMetric=10
+
+      [IPv6AcceptRA]
+      RouteMetric=10
+
+      [DHCPPrefixDelegation]
+      RouteMetric=10
+
+      [IPv6Prefix]
+      RouteMetric=10
+    owner: 'root:root'
+    permissions: '0644'
+  # only one interface needs to be configured to be "online"
+  - path: /etc/systemd/system/systemd-networkd-wait-online.service.d/wait-online-any.conf
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any
+    owner: 'root:root'
+    permissions: '0644'

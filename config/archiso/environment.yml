@@ -1,0 +1,47 @@
+#cloud-config
+merge_how:
+  - name: list
+    settings:
+      - append
+  - name: dict
+    settings:
+      - no_replace
+      - recurse_list
+
+vendor_data:
+  enabled: false
+
+users:
+  - name: user
+    groups: users
+    shell: /bin/bash
+    sudo:
+      - ALL=(ALL) ALL
+    doas:
+      - permit setenv { XAUTHORITY LANG LC_ALL } persist user
+
+ssh_pwauth: true
+chpasswd:
+  expire: false
+  users:
+    - name: root
+      password: packer-build-passwd
+      type: text
+    - name: user
+      password: $6$abcxyz$SbH927uoC4lzRtFfY0VVySMbwPylQWrA64dOsKciS4vD.N.QhnwtdzQz9SxzR0/yvnd2dvATA3gh5bNDHaNCB.
+
+growpart:
+  mode: 'off'
+resize_rootfs: 'off'
+
+write_files:
+  # sshd config -> allow root, password auth, use pam
+  - path: /etc/ssh/sshd_config
+    content: |
+      # added via cloud-init
+      PermitRootLogin yes
+      PasswordAuthentication yes
+      UsePAM yes
+    owner: 'root:root'
+    permissions: '0644'
+    append: true

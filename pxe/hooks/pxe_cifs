@@ -1,0 +1,43 @@
+#!/usr/bin/ash
+
+run_earlyhook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_cifs_srv}" ]; then
+        # Module autoloading
+        modprobe cifs 2>/dev/null
+        modprobe nls_utf8 2>/dev/null
+    fi
+}
+
+run_hook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_cifs_srv}" ]; then
+        pxe_cifs_srv=$(eval echo "${pxe_cifs_srv}")
+
+        # enable chained nfs mount handler
+        export mount_handler="pxe_cifs_mount_handler"
+    fi
+}
+
+pxe_cifs_mount_handler() {
+    newroot="${1}"
+    
+    msg ":: Boot PXE over CIFS"
+
+    # mount the cifs directly as boot mount
+    msg ":: Mount '${pxe_cifs_srv}'"
+    local mount_status
+    if [ -n "${pxe_cifs_opt}" ]; then
+        mkdir -p "${boot_mnt}"
+        mount -t cifs -o "${pxe_cifs_opt}" "${pxe_cifs_srv}" "${boot_mnt}"
+        mount_status=$?
+    else
+        mkdir -p "${boot_mnt}"
+        mount -t cifs -o guest,iocharset=utf8,file_mode=0444,dir_mode=0555,noperm "${pxe_cifs_srv}" "${boot_mnt}"
+        mount_status=$?
+    fi
+    if [ "$mount_status" -gt 0 ]; then
+        echo "!! ERROR: failed to mount '${pxe_cifs_srv}'"
+        launch_interactive_shell
+    fi
+
+    pxe_mount_handler "${newroot}"
+}

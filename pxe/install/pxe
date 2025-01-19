@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+build() {
+    add_module "loop"
+    add_module "dm_crypt"
+    add_module "overlay"
+    add_all_modules "/drivers/net/"
+    
+    add_runscript
+
+    add_binary blockdev
+    add_binary losetup
+    add_binary cryptsetup
+    add_binary /usr/lib/initcpio/ipconfig /usr/bin/ipconfig
+
+    # add support for a progressbar if pv is installed
+    if command -v dd >/dev/null 2>&1; then
+        add_binary dd
+    elif command -v pv >/dev/null 2>&1; then
+        add_binary pv
+    else
+        warning 'dd nor pv found; falling back to cp for copy to RAM'
+    fi
+
+    # Add hosts support files+dns
+    add_binary /usr/lib/libnss_files.so.2
+    add_binary /usr/lib/libnss_dns.so.2
+
+    add_dir /etc
+    printf "hosts: files dns\n" >"${BUILDROOT}/etc/nsswitch.conf"
+}
+
+help() {
+    cat <<HELPEOF
+This hook loads the necessary modules for boot via PXE.
+HELPEOF
+}

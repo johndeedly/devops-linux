@@ -1,0 +1,51 @@
+#!/usr/bin/ash
+
+run_earlyhook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_nfs_srv}" ]; then
+        # Module autoloading
+        modprobe nfs 2>/dev/null
+        modprobe sunrpc 2>/dev/null
+    fi
+}
+
+run_hook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_nfs_srv}" ]; then
+        pxe_nfs_srv=$(eval echo "${pxe_nfs_srv}")
+
+        # enable chained nfs mount handler
+        export mount_handler="pxe_nfs_mount_handler"
+    fi
+}
+
+pxe_nfs_mount_handler() {
+    newroot="${1}"
+    
+    msg ":: Boot PXE over NFS"
+
+    # mount the nfs directly as boot mount
+    msg ":: Mount NFS share '${pxe_nfs_srv}'"
+    mkdir -p "${boot_mnt}"
+    local mount_status
+    msg ":: trying nfs 4"
+    if [ -n "${pxe_nfs_opt}" ]; then
+        timeout 15 mount.nfs4 -o "${pxe_nfs_opt}" "${pxe_nfs_srv}" "${boot_mnt}"
+    else
+        timeout 15 mount.nfs4 "${pxe_nfs_srv}" "${boot_mnt}"
+    fi
+    mount_status=$?
+    if [ "$mount_status" -gt 0 ]; then
+        msg ":: trying nfs 3"
+        if [ -n "${pxe_nfs_opt}" ]; then
+            timeout 15 nfsmount -o "${pxe_nfs_opt}" "${pxe_nfs_srv}" "${boot_mnt}"
+        else
+            timeout 15 nfsmount "${pxe_nfs_srv}" "${boot_mnt}"
+        fi
+        mount_status=$?
+    fi
+    if [ "$mount_status" -gt 0 ]; then
+        echo "!! ERROR: failed to mount '${pxe_nfs_srv}'"
+        launch_interactive_shell
+    fi
+
+    pxe_mount_handler "${newroot}"
+}

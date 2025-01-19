@@ -1,0 +1,46 @@
+#cloud-config
+merge_how:
+  - name: list
+    settings:
+      - append
+  - name: dict
+    settings:
+      - no_replace
+      - recurse_list
+
+timezone: CET
+locale: de_DE
+
+write_files:
+  # enable german keyboard
+  - path: /etc/vconsole.conf
+    content: |
+      KEYMAP=de-latin1
+      XKBLAYOUT=de
+      XKBMODEL=pc105
+      FONT=Lat2-Terminus16
+    owner: 'root:root'
+    permissions: '0644'
+  # Debian/Ubuntu additional german locale
+  - path: /etc/default/locale
+    content: LANG=de_DE
+    owner: 'root:root'
+    permissions: '0644'
+  # Debian/Ubuntu additional keyboard config
+  - path: /etc/default/keyboard
+    content: |
+      KEYMAP=de-latin1
+      XKBLAYOUT=de
+      XKBMODEL=pc105
+    owner: 'root:root'
+    permissions: '0644'
+  # Debian/Ubuntu patched out systemd vconsole setup for some reason... thanks for nothing
+  - path: /etc/default/console-setup
+    content: |
+      CHARMAP="UTF-8"
+      CODESET="Lat2"
+      FONTFACE="Terminus"
+      FONTSIZE="16"
+      VIDEOMODE=
+    owner: 'root:root'
+    permissions: '0644'
