@@ -451,7 +451,6 @@ write_files:
               -- dotnet
               "omnisharp",
               "netcoredbg",
-              "csharpier",
               
               -- python
               "pyright",
@@ -502,10 +501,15 @@ write_files:
               "vimdoc",
               "html",
               "css",
+              "php",
               "javascript",
               "typescript",
               "tsx",
               "c",
+              "cpp",
+              "c_sharp",
+              "json",
+              "yaml",
               "markdown",
               "markdown_inline"
             },

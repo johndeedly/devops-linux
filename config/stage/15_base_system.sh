@@ -82,6 +82,22 @@ download_neovim() {
   fi
 }
 
+download_dotnet_debian() {
+  echo ":: download dotnet"
+  wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb
+  dpkg -i /tmp/packages-microsoft-prod.deb
+  rm /tmp/packages-microsoft-prod.deb
+  apt-get update
+  apt-get install -y dotnet-runtime
+}
+
+download_dotnet_yum() {
+  echo ":: download dotnet"
+  dnf update
+  rpm -Uvh https://packages.microsoft.com/config/centos/9/packages-microsoft-prod.rpm
+  dnf install dotnet-runtime
+}
+
 # install basic packages
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
@@ -91,12 +107,13 @@ if [ -e /bin/apt ]; then
     lshw libxml2 jq polkitd man manpages-de trash-cli \
     openssh-server openssh-client wireguard-tools nfs-kernel-server \
     gvfs gvfs-backends cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
-    libnss-ldap libpam-ldap ldap-utils nslcd
+    libnss-ldap libpam-ldap ldap-utils nslcd python3-pip python3-venv
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     luajit libluajit-5.1-dev lua-mpack lua-lpeg libunibilium-dev libmsgpack-dev libtermkey-dev
   download_neovim
+  download_dotnet_debian
   systemctl enable systemd-networkd systemd-resolved systemd-homed ssh firewalld nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -104,11 +121,11 @@ elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     pacman-contrib starship ttf-terminus-nerd ttf-nerd-fonts-symbols powershell-bin base-devel neovim yq \
     doas curl wget zstd rsyslog nano npm htop btop git firewalld \
-    bash-completion ncdu viu pv mc ranger fzf moreutils \
+    bash-completion ncdu viu pv mc ranger fzf moreutils dotnet-runtime \
     lshw libxml2 jq polkit core/man man-pages-de trash-cli \
     openssh wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
-    openldap nss-pam-ldapd
+    openldap nss-pam-ldapd python-pip
   systemctl enable systemd-networkd systemd-resolved systemd-homed sshd firewalld nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -120,12 +137,13 @@ elif [ -e /bin/yum ]; then
     lshw libxml2 jq polkit man-db trash-cli \
     openssh wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
-    openldap openldap-clients nss-pam-ldapd
+    openldap openldap-clients nss-pam-ldapd python3-pip python3-venv
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C yum install -y \
     compat-lua-libs libtermkey libtree-sitter libvterm luajit luajit2.1-luv msgpack unibilium xsel
   download_neovim
+  download_dotnet_yum
   systemctl enable systemd-networkd systemd-resolved sshd firewalld nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -153,7 +171,7 @@ systemctl mask hibernate.target suspend-then-hibernate.target hybrid-sleep.targe
 echo ":: prepare NvChad environment"
 mkdir -p /etc/skel/.local/share
 echo ":: setup NvChad environment"
-( HOME=/etc/skel /bin/bash -c 'nvim -es -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstallAll" -c ":TSInstall all" -c ":qall!" || true' ) &
+( HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh omnisharp netcoredbg pyright debugpy pylint dockerfile-language-server texlab latexindent marksman markdownlint clangd cpplint lua-language-server stylua css-lsp htmlhint html-lsp typescript-language-server deno prettier jsonlint clangd clang-format" -c ":qall!" || true' ) &
 pid=$!
 echo ":: wait for NvChad to finish"
 wait $pid
