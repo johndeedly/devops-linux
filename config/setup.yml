@@ -2,7 +2,6 @@ distros:
   archlinux: pacman
   debian: apt
   debian-12: apt
-  debian-11: apt
   ubuntu: apt
   ubuntu-24: apt
   ubuntu-22: apt
@@ -15,7 +14,6 @@ download:
   archlinux: https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
   debian: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
   debian-12: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
-  debian-11: https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2
   ubuntu: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
   ubuntu-24: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
   ubuntu-22: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
@@ -23,11 +21,20 @@ download:
   rocky: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-9: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-8: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud.latest.x86_64.qcow2
+endoflife:
+  debian: https://endoflife.date/api/debian/12.json
+  debian-12: https://endoflife.date/api/debian/12.json
+  ubuntu: https://endoflife.date/api/ubuntu/24.04.json
+  ubuntu-24: https://endoflife.date/api/ubuntu/24.04.json
+  ubuntu-22: https://endoflife.date/api/ubuntu/22.04.json
+  ubuntu-20: https://endoflife.date/api/ubuntu/20.04.json
+  rocky: https://endoflife.date/api/rocky-linux/9.json
+  rocky-9: https://endoflife.date/api/rocky-linux/9.json
+  rocky-8: https://endoflife.date/api/rocky-linux/8.json
 images:
   archlinux: Arch-Linux-x86_64-cloudimg.qcow2
   debian: debian-12-generic-amd64.qcow2
   debian-12: debian-12-generic-amd64.qcow2
-  debian-11: debian-11-generic-amd64.qcow2
   ubuntu: noble-server-cloudimg-amd64.img
   ubuntu-24: noble-server-cloudimg-amd64.img
   ubuntu-22: jammy-server-cloudimg-amd64.img

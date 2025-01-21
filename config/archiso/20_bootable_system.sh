@@ -7,6 +7,24 @@ CIDATA_DEVICE=$(lsblk -no PATH,LABEL,FSTYPE | sed -e '/cidata/I!d' -e '/iso9660/
 test -n "$CIDATA_DEVICE" && mount -o X-mount.mkdir "$CIDATA_DEVICE" /iso
 mountpoint -q /iso || ( test -f /cidata/meta-data && mount --bind -o X-mount.mkdir /cidata /iso )
 
+# check end of life
+ENDOFLIFEURL=$(yq -r '.setup as $setup | .endoflife[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)
+if [ -z "$ENDOFLIFEURL" ] || [[ "$ENDOFLIFEURL" =~ [nN][uU][lL][lL] ]]; then
+    echo ":: rolling release distro"
+else
+    ENDOFLIFEFILE="$(mktemp)"
+    wget -c -N -O "${ENDOFLIFEFILE}" --progress=dot "${ENDOFLIFEURL}"
+    eoldate=$(jq -r '.eol' "${ENDOFLIFEFILE}")
+    epoch=$(date -d "$eoldate" +%s)
+    rm "$ENDOFLIFEFILE"
+    if [ "$epoch" -lt "$(date -d '1 day ago' +%s)" ] ; then
+        echo "!! end of life reached. No security updates will be available any more: $eoldate"
+        exit 1
+    else
+        echo ":: end of life not reached yet: $eoldate"
+    fi
+fi
+
 # prepare setup variables
 CLOUD_IMAGE_PATH="/iso/$(yq -r '.setup as $setup | .images[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
 if [ -z "$CLOUD_IMAGE_PATH" ]; then
