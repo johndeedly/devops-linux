@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed --ignore plasma-welcome \
+LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit realtime-privileges \
   xorg-server xorg-xinit xorg-xrandr xautolock slock xclip xsel brightnessctl gammastep arandr dunst libnotify engrampa \
   flameshot libinput xf86-input-libinput xorg-xinput kitty wofi dex xrdp lightdm lightdm-slick-greeter \
@@ -14,6 +14,9 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed --ignore plasma-welcome \
   pamac flatpak firefox chromium virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
   plasma kwallet-pam dolphin kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer
+
+# remove plasma welcome package from plasma group
+LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-welcome
 
 # enable some services
 systemctl enable cups libvirtd.service libvirtd.socket
