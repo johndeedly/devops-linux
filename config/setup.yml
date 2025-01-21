@@ -49,8 +49,10 @@ files:
   pacman:
     mirror:
       - pacman/20_localmirror_pacman.sh
-    graphical:
-      - pacman/20_graphical_pacman.sh
+    cinnamon:
+      - pacman/20_graphical_cinnamon_pacman.sh
+    kde:
+      - pacman/20_graphical_kde_pacman.sh
     pxe-image:
       - pacman/ZZ_pxe_image.sh
   yum:

@@ -551,6 +551,16 @@ contrastOpacity=188
 showStartupLaunchMessage=false
 EOF
 
+# apply skeleton to all users
+getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
+  if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then
+    if [ "$uid" -eq 0 ] || [ "$uid" -ge 1000 ]; then
+      echo ":: apply skeleton to $home [$username $uid:$gid]"
+      rsync -a --chown=$uid:$gid /etc/skel/ "$home"
+    fi
+  fi
+done
+
 # sync everything to disk
 sync
 
