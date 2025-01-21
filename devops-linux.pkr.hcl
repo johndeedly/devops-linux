@@ -68,7 +68,7 @@ source "qemu" "default" {
   sockets              = 1
   cores                = var.cpu_cores
   threads              = 1
-  qemuargs             = [["-rtc", "base=utc,clock=host"], ["-usbdevice", "mouse"], ["-usbdevice", "keyboard"], ["-virtfs", "local,path=output,mount_tag=host.0,security_model=mapped,id=host.0"]]
+  qemuargs             = [["-rtc", "base=utc,clock=host"], ["-usbdevice", "mouse"], ["-usbdevice", "keyboard"]]
   headless             = var.headless
   iso_checksum         = "none"
   iso_url              = "archlinux-x86_64.iso"
@@ -123,8 +123,9 @@ mkdir -p "/tmp/swtpm.0"
 /usr/bin/qemu-system-x86_64 \\
   -name devops-linux-x86_64 \\
   -machine type=q35,accel=kvm \\
-  -vga virtio \\
-  -display gtk,gl=on \\
+  -device virtio-vga,id=video.0,max_outputs=1 \\
+  -vga none \\
+  -display gtk,gl=on,show-cursor=on \\
   -cpu host \\
   -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
   -device tpm-tis,tpmdev=tpm0 -tpmdev emulator,id=tpm0,chardev=vtpm -chardev socket,id=vtpm,path=/tmp/swtpm.0/vtpm.sock \\
@@ -145,8 +146,9 @@ tee output/devops-linux/devops-linux-x86_64.pxe.sh <<EOF
 /usr/bin/qemu-system-x86_64 \\
   -name devops-linux-x86_64 \\
   -machine type=q35,accel=kvm \\
-  -vga virtio \\
-  -display gtk,gl=on \\
+  -device virtio-vga,id=video.0,max_outputs=1 \\
+  -vga none \\
+  -display gtk,gl=on,show-cursor=on \\
   -cpu host \\
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev socket,id=user.0,connect=:46273 -device virtio-net,netdev=user.0 \\
