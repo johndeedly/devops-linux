@@ -193,7 +193,6 @@ if [ -f /etc/pam.d/system-auth ]; then
 fi
 if [ -f /etc/pam.d/su ]; then
     sed -i '0,/pam_rootok.so/s//pam_rootok.so\nauth            sufficient      pam_ldap.so/' /etc/pam.d/su
-    sed -i '0,//s//pam_unix.so use_first_pass/' /etc/pam.d/su
     sed -i 's/^\(auth.*pam_unix.so\)/\1 use_first_pass/' /etc/pam.d/su
     sed -i '0,/^account/s//account         sufficient      pam_ldap.so\naccount/' /etc/pam.d/su
     sed -i '0,/^session/s//session         sufficient      pam_ldap.so\nsession/' /etc/pam.d/su
