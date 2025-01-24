@@ -90,17 +90,20 @@ packer_buildappliance() {
 		done
 	fi
 	if [ -n "$_runit" ]; then
+	    _package_manager=$(yq -r '.setup as $setup | .distros[$setup.distro]' config/setup.yml)
 		case $VIRTENV in
 			wsl)
 				# windows
 				env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
-					PKR_VAR_sound_driver=dsound PKR_VAR_accel_graphics=off /bin/packer "${_args[@]}"
+					PKR_VAR_sound_driver=dsound PKR_VAR_accel_graphics=off \
+					PKR_VAR_package_manager="${_package_manager}" /bin/packer "${_args[@]}"
 				return $?
 				;;
 			*)
 				# others, including linux
 				env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
-					PKR_VAR_sound_driver=pulse PKR_VAR_accel_graphics=on /bin/packer "${_args[@]}"
+					PKR_VAR_sound_driver=pulse PKR_VAR_accel_graphics=on \
+					PKR_VAR_package_manager="${_package_manager}" /bin/packer "${_args[@]}"
 				return $?
 				;;
 		esac

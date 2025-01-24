@@ -36,6 +36,11 @@ variable "headless" {
   default = false
 }
 
+variable "package_manager" {
+  type    = string
+  default = "pacman"
+}
+
 locals {
   build_name_qemu       = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉"), "qcow2"]) # unicode replacement char for colon
 }
@@ -45,7 +50,7 @@ source "qemu" "default" {
   shutdown_command     = "/sbin/poweroff"
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
-  cd_files             = ["build/CIDATA/*", "database/*"]
+  cd_files             = ["build/CIDATA/*", "database/*", "config/archiso/*.qcow2", "config/archiso/*.img"]
   cd_label             = "CIDATA"
   disk_size            = "524288M"
   memory               = var.memory
@@ -120,7 +125,7 @@ build {
   }
 
   provisioner "file" {
-    source      = "/var/cache/pacman/pkg/"
+    source      = "/var/cache/${var.package_manager}/"
     destination = "database/stage"
     direction   = "download"
   }

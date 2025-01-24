@@ -129,9 +129,21 @@ efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l /
 mount "${ROOT_PART[0]}" /mnt
 
 # copy over package cache
-if [ -d /iso/stage/pkg ]; then
-    mkdir -p /mnt/var/cache/pacman/pkg
-    rsync -av /iso/stage/pkg/ /mnt/var/cache/pacman/pkg/
+if [ -f /mnt/bin/apt ]; then
+    if [ -d /iso/stage/apt ]; then
+        mkdir -p /mnt/var/cache/apt
+        rsync -av /iso/stage/apt/ /mnt/var/cache/apt/
+    fi
+elif [ -f /mnt/bin/pacman ]; then
+    if [ -d /iso/stage/pacman ]; then
+        mkdir -p /mnt/var/cache/pacman
+        rsync -av /iso/stage/pacman/ /mnt/var/cache/pacman/
+    fi
+elif [ -f /mnt/bin/yum ]; then
+    if [ -d /iso/stage/yum ]; then
+        mkdir -p /mnt/var/cache/yum
+        rsync -av /iso/stage/yum/ /mnt/var/cache/yum/
+    fi
 fi
 
 # set local package mirror
