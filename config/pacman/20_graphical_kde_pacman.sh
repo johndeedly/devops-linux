@@ -5,7 +5,7 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit realtime-privileges \
   xorg-server xorg-xinit xorg-xrandr xautolock slock xclip xsel brightnessctl gammastep arandr dunst libnotify engrampa \
-  flameshot libinput xf86-input-libinput xorg-xinput kitty wofi dex xrdp lightdm lightdm-slick-greeter \
+  flameshot libinput xf86-input-libinput xorg-xinput dex xrdp lightdm lightdm-slick-greeter \
   archlinux-wallpaper elementary-wallpapers elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
   ttf-hannom ttf-baekmuk noto-fonts-emoji ttf-ms-fonts \
   cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita freerdp notepadqq gitg keepassxc pdfpc zettlr obsidian \
@@ -156,12 +156,6 @@ EOF
 # configure kde desktop
 #
 
-# do not show plasma-welcome on startup
-tee /etc/skel/.config/plasma-welcomerc <<EOF
-[General]
-ShouldShow=false
-EOF
-
 # set application mimetype defaults
 FILELIST=(
   /usr/share/applications/libreoffice-math.desktop
@@ -169,12 +163,11 @@ FILELIST=(
   /usr/share/applications/libreoffice-calc.desktop
   /usr/share/applications/libreoffice-writer.desktop
   /usr/share/applications/libreoffice-impress.desktop
-  /usr/share/applications/kitty.desktop
+  /usr/share/applications/konsole.desktop
   /usr/share/applications/chromium.desktop
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/mpv.desktop
   /usr/share/applications/notepadqq.desktop
-  /usr/share/applications/gpicview.desktop
 )
 tee /tmp/mimeapps.list.added <<EOF
 [Added Associations]

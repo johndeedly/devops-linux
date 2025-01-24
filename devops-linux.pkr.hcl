@@ -68,7 +68,7 @@ source "qemu" "default" {
   sockets              = 1
   cores                = var.cpu_cores
   threads              = 1
-  qemuargs             = [["-rtc", "base=utc,clock=host"], ["-usbdevice", "mouse"], ["-usbdevice", "keyboard"]]
+  qemuargs             = [["-rtc", "base=utc,clock=host"], ["-device", "virtio-mouse"], ["-device", "virtio-keyboard"]]
   headless             = var.headless
   iso_checksum         = "none"
   iso_url              = "archlinux-x86_64.iso"
@@ -147,7 +147,7 @@ mkdir -p "/tmp/swtpm.0"
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
   -netdev socket,id=user.1,listen=:46273 -device virtio-net,netdev=user.1 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -usbdevice mouse -usbdevice keyboard \\
+  -device virtio-mouse -device virtio-keyboard \\
   -rtc base=utc,clock=host
 EOF
 # remove -display gtk,gl=on for no 3d acceleration
@@ -165,7 +165,7 @@ tee output/devops-linux/devops-linux-x86_64.pxe.sh <<EOF
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev socket,id=user.0,connect=:46273 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -usbdevice mouse -usbdevice keyboard \\
+  -device virtio-mouse -device virtio-keyboard \\
   -rtc base=utc,clock=host
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
