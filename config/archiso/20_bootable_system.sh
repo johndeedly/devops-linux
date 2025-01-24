@@ -72,8 +72,7 @@ ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed 
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
 LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${ROOT_PART[1]}" root \
-    resizepart "${ROOT_PART[1]}" -8MiB \
-    mkpart cidata fat32 -8MiB -4MiB
+    resizepart "${ROOT_PART[1]}" -4MiB
 
 # update partitions in kernel again
 partx -u "${TARGET_DEVICE}"
@@ -97,13 +96,6 @@ elif [ "${ROOT_PART[2]}" == "xfs" ] || [ "${ROOT_PART[2]}" == "XFS" ]; then
     sync
     umount -l /mnt
 fi
-
-# write the cidata iso to the cidata partition on disk
-find /var/lib/cloud/instance/config /var/lib/cloud/instance/provision -type f | sort
-dd if=/dev/zero of=/dev/disk/by-partlabel/cidata bs=1M count=2 iflag=fullblock status=progress
-mkfs.vfat -n CIDATA /dev/disk/by-partlabel/cidata
-mcopy -oi /dev/disk/by-partlabel/cidata /var/lib/cloud/instance/provision/user-data \
-  /var/lib/cloud/instance/provision/meta-data ::
 
 # bootable system
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
@@ -145,6 +137,18 @@ elif [ -f /mnt/bin/yum ]; then
         rsync -av /iso/stage/yum/ /mnt/var/cache/yum/
     fi
 fi
+
+# write the stage's cidata to the configured path on the target
+find /var/lib/cloud/instance/config /var/lib/cloud/instance/provision -type f | sort
+tee /mnt/etc/cloud/cloud.cfg.d/99_nocloud.cfg <<EOF
+disable_ec2_metadata: true
+datasource_list: [ "NoCloud" ]
+datasource:
+  NoCloud:
+    seedfrom: file:///cidata
+EOF
+mkdir -p /mnt/cidata
+cp /var/lib/cloud/instance/provision/user-data /var/lib/cloud/instance/provision/meta-data /mnt/cidata/
 
 # set local package mirror
 PKG_MIRROR=$(yq -r '.setup.pkg_mirror' /var/lib/cloud/instance/config/setup.yml)
