@@ -32,6 +32,7 @@ endoflife:
   rocky-9: https://endoflife.date/api/rocky-linux/9.json
   rocky-8: https://endoflife.date/api/rocky-linux/8.json
 images:
+  archiso: archlinux-x86_64.iso
   archlinux: Arch-Linux-x86_64-cloudimg.qcow2
   debian: debian-12-generic-amd64.qcow2
   debian-12: debian-12-generic-amd64.qcow2

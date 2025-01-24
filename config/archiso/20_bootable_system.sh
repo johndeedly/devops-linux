@@ -2,11 +2,6 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-# locate the cidata iso and mount it to /iso
-CIDATA_DEVICE=$(lsblk -no PATH,LABEL,FSTYPE | sed -e '/cidata/I!d' -e '/iso9660/I!d' | head -n1 | cut -d' ' -f1)
-test -n "$CIDATA_DEVICE" && mount -o X-mount.mkdir "$CIDATA_DEVICE" /iso
-mountpoint -q /iso || ( test -f /cidata/meta-data && mount --bind -o X-mount.mkdir /cidata /iso )
-
 # check end of life
 ENDOFLIFEURL=$(yq -r '.setup as $setup | .endoflife[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)
 if [ -z "$ENDOFLIFEURL" ] || [[ "$ENDOFLIFEURL" =~ [nN][uU][lL][lL] ]]; then
@@ -132,6 +127,12 @@ efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l /
 
 # mount detected root filesystem
 mount "${ROOT_PART[0]}" /mnt
+
+# copy over package cache
+if [ -d /iso/stage/pkg ]; then
+    mkdir -p /mnt/var/cache/pacman/pkg
+    rsync -av /iso/stage/pkg/ /mnt/var/cache/pacman/pkg/
+fi
 
 # set local package mirror
 PKG_MIRROR=$(yq -r '.setup.pkg_mirror' /var/lib/cloud/instance/config/setup.yml)

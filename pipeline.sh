@@ -170,10 +170,13 @@ write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 cp build/archiso/user-data build/archiso/meta-data build/CIDATA/
 
 echo "Download archiso when needed"
-ARCHISO=$(yq -r '.download.archiso' config/setup.yml)
-if ! wget -c -N --progress=dot:mega "${ARCHISO}"; then
-	echo 1>&2 "Download error"
-	exit 1
+ARCHISO=$(yq -r '.images.archiso' config/setup.yml)
+ARCHISOURL=$(yq -r '.download.archiso' config/setup.yml)
+if ! [ -e "${ARCHISO}" ]; then
+	if ! wget -c -N --progress=dot:mega "${ARCHISOURL}"; then
+		echo 1>&2 "Download error"
+		exit 1
+	fi
 fi
 
 mkdir -p output

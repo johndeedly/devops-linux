@@ -1,4 +1,10 @@
-build/
+build/*
+!build/CIDATA
+!build/.gitkeep
+build/CIDATA/*
+!build/CIDATA/.gitkeep
 output/
+database/*
+!database/.gitkeep
 *.qcow2
 *.iso

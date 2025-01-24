@@ -35,13 +35,17 @@ gpg --homedir "$homedir" --no-permission-warning --list-keys --list-options show
 done | gpg --faked-system-time "$FAKED_DAY_GPG" --allow-weak-key-signatures --homedir "$homedir" --no-permission-warning --import-ownertrust
 
 pacman -Sy --noconfirm
-pacman -Swp --logfile "/dev/null" --cachedir "/dev/null" libguestfs qemu-base jq yq | while read -r line; do
-    echo "$line"
-    echo "$line".sig
-done | while read -r line; do
-    echo ":: caching $line"
-    curl -sL --output-dir /var/cache/pacman/pkg --remote-name "$line"
-done
+if [ -d "/iso/archiso/pkg" ] && [ -n "$(find /iso/archiso/pkg -type f)" ]; then
+    rsync -av /iso/archiso/pkg/ /var/cache/pacman/pkg/
+else
+    pacman -Swp --logfile "/dev/null" --cachedir "/dev/null" libguestfs qemu-base jq yq | while read -r line; do
+        echo "$line"
+        echo "$line".sig
+    done | while read -r line; do
+        echo ":: caching $line"
+        curl -sL --output-dir /var/cache/pacman/pkg --remote-name "$line"
+    done
+fi
 timedatectl set-ntp false
 timedatectl set-time "$FAKED_DAY_PAC"
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm libguestfs qemu-base jq yq

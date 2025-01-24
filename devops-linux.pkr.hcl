@@ -45,7 +45,7 @@ source "qemu" "default" {
   shutdown_command     = "/sbin/poweroff"
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
-  cd_files             = ["build/CIDATA/*"]
+  cd_files             = ["build/CIDATA/*", "database/*"]
   cd_label             = "CIDATA"
   disk_size            = "524288M"
   memory               = var.memory
@@ -94,6 +94,12 @@ build {
     direction   = "download"
   }
 
+  provisioner "file" {
+    source      = "/var/cache/pacman/pkg/"
+    destination = "database/archiso"
+    direction   = "download"
+  }
+
   provisioner "shell" {
     expect_disconnect = true
     inline            = [
@@ -110,6 +116,12 @@ build {
   provisioner "file" {
     source      = "/cidata_log"
     destination = "output/devops-linux-cidata.log"
+    direction   = "download"
+  }
+
+  provisioner "file" {
+    source      = "/var/cache/pacman/pkg/"
+    destination = "database/stage"
     direction   = "download"
   }
 
