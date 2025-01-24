@@ -109,7 +109,7 @@ packer_buildappliance() {
 }
 
 echo "Prepare CIDATA directory"
-[ -n "$(find build -type f)" ] && rm -r build/*
+[ -n "$(find build -type f)" ] && find build -type f \( -not -name ".gitkeep" \) -delete
 mkdir -p build/{archiso,stage,CIDATA}
 
 tee build/archiso/meta-data build/stage/meta-data >/dev/null <<EOF
