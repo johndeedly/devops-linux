@@ -50,7 +50,7 @@ source "qemu" "default" {
   shutdown_command     = "/sbin/poweroff"
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
-  cd_files             = ["build/CIDATA/*", "database/*", "config/archiso/*.qcow2", "config/archiso/*.img"]
+  cd_files             = ["build/CIDATA/*", "database/*"]
   cd_label             = "CIDATA"
   disk_size            = "524288M"
   memory               = var.memory
