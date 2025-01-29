@@ -127,7 +127,6 @@ write_mime_params=(
     "config/stage/i18n.yml:text/cloud-config"
     "config/stage/user-skeleton.yml:text/cloud-config"
     "config/stage/10_firstboot.sh:text/x-shellscript"
-	"config/stage/15_base_system.sh:text/x-shellscript"
     "config/setup.yml:application/x-setup-config"
 )
 # pxe boot static files

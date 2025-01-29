@@ -45,9 +45,13 @@ images:
   rocky-8: Rocky-8-GenericCloud-Base.latest.x86_64.qcow2
 files:
   apt:
+    base:
+      - stage/15_base_system.sh
     mirror:
       - apt/20_localmirror_apt.sh
   pacman:
+    base:
+      - stage/15_base_system.sh
     mirror:
       - pacman/20_localmirror_pacman.sh
     cinnamon:
@@ -57,11 +61,14 @@ files:
     pxe-image:
       - pacman/ZZ_pxe_image.sh
   yum:
+    base:
+      - stage/15_base_system.sh
     mirror:
       - yum/20_localmirror_yum.sh
 setup:
   distro: archlinux
-  options: []
+  options:
+    - base
   env_vars: []
   target: /dev/vda
   archiso_mirror: false
