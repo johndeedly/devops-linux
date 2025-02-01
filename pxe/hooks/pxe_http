@@ -30,9 +30,16 @@ pxe_http_mount_handler() {
     # 2nd: download the image
     msg ":: Download '${http_img}' to '${local_img}'"
     mkdir -p "${local_img%/pxeboot.img}"
-    if ! curl -L -f -o "${local_img}" "${http_img}"; then
-        echo "!! ERROR: could not download '${http_img}' to '${local_img}'"
-        launch_interactive_shell
+    if command -v wget >/dev/null 2>&1; then
+        if ! wget -c -N -O "${local_img}" --progress=dot:mega "${http_img}"; then
+            echo "!! ERROR: could not download '${http_img}' to '${local_img}'"
+            launch_interactive_shell
+        fi
+    else
+        if ! curl -L -f -o "${local_img}" "${http_img}"; then
+            echo "!! ERROR: could not download '${http_img}' to '${local_img}'"
+            launch_interactive_shell
+        fi
     fi
 
     # 3rd: create the boot mount point for pxe_mount_handler with correct image placement
