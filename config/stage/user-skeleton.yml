@@ -92,18 +92,6 @@ write_files:
       }
       export -f fasthash
 
-      # configure completion for doas
-      complete -F _root_command doas
-      complete -F _longopt ls
-      complete -F _longopt ll
-      complete -F _longopt la
-      complete -F _longopt diff
-      complete -F _longopt grep
-      complete -F _longopt trash
-      complete -F _longopt trashdir
-      complete -F _longopt du
-      complete -F _longopt ncdu
-
       # alias and color stuff
       function ls() {
           command ls --color=auto "$@"
