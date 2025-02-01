@@ -33,6 +33,7 @@ CURRENT_DAY=$(date +"%Y-%m-%d")
 gpg --homedir "$homedir" --no-permission-warning --list-keys --list-options show-only-fpr-mbox | sed -e '/archlinux[.]org$/!d' | sort -uk1 | while read -ra fpr_mbox; do
     echo "${fpr_mbox[0]}:6:"
 done | gpg --faked-system-time "$FAKED_DAY_GPG" --allow-weak-key-signatures --homedir "$homedir" --no-permission-warning --import-ownertrust
+gpg --faked-system-time "$FAKED_DAY_GPG" --allow-weak-key-signatures --homedir "$homedir" --no-permission-warning --check-trustdb
 
 pacman -Sy --noconfirm
 if [ -d "/iso/archiso/pkg" ] && [ -n "$(find /iso/archiso/pkg -type f)" ]; then
