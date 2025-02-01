@@ -102,10 +102,10 @@ download_dotnet_yum() {
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     systemd-homed build-essential yq \
-    curl wget zstd rsyslog nano npm htop btop git firewalld \
+    zstd rsyslog npm htop btop git firewalld \
     bash-completion ncdu pv mc ranger fzf moreutils \
-    lshw libxml2 jq polkitd man manpages-de trash-cli \
-    openssh-server openssh-client wireguard-tools nfs-kernel-server \
+    lshw libxml2 jq man manpages-de trash-cli \
+    wireguard-tools nfs-kernel-server \
     gvfs gvfs-backends cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
     libnss-ldap libpam-ldap ldap-utils nslcd python3-pip python3-venv
   download_nerdfont
@@ -114,28 +114,28 @@ if [ -e /bin/apt ]; then
     luajit libluajit-5.1-dev lua-mpack lua-lpeg libunibilium-dev libmsgpack-dev libtermkey-dev
   download_neovim
   download_dotnet_debian
-  systemctl enable systemd-networkd systemd-resolved systemd-homed ssh firewalld nslcd
+  systemctl enable systemd-networkd systemd-resolved systemd-homed firewalld nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     pacman-contrib starship ttf-terminus-nerd ttf-nerd-fonts-symbols powershell-bin base-devel neovim yq \
-    curl wget zstd rsyslog nano npm htop btop git firewalld \
+    zstd rsyslog npm htop btop git firewalld \
     bash-completion ncdu viu pv mc ranger fzf moreutils dotnet-runtime \
-    lshw libxml2 jq polkit core/man man-pages-de trash-cli \
-    openssh wireguard-tools nfs-utils \
+    lshw libxml2 jq core/man man-pages-de trash-cli \
+    wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
     openldap nss-pam-ldapd python-pip
-  systemctl enable systemd-networkd systemd-resolved systemd-homed sshd firewalld nslcd
+  systemctl enable systemd-networkd systemd-resolved systemd-homed firewalld nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y \
     systemd-networkd cmake make automake gcc gcc-c++ kernel-devel \
-    curl wget zstd rsyslog nano npm htop btop git firewalld \
+    zstd rsyslog npm htop btop git firewalld \
     bash-completion ncdu pv mc ranger fzf moreutils \
-    lshw libxml2 jq polkit man-db trash-cli \
-    openssh wireguard-tools nfs-utils \
+    lshw libxml2 jq man-db trash-cli \
+    wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
     openldap openldap-clients nss-pam-ldapd python3-pip python3-venv
   download_nerdfont
@@ -144,7 +144,7 @@ elif [ -e /bin/yum ]; then
     compat-lua-libs libtermkey libtree-sitter libvterm luajit luajit2.1-luv msgpack unibilium xsel
   download_neovim
   download_dotnet_yum
-  systemctl enable systemd-networkd systemd-resolved sshd firewalld nslcd
+  systemctl enable systemd-networkd systemd-resolved firewalld nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 fi

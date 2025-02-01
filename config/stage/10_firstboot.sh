@@ -111,6 +111,19 @@ elif [ -e /bin/yum ]; then
   grub2-mkconfig -o /boot/efi/EFI/rocky/grub.cfg --update-bls-cmdline
 fi
 
+# very essential programs
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
+    jq yq openssh-server openssh-client
+  systemctl enable ssh
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh
+  systemctl enable sshd
+elif [ -e /bin/yum ]; then
+  LC_ALL=C yes | LC_ALL=C yum install -y polkit curl wget nano jq yq openssh
+  systemctl enable sshd
+fi
+
 # sync everything to disk
 sync
 
