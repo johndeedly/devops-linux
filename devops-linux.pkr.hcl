@@ -129,7 +129,7 @@ build {
   }
 
   provisioner "shell" {
-    inline = ["mkdir -p /srv/{pxe,docker}"]
+    inline = ["mkdir -p /srv/pxe /srv/docker"]
   }
 
   provisioner "file" {
