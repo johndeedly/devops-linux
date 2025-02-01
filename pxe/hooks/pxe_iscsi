@@ -64,6 +64,7 @@ EOF
         msg ":: Disconnect iSCSI from '${pxe_iscsi_srv}', target '${pxe_iscsi_tgt}'"
         iscsiadm -m node -T "${pxe_iscsi_tgt}" -p "${pxe_iscsi_srv}" -u
         iscsiadm -m node -o delete -T "${pxe_iscsi_tgt}"
+        iscsiadm -m discovery -o delete -p "${pxe_iscsi_srv}"
         killall iscsid
         killall iscsiuio
     fi
