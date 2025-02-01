@@ -130,6 +130,22 @@ build {
     direction   = "download"
   }
 
+  provisioner "shell" {
+    inline = ["mkdir -p /srv/{pxe,docker}"]
+  }
+
+  provisioner "file" {
+    source      = "/srv/pxe/"
+    destination = "output/artifacts"
+    direction   = "download"
+  }
+
+  provisioner "file" {
+    source      = "/srv/docker/"
+    destination = "output/artifacts"
+    direction   = "download"
+  }
+
   provisioner "shell-local" {
     inline = [<<EOS
 tee output/devops-linux/devops-linux-x86_64.run.sh <<EOF
