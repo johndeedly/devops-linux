@@ -79,17 +79,17 @@ partx -u "${TARGET_DEVICE}"
 sleep 1
 
 # resize main filesystem
-if [ "${ROOT_PART[2]}" == "btrfs" ] || [ "${ROOT_PART[2]}" == "BTRFS" ]; then
+if [[ "${ROOT_PART[2]}" =~ [bB][tT][rR][fF][sS] ]]; then
     echo ":: resize root btrfs"
     mount "${ROOT_PART[0]}" /mnt
     btrfs filesystem resize max /mnt
     sync
     umount -l /mnt
-elif [ "${ROOT_PART[2]}" == "ext4" ] || [ "${ROOT_PART[2]}" == "EXT4" ]; then
+elif [[ "${ROOT_PART[2]}" =~ [eE][xX][tT]4 ]]; then
     echo ":: resize root ext4"
     e2fsck -y -f "${ROOT_PART[0]}"
     resize2fs "${ROOT_PART[0]}"
-elif [ "${ROOT_PART[2]}" == "xfs" ] || [ "${ROOT_PART[2]}" == "XFS" ]; then
+elif [[ "${ROOT_PART[2]}" =~ [xX][fF][sS] ]]; then
     echo ":: resize root xfs"
     mount "${ROOT_PART[0]}" /mnt
     xfs_growfs -d /mnt
