@@ -9,11 +9,12 @@ from typing import Any
 from cloudinit.cloud import Cloud
 
 def list_types():
-    return(["application/x-setup-config", "application/x-provision-config", "application/x-provision-file"])
+    return(["application/x-setup-config", "application/x-provision-config", "application/x-per-boot", "application/x-provision-file"])
 
 def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
     configdir = pathlib.Path("/var/lib/cloud/instance/config")
     provisiondir = pathlib.Path("/var/lib/cloud/instance/provision")
+    perbootdir = pathlib.Path("/var/lib/cloud/scripts/per-boot")
 
     if ctype == "__begin__":
         configdir.mkdir(parents=True, exist_ok=True)
@@ -32,6 +33,10 @@ def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
     
     if ctype == "application/x-provision-config":
         file = provisiondir.joinpath(filename.strip())
+        content = payload
+    
+    if ctype == "application/x-per-boot":
+        file = perbootdir.joinpath(filename.strip())
         content = payload
     
     if ctype == "application/x-provision-file":

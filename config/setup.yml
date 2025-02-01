@@ -46,31 +46,43 @@ images:
 files:
   apt:
     base:
-      - stage/15_base_system.sh
+      - path: stage/15_base_system.sh
+        stage: 1
     mirror:
-      - apt/20_localmirror_apt.sh
+      - path: apt/20_localmirror_apt.sh
+        stage: 1
     proxmox:
-      - apt/20_proxmox_apt.sh
+      - path: apt/20_proxmox_apt.sh
+        stage: 1
   pacman:
     base:
-      - stage/15_base_system.sh
+      - path: stage/15_base_system.sh
+        stage: 1
     mirror:
-      - pacman/20_localmirror_pacman.sh
+      - path: pacman/20_localmirror_pacman.sh
+        stage: 1
     cinnamon:
-      - pacman/20_graphical_cinnamon_pacman.sh
+      - path: pacman/20_graphical_cinnamon_pacman.sh
+        stage: 1
     kde:
-      - pacman/20_graphical_kde_pacman.sh
+      - path: pacman/20_graphical_kde_pacman.sh
+        stage: 1
     router:
-      - pacman/20_router_pacman.sh
+      - path: pacman/20_router_pacman.sh
+        stage: 1
     podman-image:
-      - pacman/ZZ_podman_image.sh
+      - path: pacman/ZZ_podman_image.sh
+        stage: 2
     pxe-image:
-      - pacman/ZZ_pxe_image.sh
+      - path: pacman/ZZ_pxe_image.sh
+        stage: 2
   yum:
     base:
-      - stage/15_base_system.sh
+      - path: stage/15_base_system.sh
+        stage: 1
     mirror:
-      - yum/20_localmirror_yum.sh
+      - path: yum/20_localmirror_yum.sh
+        stage: 1
 setup:
   distro: archlinux
   options:

@@ -142,14 +142,22 @@ EOF
         fi
     fi
 done <<<"$(find pxe -type f)"
-# deployment scripts
+# deployment scripts stage 1
 while read -r line; do
 	if [ -n "$line" ] && [ -e "config/$line" ]; then
 		if [ -f "config/$line" ]; then
 			write_mime_params=( "${write_mime_params[@]}" "config/$line:text/x-shellscript" )
         fi
     fi
-done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro].[$setup.options[]][]' config/setup.yml)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' config/setup.yml)"
+# deployment scripts stage 2
+while read -r line; do
+	if [ -n "$line" ] && [ -e "config/$line" ]; then
+		if [ -f "config/$line" ]; then
+			write_mime_params=( "${write_mime_params[@]}" "config/$line:application/x-per-boot" )
+        fi
+    fi
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' config/setup.yml)"
 write-mime-multipart --output=build/stage/user-data "${write_mime_params[@]}"
 
 # prepare user-data for archiso, packed with stage

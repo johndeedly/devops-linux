@@ -122,6 +122,25 @@ build {
     direction   = "download"
   }
 
+  provisioner "shell" {
+    expect_disconnect = true
+    inline            = [
+      "reboot now",
+    ]
+    pause_after       = "10s"
+  }
+  
+  provisioner "shell" {
+    inline = ["cloud-init status --wait"]
+    valid_exit_codes = [0, 2]
+  }
+
+  provisioner "file" {
+    source      = "/cidata_log"
+    destination = "output/devops-linux-cidata.log"
+    direction   = "download"
+  }
+
   provisioner "file" {
     source      = "/var/cache/${var.package_manager}/"
     destination = "database/stage"

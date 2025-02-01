@@ -154,6 +154,9 @@ elif [ -e /bin/yum ]; then
   systemctl enable sshd
 fi
 
+# activate second stage
+find /var/lib/cloud/scripts/per-boot -name '*.sh' -exec chmod 0755 {} \;
+
 # sync everything to disk
 sync
 
