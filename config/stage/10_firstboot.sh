@@ -3,7 +3,9 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 # load the keyboard layout for the current session
-/usr/lib/systemd/systemd-vconsole-setup
+if [ -f /usr/lib/systemd/systemd-vconsole-setup ]; then
+  /usr/lib/systemd/systemd-vconsole-setup
+fi
 
 # import cloud-init logs
 tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
@@ -114,7 +116,7 @@ fi
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
-    jq yq openssh-server openssh-client
+    jq yq openssh-server openssh-client systemd-container
   systemctl enable ssh
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh
