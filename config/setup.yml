@@ -49,6 +49,8 @@ files:
       - stage/15_base_system.sh
     mirror:
       - apt/20_localmirror_apt.sh
+    proxmox:
+      - apt/20_proxmox_apt.sh
   pacman:
     base:
       - stage/15_base_system.sh
