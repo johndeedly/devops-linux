@@ -110,7 +110,7 @@ LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
 efibootmgr | sed -e '/'"${DISTRO_NAME}"'/I!d' | while read -r bootentry; do
     bootnum=$(echo "$bootentry" | grep -Po "[A-F0-9]{4}" | head -n1)
     if [ -n "$bootnum" ]; then
-        printf ":: remove existing cloud-ready-image boot entry %s\n" "$bootnum"
+        printf ":: remove existing ${DISTRO_NAME} entry %s\n" "$bootnum"
         efibootmgr -b "$bootnum" -B
     fi
 done
