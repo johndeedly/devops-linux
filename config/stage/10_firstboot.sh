@@ -41,6 +41,34 @@ elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y glibc-common glibc-locale-source glibc-langpack-de
 fi
 
+# Generate locales
+if [ -e /bin/apt ]; then
+  sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  dpkg-reconfigure --frontend=noninteractive locales
+  update-locale LANG=de_DE.UTF-8
+elif [ -e /bin/pacman ]; then
+  sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  echo "LANG=de_DE.UTF-8" > /etc/locale.conf
+  locale-gen
+elif [ -e /bin/yum ]; then
+  sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  echo "LANG=de_DE.UTF-8" > /etc/locale.conf
+  localedef -c -i de_DE -f UTF-8 de_DE.UTF-8
+fi
+
+# Configure timezone
+if [ -e /bin/apt ]; then
+  rm /etc/localtime || true
+  ln -s /usr/share/zoneinfo/CET /etc/localtime
+  dpkg-reconfigure --frontend=noninteractive tzdata
+elif [ -e /bin/pacman ]; then
+  rm /etc/localtime || true
+  ln -s /usr/share/zoneinfo/CET /etc/localtime
+elif [ -e /bin/yum ]; then
+  rm /etc/localtime || true
+  ln -s /usr/share/zoneinfo/CET /etc/localtime
+fi
+
 # Configure keyboard and console
 if [ -e /bin/apt ]; then
   dpkg-reconfigure --frontend=noninteractive keyboard-configuration
