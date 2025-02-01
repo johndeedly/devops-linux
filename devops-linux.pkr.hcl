@@ -50,8 +50,6 @@ source "qemu" "default" {
   shutdown_command     = "/sbin/poweroff"
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
-  cd_files             = ["build/CIDATA/*", "database/*"]
-  cd_label             = "CIDATA"
   disk_size            = "524288M"
   memory               = var.memory
   format               = "qcow2"
@@ -76,7 +74,7 @@ source "qemu" "default" {
   qemuargs             = [["-rtc", "base=utc,clock=host"], ["-device", "virtio-mouse"], ["-device", "virtio-keyboard"]]
   headless             = var.headless
   iso_checksum         = "none"
-  iso_url              = "archlinux-x86_64.iso"
+  iso_url              = "archlinux-x86_64-cidata.iso"
   output_directory     = "output/devops-linux"
   ssh_username         = "root"
   ssh_password         = "packer-build-passwd"

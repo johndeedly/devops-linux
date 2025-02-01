@@ -181,6 +181,16 @@ if ! [ -e "${ARCHISO}" ]; then
 	fi
 fi
 
+echo "Append cidata to archiso"
+ARCHISOMODDED="archlinux-x86_64-cidata.iso"
+[ -f "${ARCHISOMODDED}" ] && rm "${ARCHISOMODDED}"
+xorriso -indev "${ARCHISO}" \
+        -outdev "${ARCHISOMODDED}" \
+		-volid CIDATA \
+		-map build/CIDATA/ / \
+        -map database/ / \
+        -boot_image any replay
+
 mkdir -p output
 VIRTENV=$(systemd-detect-virt || true)
 case $VIRTENV in
