@@ -58,6 +58,8 @@ files:
       - pacman/20_graphical_cinnamon_pacman.sh
     kde:
       - pacman/20_graphical_kde_pacman.sh
+    podman-image:
+      - pacman/ZZ_podman_image.sh
     pxe-image:
       - pacman/ZZ_pxe_image.sh
   yum:
