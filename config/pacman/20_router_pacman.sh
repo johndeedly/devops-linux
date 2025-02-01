@@ -3,7 +3,7 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools syslinux dnsmasq iptraf-ng ntp step-ca step-cli darkhttpd nfs-utils \
-  samba nbd open-iscsi targetcli-fb python-rtslib-fb python-configshell-fb nvmetcli
+  samba nbd open-iscsi targetcli-fb python-rtslib-fb python-configshell-fb nvmetcli firewalld
 
 DHCP_ADDITIONAL_SETUP=(
   "dhcp-option=option:dns-server,172.26.0.1\n"

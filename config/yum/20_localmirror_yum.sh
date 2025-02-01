@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C yum install -y nginx
+LC_ALL=C yes | LC_ALL=C yum install -y nginx firewalld
 
 mkdir -p /var/cache/yum/mirror /var/empty
 
