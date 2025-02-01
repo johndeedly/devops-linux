@@ -102,7 +102,7 @@ download_dotnet_yum() {
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     systemd-homed build-essential yq \
-    doas curl wget zstd rsyslog nano npm htop btop git firewalld \
+    curl wget zstd rsyslog nano npm htop btop git firewalld \
     bash-completion ncdu pv mc ranger fzf moreutils \
     lshw libxml2 jq polkitd man manpages-de trash-cli \
     openssh-server openssh-client wireguard-tools nfs-kernel-server \
@@ -120,7 +120,7 @@ if [ -e /bin/apt ]; then
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     pacman-contrib starship ttf-terminus-nerd ttf-nerd-fonts-symbols powershell-bin base-devel neovim yq \
-    doas curl wget zstd rsyslog nano npm htop btop git firewalld \
+    curl wget zstd rsyslog nano npm htop btop git firewalld \
     bash-completion ncdu viu pv mc ranger fzf moreutils dotnet-runtime \
     lshw libxml2 jq polkit core/man man-pages-de trash-cli \
     openssh wireguard-tools nfs-utils \
