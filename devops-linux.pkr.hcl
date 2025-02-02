@@ -108,11 +108,12 @@ build {
     inline            = [
       "reboot now",
     ]
-    pause_after       = "10s"
+    pause_after       = "5s"
   }
   
   provisioner "shell" {
-    inline = ["cloud-init status --wait"]
+    pause_before     = "5s"
+    inline           = ["cloud-init status --wait"]
     valid_exit_codes = [0, 2]
   }
 
@@ -127,11 +128,12 @@ build {
     inline            = [
       "reboot now",
     ]
-    pause_after       = "10s"
+    pause_after       = "5s"
   }
   
   provisioner "shell" {
-    inline = ["cloud-init status --wait"]
+    pause_before     = "5s"
+    inline           = ["cloud-init status --wait"]
     valid_exit_codes = [0, 2]
   }
 
