@@ -19,6 +19,9 @@ users:
       - ALL=(ALL) ALL
     doas:
       - permit setenv { XAUTHORITY LANG LC_ALL } persist user
+  - name: root
+    groups: root
+    shell: /bin/bash
 
 ssh_pwauth: true
 chpasswd:
