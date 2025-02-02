@@ -52,8 +52,10 @@ files:
       - path: apt/20_localmirror_apt.sh
         stage: 1
     proxmox:
-      - path: apt/20_proxmox_apt.sh
+      - path: apt/20_proxmox_1_apt.sh
         stage: 1
+      - path: apt/20_proxmox_2_apt.sh
+        stage: 2
   pacman:
     base:
       - path: stage/15_base_system.sh
