@@ -632,3 +632,9 @@ disable_network_activation: true
 EOF
 find /etc/systemd/network -name "05-wired.network" -print -delete
 find /etc/systemd/network -name "10-cloud-init*.network" -print -delete
+
+# sync everything to disk
+sync
+
+# cleanup
+rm -- "${0}"
