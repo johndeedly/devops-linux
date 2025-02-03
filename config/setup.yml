@@ -51,6 +51,9 @@ files:
     mirror:
       - path: apt/20_localmirror_apt.sh
         stage: 1
+    podman:
+      - path: apt/20_podman_apt.sh
+        stage: 1
     proxmox:
       - path: apt/20_proxmox_1_apt.sh
         stage: 1
@@ -68,6 +71,9 @@ files:
         stage: 1
     kde:
       - path: pacman/20_graphical_kde_pacman.sh
+        stage: 1
+    podman:
+      - path: pacman/20_podman_pacman.sh
         stage: 1
     router:
       - path: pacman/20_router_pacman.sh
