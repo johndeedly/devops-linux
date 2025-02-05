@@ -12,7 +12,6 @@ if [ -e /bin/apt ]; then
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y update
   fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-container
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm jq yq
   # main repo key from website
