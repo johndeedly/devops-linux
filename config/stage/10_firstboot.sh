@@ -144,8 +144,9 @@ fi
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
-    jq yq openssh-server openssh-client systemd-container
+    jq yq openssh-server openssh-client systemd-container unattended-upgrades
   systemctl enable ssh
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh
   systemctl enable sshd
