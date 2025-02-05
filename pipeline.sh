@@ -44,6 +44,25 @@ then
     exit 1
 fi
 
+# check swtpm is installed
+if ! command -v swtpm 2>&1 >/dev/null
+then
+    echo 1>&2 "The command 'swtpm' could not be found. Please install swtpm to use this script."
+	echo 1>&2 "archlinux: https://archlinux.org/packages/extra/x86_64/swtpm/"
+	echo 1>&2 "debian: https://packages.debian.org/bookworm/swtpm"
+    exit 1
+fi
+
+# check qemu-system-x86_64 is installed
+if ! command -v qemu-system-x86_64 2>&1 >/dev/null
+then
+    echo 1>&2 "The command 'qemu-system-x86_64' could not be found. Please install qemu-desktop to use this script."
+	echo 1>&2 "archlinux: https://archlinux.org/packages/extra/x86_64/qemu-desktop/"
+	echo 1>&2 "debian: https://packages.debian.org/bookworm/qemu-system-x86_64"
+    exit 1
+fi
+
+
 packer_buildappliance() {
 	local _longopts="search,filter,args"
 	local _opts="s:f:a:"
