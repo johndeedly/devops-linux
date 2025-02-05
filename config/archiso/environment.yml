@@ -15,10 +15,7 @@ users:
   - name: user
     groups: users
     shell: /bin/bash
-    sudo:
-      - ALL=(ALL) ALL
-    doas:
-      - permit setenv { XAUTHORITY LANG LC_ALL } persist user
+    sudo: ALL=(ALL) ALL
   - name: root
     groups: root
     shell: /bin/bash
@@ -35,7 +32,7 @@ chpasswd:
 
 growpart:
   mode: 'off'
-resize_rootfs: 'off'
+resize_rootfs: noblock
 
 write_files:
   # sshd config -> allow root, password auth, use pam
