@@ -3,7 +3,7 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools syslinux dnsmasq iptraf-ng ntp step-ca step-cli darkhttpd nfs-utils \
-  samba nbd open-iscsi targetcli-fb python-rtslib-fb python-configshell-fb nvmetcli firewalld
+  samba nbd tgt nvmetcli firewalld rsync
 
 DHCP_ADDITIONAL_SETUP=(
   "dhcp-option=option:dns-server,172.26.0.1\n"
@@ -204,201 +204,14 @@ RestartSec=23
 EOF
 
 # configure iscsi
-mkdir -p /etc/target
-tee /etc/target/saveconfig.json <<'EOF'
-{
-  "fabric_modules": [],
-  "storage_objects": [
-    {
-      "aio": false,
-      "alua_tpgs": [
-        {
-          "alua_access_state": 0,
-          "alua_access_status": 0,
-          "alua_access_type": 3,
-          "alua_support_active_nonoptimized": 1,
-          "alua_support_active_optimized": 1,
-          "alua_support_offline": 1,
-          "alua_support_standby": 1,
-          "alua_support_transitioning": 1,
-          "alua_support_unavailable": 1,
-          "alua_write_metadata": 0,
-          "implicit_trans_secs": 0,
-          "name": "default_tg_pt_gp",
-          "nonop_delay_msecs": 100,
-          "preferred": 0,
-          "tg_pt_gp_id": 0,
-          "trans_delay_msecs": 0
-        }
-      ],
-      "attributes": {
-        "alua_support": 1,
-        "block_size": 512,
-        "emulate_3pc": 1,
-        "emulate_caw": 1,
-        "emulate_dpo": 1,
-        "emulate_fua_read": 1,
-        "emulate_fua_write": 1,
-        "emulate_model_alias": 1,
-        "emulate_pr": 1,
-        "emulate_rest_reord": 0,
-        "emulate_rsoc": 1,
-        "emulate_tas": 1,
-        "emulate_tpu": 0,
-        "emulate_tpws": 0,
-        "emulate_ua_intlck_ctrl": 0,
-        "emulate_write_cache": 0,
-        "enforce_pr_isids": 1,
-        "force_pr_aptpl": 0,
-        "is_nonrot": 0,
-        "max_unmap_block_desc_count": 1,
-        "max_unmap_lba_count": 8192,
-        "max_write_same_len": 4096,
-        "optimal_sectors": 16384,
-        "pgr_support": 1,
-        "pi_prot_format": 0,
-        "pi_prot_type": 0,
-        "pi_prot_verify": 0,
-        "queue_depth": 128,
-        "submit_type": 0,
-        "unmap_granularity": 1,
-        "unmap_granularity_alignment": 0,
-        "unmap_zeroes_data": 0
-      },
-      "dev": "/srv/pxe/arch/x86_64/pxeboot.img",
-      "name": "arch",
-      "size": 0,
-      "plugin": "fileio",
-      "write_back": false,
-      "wwn": "ea54b27a-7e2a-45c5-af31-933aa92c0bd1"
-    }
-  ],
-  "targets": [
-    {
-      "fabric": "iscsi",
-      "parameters": {
-        "cmd_completion_affinity": "-1"
-      },
-      "tpgs": [
-        {
-          "attributes": {
-            "authentication": 0,
-            "cache_dynamic_acls": 0,
-            "default_cmdsn_depth": 64,
-            "default_erl": 0,
-            "demo_mode_discovery": 1,
-            "demo_mode_write_protect": 1,
-            "fabric_prot_type": 0,
-            "generate_node_acls": 0,
-            "login_keys_workaround": 1,
-            "login_timeout": 15,
-            "prod_mode_write_protect": 0,
-            "t10_pi": 0,
-            "tpg_enabled_sendtargets": 1
-          },
-          "enable": true,
-          "luns": [
-            {
-              "alias": "07ada4b602",
-              "alua_tg_pt_gp_name": "default_tg_pt_gp",
-              "index": 0,
-              "storage_object": "/backstores/fileio/arch"
-            }
-          ],
-          "node_acls": [
-            {
-              "attributes": {
-                "authentication": 0,
-                "dataout_timeout": 3,
-                "dataout_timeout_retries": 5,
-                "default_erl": 0,
-                "nopin_response_timeout": 30,
-                "nopin_timeout": 15,
-                "random_datain_pdu_offsets": 0,
-                "random_datain_seq_offsets": 0,
-                "random_r2t_offsets": 0
-              },
-              "mapped_luns": [
-                {
-                  "alias": "81aa23cf49",
-                  "index": 0,
-                  "tpg_lun": 0,
-                  "write_protect": true
-                }
-              ],
-              "node_wwn": "iqn.2018-12.internal.pxe:client"
-            }
-          ],
-          "parameters": {
-            "AuthMethod": "CHAP,None",
-            "DataDigest": "CRC32C,None",
-            "DataPDUInOrder": "Yes",
-            "DataSequenceInOrder": "Yes",
-            "DefaultTime2Retain": "20",
-            "DefaultTime2Wait": "2",
-            "ErrorRecoveryLevel": "0",
-            "FirstBurstLength": "65536",
-            "HeaderDigest": "CRC32C,None",
-            "IFMarkInt": "Reject",
-            "IFMarker": "No",
-            "ImmediateData": "Yes",
-            "InitialR2T": "Yes",
-            "MaxBurstLength": "262144",
-            "MaxConnections": "1",
-            "MaxOutstandingR2T": "1",
-            "MaxRecvDataSegmentLength": "8192",
-            "MaxXmitDataSegmentLength": "262144",
-            "OFMarkInt": "Reject",
-            "OFMarker": "No",
-            "TargetAlias": "LIO Target"
-          },
-          "portals": [
-            {
-              "ip_address": "[::]",
-              "iser": false,
-              "offload": false,
-              "port": 3260
-            }
-          ],
-          "tag": 1
-        }
-      ],
-      "wwn": "iqn.2018-12.internal.pxe:arch"
-    }
-  ]
-}
+tee /etc/tgt/targets.conf <<EOF
+<target iqn.2018-12.internal.pxe:client>
+  backing-store /srv/pxe/arch/x86_64/pxeboot.img
+  allow-in-use on
+  readonly on
+</target>
 EOF
-tee /usr/local/bin/update-arch-target.sh <<'EOF'
-#!/usr/bin/env bash
-
-CONFIG_PATH=$(jq -r '.storage_objects[] | select(.name == "arch") | .dev' /etc/target/saveconfig.json)
-if [ -f "$CONFIG_PATH" ]; then
-  CONFIG_SIZE=$(wc -c <"$CONFIG_PATH")
-  jq --arg newsize "$CONFIG_SIZE" '(.storage_objects[] | select(.name == "arch")).size |= ($newsize|tonumber)' /etc/target/saveconfig.json | sponge /etc/target/saveconfig.json
-fi
-EOF
-chmod +x /usr/local/bin/update-arch-target.sh
-tee /etc/systemd/system/update-arch-target.service <<EOF
-[Unit]
-Description=Update size of pxe boot arch target
-Before=target.service
-
-[Service]
-Type=simple
-StandardInput=null
-StandardOutput=journal
-StandardError=journal
-ExecStart=/usr/local/bin/update-arch-target.sh
-
-[Install]
-WantedBy=multi-user.target
-EOF
-sed -e 's/^node.conn[0].timeo.noop_out_interval.*/node.conn[0].timeo.noop_out_interval = 0/' \
-    -e 's/^node.conn[0].timeo.noop_out_timeout.*/node.conn[0].timeo.noop_out_timeout = 0/' \
-    -e 's/^node.session.timeo.replacement_timeout.*/node.session.timeo.replacement_timeout = 86400/' -i /etc/iscsi/iscsid.conf
-tee /etc/udev/rules.d/50-iscsi.rules <<'EOF'
-ACTION=="add", SUBSYSTEM=="scsi" , ATTR{type}=="0|7|14", RUN+="/bin/sh -c 'echo Y > /sys$$DEVPATH/timeout'"
-EOF
+systemctl enable tgtd
 
 # the router is it's own acme protocol certificate authority
 useradd -d /srv/step step
