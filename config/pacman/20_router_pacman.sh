@@ -51,58 +51,13 @@ OriginalName=*
 NamePolicy=keep
 EOF
 
-# eth0 is bridged to macvlan device wan0
+# eth0 is bridged to macvlan device lan0
 tee /etc/systemd/network/15-eth0.network <<EOF
 [Match]
 Name=eth0
 
 [Network]
-MACVLAN=wan0
-LinkLocalAddressing=no
-LLDP=no
-EmitLLDP=no
-IPv6AcceptRA=no
-IPv6SendRA=no
-EOF
-
-# eth1 is bridged to macvlan device lan0
-tee /etc/systemd/network/15-eth1.network <<EOF
-[Match]
-Name=eth1
-
-[Network]
 MACVLAN=lan0
-LinkLocalAddressing=no
-LLDP=no
-EmitLLDP=no
-IPv6AcceptRA=no
-IPv6SendRA=no
-EOF
-
-# define virtual devices
-tee /etc/systemd/network/20-wan0-bridge.netdev <<EOF
-[NetDev]
-Name=wan0
-Kind=macvlan
-
-[MACVLAN]
-Mode=private
-EOF
-tee /etc/systemd/network/20-lan0-bridge.netdev <<EOF
-[NetDev]
-Name=lan0
-Kind=macvlan
-
-[MACVLAN]
-Mode=private
-EOF
-
-# configure wan0 and lan0
-tee /etc/systemd/network/25-wan0.network <<EOF
-[Match]
-Name=wan0
-
-[Network]
 DHCP=yes
 MulticastDNS=yes
 DNSOverTLS=opportunistic
@@ -123,6 +78,18 @@ RouteMetric=10
 [IPv6Prefix]
 RouteMetric=10
 EOF
+
+# define virtual devices
+tee /etc/systemd/network/20-lan0-bridge.netdev <<EOF
+[NetDev]
+Name=lan0
+Kind=macvlan
+
+[MACVLAN]
+Mode=private
+EOF
+
+# configure lan0
 tee /etc/systemd/network/25-lan0.network <<EOF
 [Match]
 Name=lan0
@@ -134,7 +101,7 @@ EOF
 
 # configure dnsmasq
 sed -i '0,/^#\?bind-interfaces.*/s//bind-interfaces/' /etc/dnsmasq.conf
-sed -i '0,/^#\?except-interface=.*/s//except-interface=eth0\nexcept-interface=wan0/' /etc/dnsmasq.conf
+sed -i '0,/^#\?except-interface=.*/s//except-interface=eth0\nexcept-interface=eth0/' /etc/dnsmasq.conf
 sed -i '0,/^#\?domain-needed.*/s//domain-needed/' /etc/dnsmasq.conf
 sed -i '0,/^#\?bogus-priv.*/s//bogus-priv/' /etc/dnsmasq.conf
 sed -i '0,/^#\?local=.*/s//local=\/internal\//' /etc/dnsmasq.conf
