@@ -96,7 +96,7 @@ setup:
   options:
     - base
   env_vars: []
-  target: /dev/vda
+  target: auto
   archiso_mirror: false
   pkg_mirror: false
   chaotic_mirror: false

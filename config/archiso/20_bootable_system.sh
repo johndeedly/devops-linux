@@ -27,7 +27,7 @@ if [ -z "$CLOUD_IMAGE_PATH" ]; then
     exit 1
 fi
 TARGET_DEVICE=$(yq -r '.setup.target' /var/lib/cloud/instance/config/setup.yml)
-if [ -z "$TARGET_DEVICE" ]; then
+if [ "$TARGET_DEVICE" == "auto" ] || [ -z "$TARGET_DEVICE" ]; then
     if [ -e /dev/vda ]; then
         TARGET_DEVICE="/dev/vda"
     elif [ -e /dev/nvme0n1 ]; then
@@ -36,6 +36,11 @@ if [ -z "$TARGET_DEVICE" ]; then
         TARGET_DEVICE="/dev/sda"
     else
         echo "!! no target device found"
+        exit 1
+    fi
+    if ! cmp <(dd "if=$TARGET_DEVICE" bs=1M count=16 2>/dev/null) <(dd if=/dev/zero bs=1M count=16 2>/dev/null) >/dev/null; then
+        echo "!! the target device $TARGET_DEVICE is not empty"
+        echo "!! force installation via \".setup.target\" in setup.yml"
         exit 1
     fi
 fi
