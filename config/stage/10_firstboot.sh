@@ -17,6 +17,12 @@ if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then
   /usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any
 fi
 
+# generate random hostname once
+tee /etc/hostname >/dev/null <<EOF
+linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
+EOF
+hostnamectl hostname "$(</etc/hostname)"
+
 # initialize pacman keyring
 if [ -e /bin/pacman ]; then
   sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf

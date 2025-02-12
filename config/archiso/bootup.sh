@@ -12,6 +12,12 @@ systemctl stop systemd-time-wait-sync.service
 systemctl disable systemd-time-wait-sync.service
 systemctl mask time-sync.target
 
+# generate random hostname
+tee /etc/hostname >/dev/null <<EOF
+linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)-setup.internal
+EOF
+hostnamectl hostname "$(</etc/hostname)"
+
 # sync everything to disk
 sync
 
