@@ -13,10 +13,13 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   texlive-bin xdg-desktop-portal xdg-desktop-portal-gtk wine-wow64 winetricks mpv gpicview qalculate-gtk drawio-desktop code \
   pamac flatpak firefox chromium virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
-  plasma kwallet-pam dolphin kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer
+  plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer
 
-# remove plasma welcome package from plasma group
-LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-welcome
+# remove meta-packages to be able to remove single entries
+LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-meta kde-graphics-meta kde-system-meta kde-utilities-meta
+
+# remove single entries from meta-packages
+LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-welcome kongress kteatime telly-skout kalm
 
 # enable some services
 systemctl enable cups libvirtd.service libvirtd.socket
