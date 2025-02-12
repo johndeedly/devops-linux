@@ -4,6 +4,10 @@ packer {
       source  = "github.com/hashicorp/qemu"
       version = "~> 1"
     }
+    virtualbox = {
+      source  = "github.com/hashicorp/virtualbox"
+      version = "~> 1"
+    }
   }
 }
 
@@ -43,6 +47,7 @@ variable "package_manager" {
 
 locals {
   build_name_qemu       = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉"), "qcow2"]) # unicode replacement char for colon
+  build_name_virtualbox = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉")]) # unicode replacement char for colon
 }
 
 
@@ -83,8 +88,35 @@ source "qemu" "default" {
 }
 
 
+source "virtualbox-iso" "default" {
+  shutdown_command         = "/sbin/poweroff"
+  disk_size                = 524288
+  memory                   = var.memory
+  format                   = "ova"
+  guest_additions_mode     = "disable"
+  guest_os_type            = "ArchLinux_64"
+  hard_drive_discard       = true
+  hard_drive_interface     = "virtio"
+  hard_drive_nonrotational = true
+  headless                 = var.headless
+  iso_checksum             = "none"
+  iso_interface            = "virtio"
+  iso_url                  = "archlinux-x86_64-cidata.iso"
+  output_directory         = "output/devops-linux"
+  output_filename          = "../devops-linux-x86_64"
+  ssh_username             = "root"
+  ssh_password             = "packer-build-passwd"
+  ssh_timeout              = "10m"
+  vboxmanage               = [["modifyvm", "{{ .Name }}", "--chipset", "ich9", "--firmware", "efi", "--cpus", "${var.cpu_cores}", "--audio-driver", "${var.sound_driver}", "--audio-out", "on", "--audio-enabled", "on", "--usb", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--graphicscontroller", "vmsvga", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--accelerate3d", "${var.accel_graphics}", "--accelerate2dvideo", "on", "--vram", "128", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--nictype1", "virtio", "--macaddress1", "auto"], ["sharedfolder", "add", "{{ .Name }}", "--name", "host.0", "--hostpath", "output/"]]
+  vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"], ["sharedfolder", "remove", "{{ .Name }}", "--name", "host.0"]]
+  vm_name                  = local.build_name_virtualbox
+  skip_export              = true
+  keep_registered          = true
+}
+
+
 build {
-  sources = ["source.qemu.default"]
+  sources = ["source.qemu.default", "source.virtualbox-iso.default"]
 
   provisioner "shell" {
     inline            = ["cloud-init status --wait"]
