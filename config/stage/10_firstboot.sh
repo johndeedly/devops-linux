@@ -147,6 +147,46 @@ elif [ -e /bin/yum ]; then
   grub2-mkconfig -o /boot/efi/EFI/rocky/grub.cfg --update-bls-cmdline
 fi
 
+# add modules to initcpio
+sed -i 's/^MODULES=.*/MODULES=(usbhid xhci_hcd vfat)/g' /etc/mkinitcpio.conf
+
+# system upgrade
+if [ -e /bin/apt ]; then
+  if grep -q Debian /proc/version; then
+    sed -i 's/main/main contrib/g' /etc/apt/sources.list.d/debian.sources
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y update
+  fi
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm jq yq
+  # main repo key from website
+  LC_ALL=C yes | LC_ALL=C pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keys.gnupg.net
+  LC_ALL=C yes | LC_ALL=C pacman-key --lsign-key 3056513887B78AEB
+  # garuda build key (remove when problems are fixed by the chaotic-aur team)
+  LC_ALL=C yes | LC_ALL=C pacman-key --recv-key 349BC7808577C592 --keyserver hkp://keys.gnupg.net
+  LC_ALL=C yes | LC_ALL=C pacman-key --lsign-key 349BC7808577C592
+  PKG_MIRROR=$(yq -r '.setup.chaotic_mirror' /var/lib/cloud/instance/config/setup.yml)
+  if [ -n "$PKG_MIRROR" ] && [ "false" != "$PKG_MIRROR" ]; then
+    tee -a /etc/pacman.conf <<EOF
+[chaotic-aur]
+${PKG_MIRROR}
+EOF
+  else
+    tee -a /etc/pacman.conf <<'EOF'
+[chaotic-aur]
+Server = https://cf-builds.garudalinux.org/repos/$repo/$arch
+EOF
+  fi
+  LC_ALL=C yes | LC_ALL=C pacman -Syu --noconfirm chaotic-keyring
+elif [ -e /bin/yum ]; then
+  LC_ALL=C yes | LC_ALL=C dnf install -y epel-release
+  LC_ALL=C yes | LC_ALL=C dnf config-manager --enable crb
+  LC_ALL=C yes | LC_ALL=C dnf upgrade -y
+  LC_ALL=C yes | LC_ALL=C yum check-update
+  LC_ALL=C yes | LC_ALL=C yum update -y
+  LC_ALL=C yes | LC_ALL=C yum install -y systemd-container
+fi
+
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
