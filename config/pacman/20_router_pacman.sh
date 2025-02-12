@@ -178,7 +178,6 @@ tee /etc/tgt/targets.conf <<EOF
   readonly on
 </target>
 EOF
-systemctl enable tgtd
 
 # the router is it's own acme protocol certificate authority
 useradd -d /srv/step step
@@ -381,7 +380,7 @@ EOF
 
 # Enable all configured services
 systemctl enable dnsmasq ntpd.timer step-ca hosts-calc nfsv4-server rpc-statd \
-  target update-arch-target smb nbd nvmet
+  tgtd smb nbd nvmet
 
 # configure the firewall
 firewall-offline-cmd --zone=public --add-service=dhcp
