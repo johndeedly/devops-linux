@@ -54,6 +54,17 @@ files:
     podman:
       - path: apt/20_podman_apt.sh
         stage: 1
+      - path: podman/20_portainer_podman.sh
+        stage: 2
+    postgres:
+      - path: podman/40_postgres_podman.sh
+        stage: 2
+    cronicle:
+      - path: podman/40_cronicle_podman.sh
+        stage: 2
+    dagu:
+      - path: podman/40_dagu_podman.sh
+        stage: 2
     proxmox:
       - path: apt/20_proxmox_1_apt.sh
         stage: 1
@@ -75,6 +86,17 @@ files:
     podman:
       - path: pacman/20_podman_pacman.sh
         stage: 1
+      - path: podman/20_portainer_podman.sh
+        stage: 2
+    postgres:
+      - path: podman/40_postgres_podman.sh
+        stage: 2
+    cronicle:
+      - path: podman/40_cronicle_podman.sh
+        stage: 2
+    dagu:
+      - path: podman/40_dagu_podman.sh
+        stage: 2
     router:
       - path: pacman/20_router_pacman.sh
         stage: 1
