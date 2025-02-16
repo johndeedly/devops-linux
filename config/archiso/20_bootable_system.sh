@@ -94,7 +94,10 @@ if [[ "${ROOT_PART[2]}" =~ [bB][tT][rR][fF][sS] ]]; then
 elif [[ "${ROOT_PART[2]}" =~ [eE][xX][tT]4 ]]; then
     echo ":: resize root ext4"
     e2fsck -y -f "${ROOT_PART[0]}"
-    resize2fs "${ROOT_PART[0]}"
+    mount "${ROOT_PART[0]}" /mnt
+    resize2fs -p "${ROOT_PART[0]}"
+    sync
+    umount -l /mnt
 elif [[ "${ROOT_PART[2]}" =~ [xX][fF][sS] ]]; then
     echo ":: resize root xfs"
     mount "${ROOT_PART[0]}" /mnt
