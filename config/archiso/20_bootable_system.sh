@@ -112,9 +112,20 @@ BIOS_PART=( $(lsblk -no PARTN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9
 EFI_PART=( $(lsblk -no PARTN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
 echo "BIOS: ${TARGET_DEVICE}, partition ${BIOS_PART[0]}"
 echo "EFI: ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
-LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-  name "${BIOS_PART[0]}" bios \
-  name "${EFI_PART[0]}" efi
+if [ -n "${BIOS_PART[0]}" ] && [ -n "${EFI_PART[0]}" ]; then
+  LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
+    name "${BIOS_PART[0]}" bios \
+    name "${EFI_PART[0]}" efi
+elif [ -n "${EFI_PART[0]}" ]; then
+  LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
+    name "${EFI_PART[0]}" efi
+elif [ -n "${BIOS_PART[0]}" ]; then
+  LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
+    name "${BIOS_PART[0]}" bios
+else
+  echo "!! neither efi nor boot partitions found"
+  exit 1
+fi
 # remove duplicate "cloud-ready-image" entries
 efibootmgr | sed -e '/'"${DISTRO_NAME}"'/I!d' | while read -r bootentry; do
     bootnum=$(echo "$bootentry" | grep -Po "[A-F0-9]{4}" | head -n1)
