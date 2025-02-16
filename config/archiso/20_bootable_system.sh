@@ -52,7 +52,7 @@ if ! [ -f "${CLOUD_IMAGE_PATH}" ]; then
         exit 1
     fi
     CLOUD_IMAGE_PATH="$(mktemp -d)/$(yq -r '.setup as $setup | .images[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
-    wget -c -N -O "${CLOUD_IMAGE_PATH}" --progress=dot:mega "${DOWNLOAD_IMAGE_PATH}"
+    wget -c -N -O "${CLOUD_IMAGE_PATH}" --progress=dot:giga "${DOWNLOAD_IMAGE_PATH}"
 fi
 echo "CLOUD-IMAGE: ${CLOUD_IMAGE_PATH}, TARGET: ${TARGET_DEVICE}"
 
