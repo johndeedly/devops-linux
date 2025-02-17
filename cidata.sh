@@ -8,7 +8,7 @@ err_report() {
 }
 trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
 
-_iso=0
+_iso=1
 _archiso=0
 parse_parameters() {
     local _longopts="iso,archiso"
