@@ -31,9 +31,11 @@ sed -i 's|/run/containers/storage|/var/tmp/buildah/run/storage|g' /etc/container
 sed -i 's|/var/lib/containers/storage|/var/tmp/buildah/var/storage|g' /etc/containers/storage.conf
 buildah info
 
+# see https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container#the_quest
 buildah --cap-add=SYS_CHROOT,NET_ADMIN,NET_RAW --name worker from scratch
-buildah config --entrypoint "/usr/sbin/init" --cmd '["--log-level=info", "--unit=multi-user.target"]' \
-  --stop-signal 'SIGRTMIN+3' --workingdir "/root" worker
+buildah config --entrypoint '["/usr/lib/systemd/systemd", "--log-level=info", "--unit=multi-user.target"]' \
+  --stop-signal 'SIGRTMIN+3' --workingdir "/root" --port '22/tcp' \
+  --user "root:root" --volume "/run" --volume "/tmp" --volume "/sys/fs/cgroup" worker
 scratchmnt=$(buildah mount worker)
 mount --bind "${scratchmnt}" /mnt
 
