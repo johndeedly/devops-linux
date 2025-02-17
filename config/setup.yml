@@ -101,7 +101,7 @@ files:
       - path: pacman/20_router_pacman.sh
         stage: 1
     podman-image:
-      - path: pacman/ZZ_podman_image.sh
+      - path: podman/ZZ_podman_image.sh
         stage: 2
     pxe-image:
       - path: pacman/ZZ_pxe_image.sh
