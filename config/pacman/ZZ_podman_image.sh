@@ -10,7 +10,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
 mkdir -p /srv/img
 sync
 mksquashfs / /srv/img/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-  -e "boot/*" "cidata*" "dev/*" "etc/fstab" "etc/crypttab" "etc/crypttab.initramfs" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "usr/lib/firmware/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*"
+  -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "usr/lib/firmware/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*"
 
 # reenable systemd-network-generator
 systemctl unmask systemd-network-generator
@@ -24,7 +24,8 @@ sed -i 's|/var/lib/containers/storage|/var/tmp/buildah/var/storage|g' /etc/conta
 buildah info
 
 buildah --cap-add=SYS_CHROOT,NET_ADMIN,NET_RAW --name worker from scratch
-buildah config --entrypoint "/usr/sbin/init" --cmd '["--log-level=info", "--unit=multi-user.target"]' worker
+buildah config --entrypoint "/usr/sbin/init" --cmd '["--log-level=info", "--unit=multi-user.target"]' \
+  --stop-signal 'SIGRTMIN+3' --workingdir "/root" worker
 scratchmnt=$(buildah mount worker)
 mount --bind "${scratchmnt}" /mnt
 
