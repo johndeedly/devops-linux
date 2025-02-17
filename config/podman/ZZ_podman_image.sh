@@ -6,7 +6,11 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 systemctl mask systemd-network-generator
 
 # create a squashfs snapshot based on rootfs
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
+fi
 mkdir -p /srv/img
 sync
 mksquashfs / /srv/img/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
@@ -15,7 +19,11 @@ mksquashfs / /srv/img/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progres
 # reenable systemd-network-generator
 systemctl unmask systemd-network-generator
 
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed buildah podman fuse-overlayfs yq
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install buildah podman fuse-overlayfs yq
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed buildah podman fuse-overlayfs yq
+fi
 
 export TMPDIR="/var/tmp/buildah/tmp"
 mkdir -p "${TMPDIR}" /var/tmp/buildah/run/storage /var/tmp/buildah/var/storage
@@ -46,3 +54,9 @@ mkdir -p /srv/docker
 buildah push "devops-linux-${DISTRO_NAME}" "docker-archive:/srv/docker/devops-linux-${DISTRO_NAME}.tar"
 zstd -4 "/srv/docker/devops-linux-${DISTRO_NAME}.tar"
 buildah rm worker
+
+# sync everything to disk
+sync
+
+# cleanup
+rm -- "${0}"
