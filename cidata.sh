@@ -10,9 +10,10 @@ trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
 
 _iso=1
 _archiso=0
+_ram=0
 parse_parameters() {
-    local _longopts="iso,archiso"
-    local _opts="ia"
+    local _longopts="iso,archiso,isoinram"
+    local _opts="iar"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -26,6 +27,10 @@ parse_parameters() {
             -a|--archiso)
                 _archiso=1
                 _iso=0
+                shift
+                ;;
+            -r|--isoinram)
+                _ram=1
                 shift
                 ;;
             --)
@@ -117,7 +122,12 @@ if [ $_archiso -eq 1 ]; then
 
     echo "Append cidata to archiso"
     ARCHISOMODDED="archlinux-x86_64-cidata.iso"
+    [ -L "${ARCHISOMODDED}" ] && rm "$(readlink -f "${ARCHISOMODDED}")" && rm "${ARCHISOMODDED}"
     [ -f "${ARCHISOMODDED}" ] && rm "${ARCHISOMODDED}"
+    if [ $_ram -eq 1 ]; then
+        ARCHISOMODDED="$(mktemp -d)/archlinux-x86_64-cidata.iso"
+        ln -s "${ARCHISOMODDED}" archlinux-x86_64-cidata.iso
+    fi
     xorriso -indev "${ARCHISO}" \
             -outdev "${ARCHISOMODDED}" \
             -volid CIDATA \
@@ -127,7 +137,12 @@ if [ $_archiso -eq 1 ]; then
 elif [ $_iso -eq 1 ]; then
     echo "Create cidata iso"
     CIDATAISO="cidata.iso"
+    [ -L "${CIDATAISO}" ] && rm "$(readlink -f "${CIDATAISO}")" && rm "${CIDATAISO}"
     [ -f "${CIDATAISO}" ] && rm "${CIDATAISO}"
+    if [ $_ram -eq 1 ]; then
+        ARCHISOMODDED="$(mktemp -d)/archlinux-x86_64-cidata.iso"
+        ln -s "${ARCHISOMODDED}" archlinux-x86_64-cidata.iso
+    fi
     xorriso -outdev "${CIDATAISO}" \
             -volid CIDATA \
             -map build/stage/ / \

@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
+ARCHISOMODDED="archlinux-x86_64-cidata.iso"
+
 # error handling
 set -E -o functrace
 err_report() {
     echo "errexit command '${1}' returned ${2} on line $(caller)" 1>&2
+    [ -L "${ARCHISOMODDED}" ] && rm "$(readlink -f "${ARCHISOMODDED}")" && rm "${ARCHISOMODDED}"
     exit "${2}"
 }
 trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
@@ -130,7 +133,7 @@ packer_buildappliance() {
     return -1
 }
 
-./cidata.sh --archiso
+./cidata.sh --archiso --isoinram
 
 mkdir -p output
 VIRTENV=$(systemd-detect-virt || true)
@@ -144,3 +147,5 @@ case $VIRTENV in
         packer_buildappliance -s "*devops-linux*.qcow2" -a "build -force -on-error=ask -only=qemu.default devops-linux.pkr.hcl"
         ;;
 esac
+
+[ -L "${ARCHISOMODDED}" ] && rm "$(readlink -f "${ARCHISOMODDED}")" && rm "${ARCHISOMODDED}"
