@@ -140,8 +140,8 @@ elif [ $_iso -eq 1 ]; then
     [ -L "${CIDATAISO}" ] && rm "$(readlink -f "${CIDATAISO}")" && rm "${CIDATAISO}"
     [ -f "${CIDATAISO}" ] && rm "${CIDATAISO}"
     if [ $_ram -eq 1 ]; then
-        ARCHISOMODDED="$(mktemp -d)/archlinux-x86_64-cidata.iso"
-        ln -s "${ARCHISOMODDED}" archlinux-x86_64-cidata.iso
+        CIDATAISO="$(mktemp -d)/cidata.iso"
+        ln -s "${CIDATAISO}" cidata.iso
     fi
     xorriso -outdev "${CIDATAISO}" \
             -volid CIDATA \
