@@ -22,9 +22,9 @@ services:
     networks:
       - lan
     ports:
-      - 5432:5432
+      - '5432:5432'
     security_opt:
-      - no-new-privileges:true
+      - 'no-new-privileges:true'
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: resu
@@ -37,7 +37,7 @@ services:
     networks:
       - lan
     ports:
-      - 15432:80
+      - '15432:80'
     depends_on:
       - database
     environment:

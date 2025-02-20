@@ -21,9 +21,9 @@ services:
     networks:
       - lan
     ports:
-      - 18080:8080
+      - '18080:8080'
     security_opt:
-      - no-new-privileges:true
+      - 'no-new-privileges:true'
     environment:
       DAGU_TZ: CET
     volumes:

@@ -21,11 +21,11 @@ services:
     networks:
       - lan
     ports:
-      - 8000:8000
-      - 9000:9000
-      - 9443:9443
+      - '8000:8000'
+      - '9000:9000'
+      - '9443:9443'
     security_opt:
-      - no-new-privileges:true
+      - 'no-new-privileges:true'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/localtime:/etc/localtime:ro

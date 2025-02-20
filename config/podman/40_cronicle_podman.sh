@@ -60,7 +60,7 @@ services:
     networks:
       - lan
     ports:
-      - 13012:3012
+      - '13012:3012'
 EOF
 
 pushd "${BUILDTMP}"
