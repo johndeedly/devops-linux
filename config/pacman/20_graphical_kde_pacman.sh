@@ -4,13 +4,13 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit realtime-privileges \
-  xorg-server xorg-xinit xorg-xrandr xautolock slock xclip xsel brightnessctl gammastep arandr dunst libnotify engrampa \
-  flameshot libinput xf86-input-libinput xorg-xinput dex xrdp lightdm lightdm-slick-greeter \
+  xorg-server xorg-xinit xorg-xrandr xautolock slock xclip xsel brightnessctl arandr dunst libnotify engrampa \
+  libinput xf86-input-libinput xorg-xinput kitty dex xrdp lightdm lightdm-slick-greeter \
   archlinux-wallpaper elementary-wallpapers elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
   ttf-hannom ttf-baekmuk noto-fonts-emoji ttf-ms-fonts \
   cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita freerdp gitg keepassxc pdfpc zettlr obsidian \
   bluez blueman \
-  texlive-bin xdg-desktop-portal xdg-desktop-portal-gtk wine-wow64 winetricks mpv gpicview qalculate-gtk drawio-desktop code \
+  texlive-bin xdg-desktop-portal xdg-desktop-portal-kde wine-wow64 winetricks mpv gpicview qalculate-gtk drawio-desktop code \
   pamac flatpak firefox chromium virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
   plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer
@@ -19,7 +19,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
 LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-meta kde-graphics-meta kde-system-meta kde-utilities-meta
 
 # remove single entries from meta-packages
-LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-welcome kongress kteatime telly-skout kalm
+LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-welcome kongress kteatime telly-skout kalm konsole yakuake
 
 # enable some services
 systemctl enable cups libvirtd.service libvirtd.socket
@@ -166,10 +166,11 @@ FILELIST=(
   /usr/share/applications/libreoffice-calc.desktop
   /usr/share/applications/libreoffice-writer.desktop
   /usr/share/applications/libreoffice-impress.desktop
-  /usr/share/applications/konsole.desktop
+  /usr/share/applications/kitty.desktop
   /usr/share/applications/chromium.desktop
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/mpv.desktop
+  /usr/share/applications/org.kde.kate.desktop
 )
 tee /tmp/mimeapps.list.added <<EOF
 [Added Associations]
@@ -203,31 +204,6 @@ EOF
 done
 cat /tmp/mimeapps.list.added /tmp/mimeapps.list.default > /etc/xdg/mimeapps.list
 rm /tmp/mimeapps.list.added /tmp/mimeapps.list.default
-
-# autostart flameshot
-mkdir -p /etc/xdg/autostart
-tee /etc/xdg/autostart/flameshot.desktop <<EOF
-[Desktop Entry]
-Name=Flameshot
-Comment=Autostart flameshot on startup
-Exec=/usr/bin/flameshot
-Terminal=false
-Type=Application
-X-GNOME-Autostart-enabled=true
-EOF
-chmod +x /etc/xdg/autostart/flameshot.desktop
-
-# autostart gammastep
-tee /etc/xdg/autostart/gammastep.desktop <<EOF
-[Desktop Entry]
-Name=Gammastep
-Comment=Autostart gammastep on startup
-Exec=/usr/bin/gammastep -l manual:51:10 -t 6500:3500 -b 1:0.75 -m randr
-Terminal=false
-Type=Application
-X-GNOME-Autostart-enabled=true
-EOF
-chmod +x /etc/xdg/autostart/gammastep.desktop
 
 # software cursor when running inside a vm
 tee /usr/local/bin/vm-check.sh <<'EOF'
@@ -271,6 +247,13 @@ systemctl enable vm-check
 # global xterm fallback to kitty terminal
 ln -s /usr/bin/kitty /usr/local/bin/xterm
 
+# configure global shortcuts
+mkdir -p /etc/skel/.config
+tee /etc/skel/.config/kglobalshortcutsrc <<'EOF'
+[services][kitty.desktop]
+_launch=Ctrl+Alt+T
+EOF
+
 # install code-oss extensions for user"
 ( HOME=/etc/skel /bin/bash -c '
 # csharp
@@ -294,14 +277,6 @@ code --install-extension naumovs.color-highlight --force
 ' ) &
 pid=$!
 wait $pid
-
-# configure flameshot
-mkdir -p /etc/skel/.config/flameshot
-tee /etc/skel/.config/flameshot/flameshot.ini <<'EOF'
-[General]
-contrastOpacity=188
-showStartupLaunchMessage=false
-EOF
 
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
