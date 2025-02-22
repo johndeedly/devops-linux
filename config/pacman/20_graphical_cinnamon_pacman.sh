@@ -8,7 +8,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   flameshot libinput xf86-input-libinput xorg-xinput kitty wofi dex xrdp ibus ibus-typing-booster lightdm lightdm-slick-greeter \
   archlinux-wallpaper elementary-wallpapers elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
   ttf-hannom ttf-baekmuk noto-fonts-emoji ttf-ms-fonts \
-  cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita seahorse freerdp notepadqq gitg keepassxc pdfpc zettlr obsidian \
+  cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita seahorse freerdp gitg keepassxc pdfpc zettlr obsidian \
   bluez blueman \
   texlive-bin xdg-desktop-portal xdg-desktop-portal-gtk wine-wow64 winetricks mpv gpicview qalculate-gtk drawio-desktop code \
   pamac flatpak firefox chromium gnome-keyring virt-manager \
@@ -304,7 +304,6 @@ FILELIST=(
   /usr/share/applications/betterbird.desktop
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/mpv.desktop
-  /usr/share/applications/notepadqq.desktop
   /usr/share/applications/gpicview.desktop
   /usr/share/applications/nemo.desktop
 )
