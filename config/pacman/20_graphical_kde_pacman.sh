@@ -13,7 +13,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   texlive-bin xdg-desktop-portal xdg-desktop-portal-kde wine-wow64 winetricks mpv gpicview drawio-desktop code \
   pamac flatpak firefox chromium virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
-  plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer
+  plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer kwin-polonium
 
 # remove meta-packages to be able to remove single entries
 LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-meta kde-graphics-meta kde-system-meta kde-utilities-meta
@@ -249,9 +249,20 @@ ln -s /usr/bin/kitty /usr/local/bin/xterm
 
 # configure global shortcuts
 mkdir -p /etc/skel/.config
-tee /etc/skel/.config/kglobalshortcutsrc <<'EOF'
+tee -a /etc/skel/.config/kglobalshortcutsrc <<'EOF'
 [services][kitty.desktop]
 _launch=Ctrl+Alt+T
+EOF
+
+# configure plugins
+mkdir -p /etc/skel/.config
+tee -a /etc/skel/.config/kwinrc <<'EOF'
+[Plugins]
+poloniumEnabled=true
+
+[Script-polonium]
+Borders=2
+EngineType=1
 EOF
 
 # install code-oss extensions for user"
