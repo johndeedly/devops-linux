@@ -10,7 +10,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   ttf-hannom ttf-baekmuk noto-fonts-emoji ttf-ms-fonts \
   cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita freerdp gitg keepassxc pdfpc zettlr obsidian \
   bluez blueman \
-  texlive-bin xdg-desktop-portal xdg-desktop-portal-kde wine-wow64 winetricks mpv gpicview qalculate-gtk drawio-desktop code \
+  texlive-bin xdg-desktop-portal xdg-desktop-portal-kde wine-wow64 winetricks mpv gpicview drawio-desktop code \
   pamac flatpak firefox chromium virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
   plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer
