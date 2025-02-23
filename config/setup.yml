@@ -76,6 +76,9 @@ files:
     podman-image:
       - path: podman/ZZ_podman_image.sh
         stage: 2
+    pxe-image:
+      - path: pxe/ZZ_pxe_image.sh
+        stage: 2
   pacman:
     base:
       - path: stage/15_base_system.sh
@@ -113,7 +116,7 @@ files:
       - path: podman/ZZ_podman_image.sh
         stage: 2
     pxe-image:
-      - path: pacman/ZZ_pxe_image.sh
+      - path: pxe/ZZ_pxe_image.sh
         stage: 2
   yum:
     base:
