@@ -1,0 +1,80 @@
+#!/usr/bin/ash
+
+run_hook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_scp_srv}" ]; then
+        # copy to RAM logic is disabled, as the image will be downloaded to RAM
+        export copytoram="n"
+
+        pxe_scp_srv=$(eval echo "${pxe_scp_srv}")
+
+        # enable chained scp mount handler
+        export mount_handler="pxe_scp_mount_handler"
+    fi
+}
+
+# args: /path/to/newroot
+pxe_scp_mount_handler() {
+    newroot="${1}"
+    [ -z "${pxe_scp_usr}" ] && pxe_scp_usr="pxe"
+    [ -z "${pxe_scp_pwd}" ] && pxe_scp_pwd="pxe"
+    local scp_img="${pxe_scp_usr}@${pxe_scp_srv}:~/arch/${arch}/pxeboot.img"
+
+    msg ":: Boot PXE with SCP"
+
+    # 1st: check the copy to RAM filesystem is present
+    if ! mountpoint -q "${copytoram_mnt}"; then
+        msg ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
+        mount --mkdir -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram "${copytoram_mnt}"
+    fi
+
+    local local_img="${copytoram_mnt}/arch/${arch}/pxeboot.img"
+
+    # 2nd: prepare the environment for ssh
+    # pseudo terminals for sshpass
+    mkdir -p /dev/pts
+    tee -a /etc/fstab >/dev/null <<EOF
+none  /dev/pts  devpts  defaults 0 0
+EOF
+    mount /dev/pts
+    # root user definition
+    tee /etc/passwd >/dev/null <<EOF
+root:x:0:0::/root:/bin/sh
+EOF
+    tee /etc/group >/dev/null <<EOF
+root:x:0:root
+EOF
+    # root user ssh environment
+    mkdir -p /root/.ssh
+    chmod 0700 /root/.ssh
+    tee /root/.ssh/config >/dev/null <<EOF
+Host ${pxe_scp_srv}
+StrictHostKeyChecking no
+EOF
+    chmod 0400 /root/.ssh/config
+    ssh-keygen -t rsa -N "" -C "" -f /root/.ssh/id_rsa
+    
+    # 3rd: download the image
+    msg ":: Download '${scp_img}' to '${local_img}'"
+    mkdir -p "${local_img%/pxeboot.img}"
+    if ! sshpass -p "${pxe_scp_pwd}" scp "${scp_img}" "${local_img}"; then
+        scp_img="${pxe_scp_usr}@${pxe_scp_srv}:/srv/pxe/arch/${arch}/pxeboot.img"
+        msg ":: Try download '${scp_img}' from fallback source '${local_img}'"
+        if ! sshpass -p "${pxe_scp_pwd}" scp "${scp_img}" "${local_img}"; then
+            echo "!! ERROR: could not download '${scp_img}' to '${local_img}'"
+            launch_interactive_shell
+        fi
+    fi
+
+    # 4th: create the boot mount point for pxe_mount_handler with correct image placement
+    msg ":: Bindmount '${copytoram_mnt}' as '${boot_mnt}'"
+    if ! mount --mkdir -o bind "${copytoram_mnt}" "${boot_mnt}"; then
+        echo "!! ERROR: failed to mount '${copytoram_mnt}'"
+        launch_interactive_shell
+    fi
+
+    pxe_mount_handler "${newroot}"
+    
+    # last: remove pseudo terminal mount
+    umount /dev/pts || true
+    rm -r /dev/pts
+}

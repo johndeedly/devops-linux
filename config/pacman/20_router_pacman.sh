@@ -286,6 +286,12 @@ guest ok = yes
 public = yes
 EOF
 
+# configure scp
+USERID=pxe
+useradd -d /srv/pxe -e "" -f "-1" -N -l "${USERID}"
+PXEPWDHASH=$(openssl passwd -6 -salt abcxyz "$USERID")
+sed -i 's/^'"$USERID"':[^:]*:/'"$USERID"':'"${PXEPWDHASH//\//\\/}"':/' /etc/shadow
+
 # configure nbd
 tee /etc/nbd-server/config <<EOF
 [generic]

@@ -27,7 +27,7 @@ fi
 systemctl unmask systemd-network-generator
 
 if [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed mkinitcpio-nfs-utils curl ca-certificates-utils cifs-utils \
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed sshpass mkinitcpio-nfs-utils curl ca-certificates-utils cifs-utils \
     nfs-utils nbd open-iscsi nvme-cli wireguard-tools
 fi
 

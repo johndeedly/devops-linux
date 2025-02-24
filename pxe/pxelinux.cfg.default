@@ -59,6 +59,13 @@ INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
 APPEND pxe_cifs_srv=//${pxeserver}/pxe copytoram=y cow_spacesize=75%
 SYSAPPEND 3
 
+LABEL ArchSCP
+MENU LABEL Boot Arch Linux using SCP
+LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
+INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
+APPEND pxe_scp_srv=${pxeserver} cow_spacesize=75%
+SYSAPPEND 3
+
 LABEL ArchiSCSI
 MENU LABEL Boot Arch Linux using iSCSI
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
