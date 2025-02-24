@@ -12,7 +12,7 @@ run_hook() {
 pxe_iscsi_mount_handler() {
     newroot="${1}"
     [ -z "${pxe_iscsi_cli}" ] && pxe_iscsi_cli="iqn.2018-12.internal.pxe:client"
-    [ -z "${pxe_iscsi_tgt}" ] && pxe_iscsi_tgt="iqn.2018-12.internal.pxe:arch"
+    [ -z "${pxe_iscsi_tgt}" ] && pxe_iscsi_tgt="iqn.2018-12.internal.pxe:target"
     
     msg ":: Boot PXE over iSCSI"
 

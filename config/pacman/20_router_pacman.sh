@@ -123,7 +123,7 @@ rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/efi32/ /srv/tftp/efi32/
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/efi64/ /srv/tftp/efi64/
 tee /srv/tftp/pxelinux.cfg/default <<EOF
-$(</cidata/install/pxe/pxelinux.cfg.default)
+$(</var/lib/cloud/instance/provision/pxe/pxelinux.cfg.default)
 EOF
 ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/bios/pxelinux.cfg/default
 ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi32/pxelinux.cfg/default
@@ -172,7 +172,7 @@ EOF
 
 # configure iscsi
 tee /etc/tgt/targets.conf <<EOF
-<target iqn.2018-12.internal.pxe:client>
+<target iqn.2018-12.internal.pxe:target>
   backing-store /srv/pxe/arch/x86_64/pxeboot.img
   allow-in-use on
   readonly on

@@ -31,7 +31,9 @@ pxe_cifs_mount_handler() {
         mount_status=$?
     else
         mkdir -p "${boot_mnt}"
-        mount -t cifs -o guest,iocharset=utf8,file_mode=0444,dir_mode=0555,noperm "${pxe_cifs_srv}" "${boot_mnt}"
+        # bugfix for https://www.reddit.com/r/archlinux/comments/1iq66ba/mounting_smb_shares_with_o_guest_fails_since/
+        # bug since cifs-utils 7.2-1
+        mount -t cifs -o password2=fake,guest,iocharset=utf8,file_mode=0444,dir_mode=0555,noperm,ro "${pxe_cifs_srv}" "${boot_mnt}"
         mount_status=$?
     fi
     if [ "$mount_status" -gt 0 ]; then
