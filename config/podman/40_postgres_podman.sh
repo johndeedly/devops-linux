@@ -16,8 +16,8 @@ volumes:
   db-data:
   pgadm-data:
 services:
-  database:
-    image: postgres:latest
+  postgres:
+    image: postgres:alpine
     restart: unless-stopped
     networks:
       - lan
@@ -38,8 +38,6 @@ services:
       - lan
     ports:
       - '15432:80'
-    depends_on:
-      - database
     environment:
       PGADMIN_DEFAULT_EMAIL: user@lan.internal
       PGADMIN_DEFAULT_PASSWORD: resu
@@ -50,11 +48,12 @@ pushd "${BUILDTMP}"
   podman-compose up --no-start
 popd
 pushd /etc/systemd/system
-  podman generate systemd --new --name "${PROJECTNAME}_database_1" -f
+  podman generate systemd --new --name "${PROJECTNAME}_postgres_1" -f
   podman generate systemd --new --name "${PROJECTNAME}_pgadmin_1" \
-    "--after=container-${PROJECTNAME}_database_1.service" \
-    "--requires=container-${PROJECTNAME}_database_1.service" -f
+    "--after=container-${PROJECTNAME}_postgres_1.service" \
+    "--requires=container-${PROJECTNAME}_postgres_1.service" -f
 popd
+systemctl enable "container-${PROJECTNAME}_postgres_1"
 systemctl enable "container-${PROJECTNAME}_pgadmin_1"
 
 firewall-offline-cmd --zone=public --add-port=5432/tcp
