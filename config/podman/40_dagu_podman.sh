@@ -28,6 +28,7 @@ services:
       DAGU_TZ: CET
     volumes:
       - config:/config
+      - /var/run/docker.sock:/var/run/docker.sock
     command: dagu start-all
 EOF
 pushd "${BUILDTMP}"
