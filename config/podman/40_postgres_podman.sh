@@ -8,6 +8,29 @@ TMPDIR="$(mktemp -d)"
 BUILDTMP="${TMPDIR}/${PROJECTNAME}"
 mkdir -p "${BUILDTMP}"
 
+mkdir "${BUILDTMP}/pgadmin"
+tee "${BUILDTMP}/pgadmin/servers.json" <<EOF
+{
+  "Servers": {
+    "1": {
+      "Name": "Database",
+      "Group": "Servers",
+      "Port": 5432,
+      "Username": "user",
+      "Host": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres"
+    }
+  }
+}
+EOF
+tee "${BUILDTMP}/pgadmin/Dockerfile" <<EOF
+FROM dpage/pgadmin4:latest
+
+COPY ./servers.json /pgadmin4/servers.json
+EOF
+
+
 tee "${BUILDTMP}/podman-compose.yml" <<EOF
 name: ${PROJECTNAME}
 networks:
@@ -32,7 +55,7 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
   pgadmin:
-    image: dpage/pgadmin4
+    build: ./pgadmin
     restart: unless-stopped
     networks:
       - lan
