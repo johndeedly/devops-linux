@@ -61,6 +61,8 @@ services:
       - lan
     ports:
       - '13012:3012'
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
 EOF
 
 pushd "${BUILDTMP}"

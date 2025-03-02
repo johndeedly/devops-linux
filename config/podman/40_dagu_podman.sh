@@ -26,9 +26,14 @@ services:
       - 'no-new-privileges:true'
     environment:
       DAGU_TZ: CET
+      DAGU_PORT: 8080
+      DAGU_IS_BASICAUTH: 1
+      DAGU_BASICAUTH_USERNAME: user
+      DAGU_BASICAUTH_PASSWORD: resu
     volumes:
       - config:/config
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
     command: dagu start-all
 EOF
 pushd "${BUILDTMP}"
