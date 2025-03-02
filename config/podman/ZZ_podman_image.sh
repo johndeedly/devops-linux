@@ -34,7 +34,7 @@ buildah info
 # see https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container#the_quest
 buildah --cap-add=SYS_CHROOT,NET_ADMIN,NET_RAW --name worker from scratch
 buildah config --entrypoint '["/usr/lib/systemd/systemd", "--log-level=info", "--unit=multi-user.target"]' \
-  --stop-signal 'SIGRTMIN+3' --workingdir "/root" --port '22/tcp' \
+  --stop-signal 'SIGRTMIN+3' --workingdir "/root" --port '22/tcp' --port '9090/tcp' \
   --user "root:root" --volume "/run" --volume "/tmp" --volume "/sys/fs/cgroup" worker
 scratchmnt=$(buildah mount worker)
 mount --bind "${scratchmnt}" /mnt

@@ -190,16 +190,34 @@ fi
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
-    jq yq openssh-server openssh-client systemd-container unattended-upgrades
-  systemctl enable ssh
+    jq yq openssh-server openssh-client systemd-container unattended-upgrades firewalld
+  systemctl enable ssh firewalld
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
 elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh
-  systemctl enable sshd
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh firewalld
+  systemctl enable sshd firewalld
 elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C yum install -y polkit curl wget nano jq yq openssh
-  systemctl enable sshd
+  LC_ALL=C yes | LC_ALL=C yum install -y polkit curl wget nano jq yq openssh firewalld
+  systemctl enable sshd firewalld
 fi
+
+# enable cockpit
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install cockpit cockpit-storaged cockpit-packagekit
+  systemctl enable cockpit.socket
+  firewall-offline-cmd --zone=public --add-port=9090/tcp
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm cockpit cockpit-storaged cockpit-packagekit
+  systemctl enable cockpit.socket
+  firewall-offline-cmd --zone=public --add-port=9090/tcp
+elif [ -e /bin/yum ]; then
+  LC_ALL=C yes | LC_ALL=C yum install -y cockpit cockpit-storaged cockpit-packagekit
+  systemctl enable cockpit.socket
+  firewall-offline-cmd --zone=public --add-port=9090/tcp
+fi
+ln -sfn /dev/null /etc/motd.d/cockpit
+ln -sfn /dev/null /etc/issue.d/cockpit.issue
+sed -i '/^root$/d' /etc/cockpit/disallowed-users
 
 # sync everything to disk
 sync
