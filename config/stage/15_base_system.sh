@@ -164,7 +164,7 @@ if [ -f /etc/pam.d/su-l ]; then
 fi
 if [ -f /etc/nslcd.conf ]; then
   chmod 0600 /etc/nslcd.conf
-  sed -i 's|^uri |uri ldap://0.0.0.0/|' /etc/nslcd.conf
+  sed -i 's|^uri .*|uri ldap://0.0.0.0/|' /etc/nslcd.conf
 fi
 if [ -f /etc/nsswitch.conf ]; then
     sed -i 's/^\(passwd.*\)/\1 ldap/' /etc/nsswitch.conf
