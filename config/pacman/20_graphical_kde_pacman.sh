@@ -263,6 +263,8 @@ poloniumEnabled=true
 [Script-polonium]
 Borders=2
 EngineType=1
+InsertionPoint=1
+MaximizeSingle=true
 EOF
 
 # install code-oss extensions for user"
