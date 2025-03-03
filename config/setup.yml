@@ -68,6 +68,9 @@ files:
     plex:
       - path: podman/40_plex_podman.sh
         stage: 2
+    minecraft:
+      - path: podman/40_minecraft_podman.sh
+        stage: 2
     gitlab:
       - path: podman/40_gitlab_podman.sh
         stage: 2
@@ -111,6 +114,9 @@ files:
         stage: 2
     plex:
       - path: podman/40_plex_podman.sh
+        stage: 2
+    minecraft:
+      - path: podman/40_minecraft_podman.sh
         stage: 2
     gitlab:
       - path: podman/40_gitlab_podman.sh
