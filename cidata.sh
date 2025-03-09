@@ -62,19 +62,19 @@ write_mime_params=(
     "config/stage/ZZ_second_stage.sh:text/x-shellscript"
     "config/setup.yml:application/x-setup-config"
 )
-# pxe boot static files
+# deployment scripts stage 'config'
 while read -r line; do
-    if [ -n "$line" ] && [ -e "$line" ]; then
-        if [ -f "$line" ]; then
+    if [ -n "$line" ] && [ -e "config/$line" ]; then
+        if [ -f "config/$line" ]; then
             mkdir -p "build/$(dirname $line)"
             tee "build/$line" >/dev/null <<EOF
 $(dirname $line)
-$(base64 -w 0 "$line")
+$(base64 -w 0 "config/$line")
 EOF
             write_mime_params=( "${write_mime_params[@]}" "build/$line:application/x-provision-file" )
         fi
     fi
-done <<<"$(find pxe -type f)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.config) | .path' config/setup.yml)"
 # deployment scripts stage 1
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then

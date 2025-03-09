@@ -85,6 +85,46 @@ files:
     pxe-image:
       - path: pxe/ZZ_pxe_image.sh
         stage: 2
+      - path: pxe/ZZ_pxe_image/hooks/pxe
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_cifs
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_http
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_iscsi
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_nbd
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_nfs
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_nvmeof
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_scp
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_wg
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_cifs
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_http
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_iscsi
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_nbd
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_nfs
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_nvmeof
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_scp
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_wg
+        config: true
+      - path: pxe/ZZ_pxe_image/pxe.conf
+        config: true
+      - path: pxe/ZZ_pxe_image/pxe.preset
+        config: true
   pacman:
     base:
       - path: stage/15_base_system.sh
@@ -124,12 +164,54 @@ files:
     router:
       - path: pacman/20_router_pacman.sh
         stage: 1
+      - path: pacman/20_router_pacman/pxelinux.cfg.default
+        config: true
     podman-image:
       - path: podman/ZZ_podman_image.sh
         stage: 2
     pxe-image:
       - path: pxe/ZZ_pxe_image.sh
         stage: 2
+      - path: pxe/ZZ_pxe_image/hooks/pxe
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_cifs
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_http
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_iscsi
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_nbd
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_nfs
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_nvmeof
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_scp
+        config: true
+      - path: pxe/ZZ_pxe_image/hooks/pxe_wg
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_cifs
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_http
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_iscsi
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_nbd
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_nfs
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_nvmeof
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_scp
+        config: true
+      - path: pxe/ZZ_pxe_image/install/pxe_wg
+        config: true
+      - path: pxe/ZZ_pxe_image/pxe.conf
+        config: true
+      - path: pxe/ZZ_pxe_image/pxe.preset
+        config: true
   yum:
     base:
       - path: stage/15_base_system.sh
