@@ -19,7 +19,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
 LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-meta kde-graphics-meta kde-system-meta kde-utilities-meta
 
 # remove single entries from meta-packages
-LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-welcome kongress kteatime telly-skout kalm konsole yakuake
+LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-welcome kongress kteatime telly-skout kalm yakuake
 
 # enable some services
 systemctl enable cups libvirtd.service libvirtd.socket
