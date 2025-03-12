@@ -122,7 +122,7 @@ elif [ -e /bin/yum ]; then
 fi
 
 # modify grub
-GRUB_GLOBAL_CMDLINE="console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux"
+GRUB_GLOBAL_CMDLINE="console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1"
 GRUB_CFGS=( /etc/default/grub /etc/default/grub.d/* )
 for cfg in "${GRUB_CFGS[@]}"; do
   sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="'"$GRUB_GLOBAL_CMDLINE"'"/' "$cfg" || true

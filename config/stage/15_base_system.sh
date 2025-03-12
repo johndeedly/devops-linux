@@ -238,19 +238,22 @@ systemctl --global enable userlogin.service
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
-    xserver-xorg-video-nouveau \
+    nvidia-driver firmware-misc-nonfree \
     xserver-xorg-video-intel \
     xserver-xorg-video-vmware \
     xserver-xorg-video-qxl
   LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
 elif [ -e /bin/pacman ]; then
-  sed -i 's/^MODULES=(/MODULES=(amdgpu radeon nouveau i915 virtio-gpu vmwgfx /g' /etc/mkinitcpio.conf
+  sed -i 's/^MODULES=(/MODULES=(amdgpu radeon nvidia nvidia_modeset nvidia_uvm nvidia_drm i915 virtio-gpu vmwgfx /g' /etc/mkinitcpio.conf
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     xf86-video-ati xf86-video-amdgpu mesa vulkan-radeon libva-mesa-driver mesa-vdpau libva-utils nvtop \
-    xf86-video-nouveau vulkan-nouveau \
+    nvidia nvidia-utils nvidia-prime libva-nvidia-driver \
     xf86-video-intel vulkan-intel libva-intel-driver \
     xf86-video-vmware \
     xf86-video-qxl
+  tee /etc/modprobe.d/nvidia.conf <<EOF
+options nvidia-drm modeset=1
+EOF
   mkinitcpio -P
 fi
 
