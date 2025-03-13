@@ -5,6 +5,9 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 # disable systemd-network-generator in pxe image
 systemctl mask systemd-network-generator
 
+# mask systemd-hostnamed in pxe image
+systemctl mask systemd-hostnamed.socket systemd-hostnamed.service
+
 # create a squashfs snapshot based on rootfs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
@@ -22,6 +25,9 @@ elif [ -e /bin/pacman ]; then
   mksquashfs / /srv/pxe/arch/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
     -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*"
 fi
+
+# reenable systemd-hostnamed
+systemctl unmask systemd-hostnamed.socket systemd-hostnamed.service
 
 # reenable systemd-network-generator
 systemctl unmask systemd-network-generator
