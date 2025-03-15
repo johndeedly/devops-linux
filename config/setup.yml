@@ -134,10 +134,10 @@ files:
         stage: 1
     cinnamon:
       - path: pacman/20_graphical_cinnamon_pacman.sh
-        stage: 1
+        stage: 2
     kde:
       - path: pacman/20_graphical_kde_pacman.sh
-        stage: 1
+        stage: 2
     podman:
       - path: pacman/20_podman_pacman.sh
         stage: 1
