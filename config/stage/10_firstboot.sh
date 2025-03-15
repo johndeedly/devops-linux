@@ -29,6 +29,17 @@ if [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -Sy --noconfirm archlinux-keyring
 fi
 
+# initialize apt sources
+if [ -e /bin/apt ]; then
+  if grep -q Debian /proc/version; then
+    sed -i 's/main contrib$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
+    sed -i 's/main contrib$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
+  elif grep -q Ubuntu /proc/version; then
+    sed -i 's/^(deb .* universe)$/\1 multiverse/' /etc/apt/sources.list
+    sed -i 's/^(deb .* universe)$/\1 multiverse/' /etc/apt/sources.list.d/ubuntu.sources
+  fi
+fi
+
 # speedup apt on ubuntu and debian
 if [ -e /bin/apt ]; then
   APT_CFGS=( /etc/apt/apt.conf.d/* )

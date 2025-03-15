@@ -10,8 +10,8 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 # add the proxmox repository and some bookworm related stuff to the package sources
 tee -a /etc/apt/sources.list <<EOF
 
-deb http://ftp.debian.org/debian bookworm main contrib
-deb http://ftp.debian.org/debian bookworm-updates main contrib
+deb http://ftp.debian.org/debian bookworm main contrib non-free non-free-firmware
+deb http://ftp.debian.org/debian bookworm-updates main contrib non-free non-free-firmware
 
 deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription
 
