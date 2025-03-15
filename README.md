@@ -25,10 +25,10 @@ The project has the following folder structure:
 - **📁config/📄setup.yml** - central configuration file describing all the files that are needed for the installation
 - **📁database** - a temporary folder for package caching, allowing for installations where no internet is available to use a local package cache from previous installations
 - **📁output** - the final artifacts are placed inside this folder
-- **📁output/artifacts/docker** - the produced docker image is placed here
-- **📁output/artifacts/pxe** - the produced files for pxe booting are placed here
-- **📁output/devops-linux** - the produced virtual machine is placed here
-- **📁output/devops-linux/devops-linux-x86_64.run.sh** - the main executable script for the produced virtual machine
+- **📁output/📁artifacts/📁docker** - the produced docker image is placed here
+- **📁output/📁artifacts/📁pxe** - the produced files for pxe booting are placed here
+- **📁output/📁devops-linux** - the produced virtual machine is placed here
+- **📁output/📁devops-linux/📄devops-linux-x86_64.run.sh** - the main executable script for the produced virtual machine
 - **📄cidata.sh** - preparation script to package the files needed for CIDATA execution of cloud-init
 - **📄pipeline.sh** - this script will start the whole setup pipeline
 
@@ -89,7 +89,7 @@ At this point the following options can be selected for installation:
 - **plex** (_Arch, Debian, Ubuntu_): Install [plex media server](https://www.plex.tv/) as a container including shared gpu passthrough and configuration of the host.
 - **minecraft** (_Arch, Debian, Ubuntu_): Install [minecraft](https://www.minecraft.net/de-de) as a container.
 - **gitlab** (_Arch, Debian, Ubuntu_): Install [gitlab](https://about.gitlab.com/) as a container.
-- **router** (_Arch_): A fully functional virtual router with DHCP4, DHCP6, DNS, NTP, PXE boot and ACME certificate authority. Connect the router through ```-netdev socket,listen=...``` with subsequent virtual machines ```-netdev socket,connect=...```.
+- **router** (_Arch_): A fully functional virtual router with DHCP4, DHCP6, DNS, NTP, PXE boot and ACME certificate authority. Connect the router through ```-netdev socket,listen=...``` with subsequent virtual machines ```-netdev socket,connect=...```. To arm PXE boot with the prebuild initramfs, kernel and image, the ```📁output/📁artifacts``` folder in the default configuration can be mounted via ```mount -t 9p artifacts.0 /mnt``` and the contents then copied to ```cp /mnt/pxe/arch/x86_64/* /srv/pxe/arch/x86_64/```.
 - **proxmox** (_Debian_): Install [proxmox](https://www.proxmox.com/en/) to configure and spawn virtual machines and LXC container via gui.
 - **podman-image** (_Arch, Debian_): As the final step, take everything that was configured before and generate a fully functional OCI container, that can be uploaded to any docker or podman instance.
 - **pxe-image** (_Arch, Debian_): As the final step, take everything that was configured before and generate a fully functional pxe boot image, that can e.g. be used in conjunction with the router option above to netboot any device on the LAN. The Arch PXE image is able to be booted via CIFS, HTTP, ISCSI, NBD, NFS, NVMEOF and SCP (never saw that one before, right? 😉).

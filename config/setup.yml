@@ -163,7 +163,7 @@ files:
         stage: 2
     router:
       - path: pacman/20_router_pacman.sh
-        stage: 1
+        stage: 2
       - path: pacman/20_router_pacman/pxelinux.cfg.default
         config: true
     podman-image:

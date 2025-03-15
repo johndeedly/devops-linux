@@ -238,4 +238,10 @@ KeepConfiguration=yes
 MulticastDNS=yes
 EOF
     fi
+
+    # 9th: generate a random hostname for the client
+    tee "${newroot}/etc/hostname" >/dev/null <<EOF
+linux-$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
+EOF
+    msg ":: Using the random hostname $(<"${newroot}/etc/hostname")"
 }

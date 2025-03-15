@@ -8,6 +8,8 @@ build() {
     
     add_runscript
 
+    add_binary tr
+    add_binary head
     add_binary blockdev
     add_binary losetup
     add_binary cryptsetup

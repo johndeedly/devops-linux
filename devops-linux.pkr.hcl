@@ -219,11 +219,31 @@ mkdir -p "/tmp/swtpm.0"
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
   -device virtio-mouse -device virtio-keyboard \\
+  -rtc base=utc,clock=host \\
+  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
+
+# -netdev socket,id=user.0,listen=:23568 -device virtio-net,netdev=user.0
+EOF
+chmod +x output/devops-linux/devops-linux-x86_64.run.sh
+tee output/devops-linux/devops-linux-x86_64.pxe.sh <<EOF
+#!/usr/bin/env bash
+trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
+/usr/bin/qemu-system-x86_64 \\
+  -name devops-linux-pxe-x86_64 \\
+  -machine type=q35,accel=kvm \\
+  -device virtio-vga,id=video.0,max_outputs=1 \\
+  -vga none \\
+  -display gtk,gl=on,show-cursor=on \\
+  -cpu host \\
+  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
+  -netdev socket,id=user.0,connect=:23568 -device virtio-net,netdev=user.0 \\
+  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
+  -device virtio-mouse -device virtio-keyboard \\
   -rtc base=utc,clock=host
 EOF
+chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
 # remove -display gtk,gl=on for no 3d acceleration
-# -display none, -daemonize, hostfwd=::12345-:22 for running as a daemonized server
-chmod +x output/devops-linux/devops-linux-x86_64.run.sh
+# -display none, -daemonize, hostfwd=::12457-:22 for running as a daemonized server
 EOS
     ]
     only_on = ["linux"]
