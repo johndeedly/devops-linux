@@ -238,10 +238,17 @@ systemctl --global enable userlogin.service
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
-    nvidia-driver firmware-misc-nonfree \
     xserver-xorg-video-intel \
     xserver-xorg-video-vmware \
     xserver-xorg-video-qxl
+  if grep -q Debian /proc/version; then
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install nvidia-driver firmware-misc-nonfree
+  elif grep -q Ubuntu /proc/version; then
+    NVIDIA_DRIVER_VERSION=$(LC_ALL=C apt list 'nvidia-driver-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
+    if [ -n "${NVIDIA_DRIVER_VERSION}" ]; then
+      LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${NVIDIA_DRIVER_VERSION}"
+    fi
+  fi
   LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
 elif [ -e /bin/pacman ]; then
   sed -i 's/^MODULES=(/MODULES=(amdgpu radeon nvidia nvidia_modeset nvidia_uvm nvidia_drm i915 virtio-gpu vmwgfx /g' /etc/mkinitcpio.conf
