@@ -66,7 +66,6 @@ EOF
   fi
   pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username" -propagate 1 || true
 done
-ifreload -a
 
 # sync everything to disk
 sync
