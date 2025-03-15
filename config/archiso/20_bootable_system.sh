@@ -173,7 +173,7 @@ if [ -n "$PKG_MIRROR" ] && [ "false" != "$PKG_MIRROR" ]; then
 #   Types: deb
 #   URIs: http://mirror.internal:8080/debian
 #   Suites: bookworm bookworm-updates bookworm-backports bookworm-security
-#   Components: main contrib
+#   Components: main contrib non-free non-free-firmware
 # </example>
 
 ${PKG_MIRROR}
@@ -205,8 +205,8 @@ EOF
 # auto configured through setup.yml
 # <example>
 #   [baseos]
-#   name=Rocky Linux $releasever - BaseOS
-#   baseurl=http://mirror.internal:8080/rocky/$contentdir/$releasever/BaseOS/$basearch/os/
+#   name=Rocky Linux \$releasever - BaseOS
+#   baseurl=http://mirror.internal:8080/rocky/\$contentdir/\$releasever/BaseOS/\$basearch/os/
 #   gpgcheck=1
 #   enabled=1
 #   countme=1
@@ -214,8 +214,8 @@ EOF
 #   gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
 #
 #   [appstream]
-#   name=Rocky Linux $releasever - AppStream
-#   baseurl=http://mirror.internal:8080/rocky/$contentdir/$releasever/AppStream/$basearch/os/
+#   name=Rocky Linux \$releasever - AppStream
+#   baseurl=http://mirror.internal:8080/rocky/\$contentdir/\$releasever/AppStream/\$basearch/os/
 #   gpgcheck=1
 #   enabled=1
 #   countme=1
@@ -223,8 +223,8 @@ EOF
 #   gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
 #
 #   [crb]
-#   name=Rocky Linux $releasever - CRB
-#   baseurl=http://mirror.internal:8080/rocky/$contentdir/$releasever/CRB/$basearch/os/
+#   name=Rocky Linux \$releasever - CRB
+#   baseurl=http://mirror.internal:8080/rocky/\$contentdir/\$releasever/CRB/\$basearch/os/
 #   gpgcheck=1
 #   enabled=1
 #   countme=1
