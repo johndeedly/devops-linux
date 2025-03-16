@@ -68,8 +68,11 @@ files:
     plex:
       - path: podman/40_plex_podman.sh
         stage: 2
-    minecraft:
-      - path: podman/40_minecraft_podman.sh
+    minecraft-cobblemon:
+      - path: podman/40_minecraft_cobblemon_podman.sh
+        stage: 2
+    minecraft-create:
+      - path: podman/40_minecraft_create_podman.sh
         stage: 2
     gitlab:
       - path: podman/40_gitlab_podman.sh
@@ -155,8 +158,11 @@ files:
     plex:
       - path: podman/40_plex_podman.sh
         stage: 2
-    minecraft:
-      - path: podman/40_minecraft_podman.sh
+    minecraft-cobblemon:
+      - path: podman/40_minecraft_cobblemon_podman.sh
+        stage: 2
+    minecraft-create:
+      - path: podman/40_minecraft_create_podman.sh
         stage: 2
     gitlab:
       - path: podman/40_gitlab_podman.sh
