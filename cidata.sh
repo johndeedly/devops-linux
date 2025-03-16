@@ -11,9 +11,10 @@ trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
 _iso=1
 _archiso=0
 _ram=0
+_autoreboot=0
 parse_parameters() {
-    local _longopts="iso,archiso,isoinram"
-    local _opts="iar"
+    local _longopts="iso,archiso,isoinram,autoreboot"
+    local _opts="iarb"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -33,6 +34,10 @@ parse_parameters() {
                 _ram=1
                 shift
                 ;;
+            -b|--autoreboot)
+                _autoreboot=1
+                shift
+                ;;
             --)
                 shift
                 break
@@ -48,6 +53,21 @@ echo "Prepare CIDATA directories"
 mkdir -p build/{archiso,stage}
 
 tee build/archiso/meta-data build/stage/meta-data >/dev/null <<EOF
+EOF
+tee build/ZZ_ZZ_autoreboot.sh >/dev/null <<'EOF'
+#!/usr/bin/env bash
+exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+# double fork trick to prevent the subprocess from exiting
+echo "[ OK ] Reboot in approximately 5 seconds"
+( (
+  sleep 5
+  # valid exit codes are 0 or 2
+  cloud-init status --wait >/dev/null 2>&1 || true
+  echo "[ OK ] Rebooting the system"
+  reboot now
+) & )
+# cleanup
+rm -- "${0}"
 EOF
 
 # prepare user-data for stage
@@ -76,6 +96,9 @@ EOF
     fi
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.config) | .path' config/setup.yml)"
 # deployment scripts stage 1
+if [ $_autoreboot -eq 1 ]; then
+    write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:text/x-shellscript" )
+fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then
         if [ -f "config/$line" ]; then
@@ -84,6 +107,9 @@ while read -r line; do
     fi
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' config/setup.yml)"
 # deployment scripts stage 2
+if [ $_autoreboot -eq 1 ]; then
+    write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:application/x-per-boot" )
+fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then
         if [ -f "config/$line" ]; then
@@ -108,6 +134,9 @@ if [ $_archiso -eq 1 ]; then
         "build/stage/user-data:application/x-provision-config"
         "build/stage/meta-data:application/x-provision-config"
     )
+    if [ $_autoreboot -eq 1 ]; then
+        write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:text/x-shellscript" )
+    fi
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 
     echo "Download archiso when needed"
