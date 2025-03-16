@@ -59,6 +59,9 @@ files:
     postgres:
       - path: podman/40_postgres_podman.sh
         stage: 2
+    homeassistant:
+      - path: podman/40_homeassistant_podman.sh
+        stage: 2
     cronicle:
       - path: podman/40_cronicle_podman.sh
         stage: 2
@@ -148,6 +151,9 @@ files:
         stage: 2
     postgres:
       - path: podman/40_postgres_podman.sh
+        stage: 2
+    homeassistant:
+      - path: podman/40_homeassistant_podman.sh
         stage: 2
     cronicle:
       - path: podman/40_cronicle_podman.sh
