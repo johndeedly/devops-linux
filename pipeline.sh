@@ -29,6 +29,15 @@ then
     exit 1
 fi
 
+# check xorriso is installed
+if ! command -v xorriso 2>&1 >/dev/null
+then
+    echo 1>&2 "The command 'xorriso' could not be found. Please install xorriso to use this script."
+    echo 1>&2 "archlinux: https://archlinux.org/packages/extra/x86_64/libisoburn/"
+    echo 1>&2 "debian: https://packages.debian.org/bookworm/xorriso"
+    exit 1
+fi
+
 # check write-mime-multipart is installed
 if ! command -v write-mime-multipart 2>&1 >/dev/null
 then
