@@ -171,6 +171,7 @@ FILELIST=(
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/mpv.desktop
   /usr/share/applications/org.kde.kate.desktop
+  /usr/share/applications/org.kde.dolphin.desktop
 )
 tee /tmp/mimeapps.list.added <<EOF
 [Added Associations]
