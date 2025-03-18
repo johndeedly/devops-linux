@@ -72,13 +72,11 @@ partx -u "${TARGET_DEVICE}"
 sleep 1
 
 # resize main ext4/btrfs partition
-# create cidata partition at the end of the disk
 ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/root\|linux filesystem/I!d' | head -n1) )
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
 LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${ROOT_PART[1]}" root \
-    resizepart "${ROOT_PART[1]}" -8MiB \
-    mkpart cidata fat32 -8MiB -4MiB
+    resizepart "${ROOT_PART[1]}" -4MiB
 
 # update partitions in kernel again
 partx -u "${TARGET_DEVICE}"
@@ -158,10 +156,14 @@ elif [ -f /mnt/bin/yum ]; then
     fi
 fi
 
-# write the stage user-data to the cidata partition on disk
-dd if=/dev/zero of=/dev/disk/by-partlabel/cidata bs=1M count=4 iflag=fullblock status=progress
-mkfs.vfat -n CIDATA /dev/disk/by-partlabel/cidata
-mcopy -oi /dev/disk/by-partlabel/cidata /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data ::
+# write the stage user-data to the cidata path on disk
+mkdir -p /mnt/{cidata,etc/cloud/cloud.cfg.d}
+cp /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data /mnt/cidata
+tee /mnt/etc/cloud/cloud.cfg.d/provision-source.cfg >/dev/null <<EOF
+datasource:
+  NoCloud:
+    seedfrom: file:///cidata
+EOF
 
 # set local package mirror
 PKG_MIRROR=$(yq -r '.setup.pkg_mirror' /var/lib/cloud/instance/config/setup.yml)
