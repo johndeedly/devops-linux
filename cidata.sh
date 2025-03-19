@@ -86,9 +86,8 @@ tee build/ZZ_ZZ_autoreboot.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 # double fork trick to prevent the subprocess from exiting
-echo "[ OK ] Reboot in approximately 5 seconds"
+echo "[ ## ] Wait for cloud-init to finish"
 ( (
-  sleep 5
   # valid exit codes are 0 or 2
   cloud-init status --wait >/dev/null 2>&1 || true
   echo "[ OK ] Rebooting the system"
@@ -162,9 +161,6 @@ if [ $_archiso -eq 1 ]; then
         "build/stage/user-data:application/x-provision-config"
         "build/stage/meta-data:application/x-provision-config"
     )
-    if [ $_autoreboot -eq 1 ]; then
-        write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:text/x-shellscript" )
-    fi
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 
     echo "Download archiso when needed"
