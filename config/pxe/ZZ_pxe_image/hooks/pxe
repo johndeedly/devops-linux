@@ -204,7 +204,7 @@ NamePolicy=keep
 EOF
         mkdir -p "${newroot}/etc/NetworkManager/conf.d"
         msg ":: NetworkManager config for device '${bootif_dev}' ('${bootif_mac}')"
-        tee "${newroot}/etc/NetworkManager/conf.d/10-${bootif_dev}.conf" >/dev/null <<EOF
+        tee "${newroot}/etc/NetworkManager/conf.d/90-${bootif_dev}.conf" >/dev/null <<EOF
 [main]
 no-auto-default+=${bootif_mac}
 

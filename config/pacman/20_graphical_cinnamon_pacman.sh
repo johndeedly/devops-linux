@@ -18,14 +18,20 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
 # enable some services
 systemctl enable cups libvirtd.service libvirtd.socket
 
-# fix phantom network devices in nm-applet
+# configure network manager
+mkdir -p /etc/NetworkManager/conf.d
+tee /etc/NetworkManager/conf.d/10-virtio-net-managed-devices.conf <<EOF
+[devices-virtio-net-managed]
+match-device=driver:virtio_net
+managed=true
+EOF
 tee /etc/NetworkManager/NetworkManager.conf <<'EOF'
 [main]
 plugins=ifupdown,keyfile
 dns=systemd-resolved
 
 [keyfile]
-unmanaged-devices=*,except:type:wifi,except:type:wwan
+unmanaged-devices=*,except:type:ethernet,except:type:wifi,except:type:wwan
 
 [ifupdown]
 managed=true
@@ -35,7 +41,6 @@ wifi.scan-rand-mac-address=yes
 EOF
 systemctl unmask NetworkManager || true
 systemctl enable NetworkManager
-systemctl mask NetworkManager-wait-online NetworkManager-dispatcher
 
 # add all users to group libvirt
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
