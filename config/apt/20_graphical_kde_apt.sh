@@ -46,6 +46,42 @@ wifi.scan-rand-mac-address=yes
 EOF
 systemctl unmask NetworkManager || true
 systemctl enable NetworkManager
+find /sys/class/net \( -name "en*" -o -name "eth*" \) -exec basename {} \; | while read -r line; do
+  tee "/etc/NetworkManager/system-connections/$line.nmconnection" <<EOF
+[connection]
+id=$line
+uuid=$(uuidgen)
+type=ethernet
+autoconnect=true
+interface-name=$line
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+EOF
+  chmod 600 "/etc/NetworkManager/system-connections/$line.nmconnection"
+done
+find /sys/class/net -name "wl*" -exec basename {} \; | while read -r line; do
+  tee "/etc/NetworkManager/system-connections/$line.nmconnection" <<EOF
+[connection]
+id=$line
+uuid=$(uuidgen)
+type=wifi
+autoconnect=true
+interface-name=$line
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+EOF
+  chmod 600 "/etc/NetworkManager/system-connections/$line.nmconnection"
+done
 
 # add all users to group libvirt
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
