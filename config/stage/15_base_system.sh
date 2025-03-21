@@ -242,13 +242,26 @@ if [ -e /bin/apt ]; then
     xserver-xorg-video-vmware \
     xserver-xorg-video-qxl
   if grep -q Debian /proc/version; then
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install nvidia-driver firmware-misc-nonfree
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install xserver-xorg-video-nvidia
   elif grep -q Ubuntu /proc/version; then
-    NVIDIA_DRIVER_VERSION=$(LC_ALL=C apt list 'nvidia-driver-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
-    if [ -n "${NVIDIA_DRIVER_VERSION}" ]; then
-      LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${NVIDIA_DRIVER_VERSION}"
+    NVIDIA_XORG_VERSION=$(LC_ALL=C apt list 'xserver-xorg-video-nvidia-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
+    if [ -n "${NVIDIA_XORG_VERSION}" ]; then
+      LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${NVIDIA_XORG_VERSION}"
     fi
   fi
+  tee /etc/modprobe.d/nvidia.conf <<EOF
+options nvidia-drm modeset=1
+EOF
+  # ignore failed service when no nvidia card is present - the system is
+  # not in a degraded state when this happens, nvidia...
+  mkdir -p /etc/systemd/system/nvidia-persistenced.service.d
+  tee /etc/systemd/system/nvidia-persistenced.service.d/override.conf <<EOF
+[Service]
+ExecStart=
+ExecStopPost=
+ExecStart=-/usr/bin/nvidia-persistenced --user nvpd
+ExecStopPost=-/bin/rm -rf /var/run/nvidia-persistenced
+EOF
   LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
 elif [ -e /bin/pacman ]; then
   sed -i 's/^MODULES=(/MODULES=(amdgpu radeon nvidia nvidia_modeset nvidia_uvm nvidia_drm i915 virtio-gpu vmwgfx /g' /etc/mkinitcpio.conf
