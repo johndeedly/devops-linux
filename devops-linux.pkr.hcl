@@ -45,6 +45,11 @@ variable "package_manager" {
   default = "pacman"
 }
 
+variable "package_cache" {
+  type    = bool
+  default = false
+}
+
 locals {
   build_name_qemu       = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉"), "qcow2"]) # unicode replacement char for colon
   build_name_virtualbox = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉")]) # unicode replacement char for colon
@@ -130,7 +135,7 @@ build {
   }
 
   provisioner "file" {
-    source      = "/var/cache/pacman/pkg/"
+    source      = var.package_cache ? "/var/cache/pacman/pkg/" : ""
     destination = "database/archiso"
     direction   = "download"
   }
@@ -176,7 +181,7 @@ build {
   }
 
   provisioner "file" {
-    source      = "/var/cache/${var.package_manager}/"
+    source      = var.package_cache ? "/var/cache/${var.package_manager}/" : ""
     destination = "database/stage"
     direction   = "download"
   }
