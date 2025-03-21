@@ -159,9 +159,15 @@ elif [ -f /mnt/bin/yum ]; then
 fi
 
 # write the stage user-data to the cidata partition on disk
-dd if=/dev/zero of=/dev/disk/by-partlabel/cidata bs=1M count=4 iflag=fullblock status=progress
-mkfs.vfat -n CIDATA /dev/disk/by-partlabel/cidata
-mcopy -oi /dev/disk/by-partlabel/cidata /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data ::
+xorrisofs -volid CIDATA -o /tmp/cidata.iso9660 /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data
+ISOSIZE=$(stat -c%s /tmp/cidata.iso9660)
+MAXSIZE=$(numfmt --from=iec-i 4Mi)
+if [ "$ISOSIZE" -le "$MAXSIZE" ]; then
+  cat /tmp/cidata.iso9660 /dev/zero | dd of=/dev/disk/by-partlabel/cidata bs=1M count=4 iflag=fullblock status=progress
+else
+  echo "!! Produced CIDATA iso9660 filesystem is larger than 4MiB"
+  exit 1
+fi
 
 # set local package mirror
 PKG_MIRROR=$(yq -r '.setup.pkg_mirror' /var/lib/cloud/instance/config/setup.yml)
