@@ -67,15 +67,27 @@ fi
 
 # Generate locales
 if [ -e /bin/apt ]; then
-  sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  if [ -f /etc/locale.gen ]; then
+    sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  else
+    echo "de_DE.UTF-8 UTF-8" > /etc/locale.gen
+  fi
   dpkg-reconfigure --frontend=noninteractive locales
   update-locale LANG=de_DE.UTF-8
 elif [ -e /bin/pacman ]; then
-  sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  if [ -f /etc/locale.gen ]; then
+    sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  else
+    echo "de_DE.UTF-8 UTF-8" > /etc/locale.gen
+  fi
   echo "LANG=de_DE.UTF-8" > /etc/locale.conf
   locale-gen
 elif [ -e /bin/yum ]; then
-  sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  if [ -f /etc/locale.gen ]; then
+    sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+  else
+    echo "de_DE.UTF-8 UTF-8" > /etc/locale.gen
+  fi
   echo "LANG=de_DE.UTF-8" > /etc/locale.conf
   localedef -c -i de_DE -f UTF-8 de_DE.UTF-8
 fi
@@ -166,7 +178,9 @@ elif [ -e /bin/yum ]; then
 fi
 
 # add modules to initcpio
-sed -i 's/^MODULES=.*/MODULES=(usbhid xhci_hcd vfat)/g' /etc/mkinitcpio.conf
+if [ -f /etc/mkinitcpio.conf ]; then
+  sed -i 's/^MODULES=.*/MODULES=(usbhid xhci_hcd vfat)/g' /etc/mkinitcpio.conf
+fi
 
 # system upgrade
 if [ -e /bin/apt ]; then
