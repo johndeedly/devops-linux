@@ -32,12 +32,21 @@ fi
 # initialize apt sources
 if [ -e /bin/apt ]; then
   if grep -q Debian /proc/version; then
-    sed -i 's/main contrib$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list
-    sed -i 's/main contrib$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
+    # old format
+    sed -i 's/\(deb .* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list
+    sed -i 's/\(deb .* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
+    # new format
+    sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list
+    sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
   elif grep -q Ubuntu /proc/version; then
-    sed -i 's/^(deb .* universe)$/\1 multiverse/' /etc/apt/sources.list
-    sed -i 's/^(deb .* universe)$/\1 multiverse/' /etc/apt/sources.list.d/ubuntu.sources
+    # old format
+    sed -i 's/\(deb .* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
+    sed -i 's/\(deb .* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
+    # new format
+    sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
+    sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
   fi
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 fi
 
 # speedup apt on ubuntu and debian
@@ -46,13 +55,11 @@ if [ -e /bin/apt ]; then
   for cfg in "${APT_CFGS[@]}"; do
     sed -i 's/^Acquire::http::Dl-Limit/\/\/Acquire::http::Dl-Limit/' "$cfg" || true
   done
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 fi
 
 # Configure keyboard and console
 if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install locales keyboard-configuration console-setup console-data tzdata
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y glibc-common glibc-locale-source glibc-langpack-de
@@ -163,10 +170,6 @@ sed -i 's/^MODULES=.*/MODULES=(usbhid xhci_hcd vfat)/g' /etc/mkinitcpio.conf
 
 # system upgrade
 if [ -e /bin/apt ]; then
-  if grep -q Debian /proc/version; then
-    sed -i 's/main/main contrib/g' /etc/apt/sources.list.d/debian.sources
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y update
-  fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm jq yq
