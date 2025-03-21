@@ -46,8 +46,11 @@ download_dotnet_debian() {
   wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb
   dpkg -i /tmp/packages-microsoft-prod.deb
   rm /tmp/packages-microsoft-prod.deb
-  apt-get update
-  apt-get install -y dotnet-runtime
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
+  DOTNET_VERSION=$(LC_ALL=C apt list 'dotnet-runtime-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
+  if [ -n "${DOTNET_VERSION}" ]; then
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${DOTNET_VERSION}"
+  fi
 }
 
 download_dotnet_yum() {
