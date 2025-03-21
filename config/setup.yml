@@ -51,6 +51,9 @@ files:
     mirror:
       - path: apt/20_localmirror_apt.sh
         stage: 1
+    kde:
+      - path: apt/20_graphical_kde_apt.sh
+        stage: 2
     podman:
       - path: apt/20_podman_apt.sh
         stage: 1
