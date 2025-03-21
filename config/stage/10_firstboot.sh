@@ -215,6 +215,14 @@ elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y systemd-container
 fi
 
+download_yq() {
+  echo ":: download yq"
+  curl --fail --silent --location --output /tmp/yq_linux_amd64.tar.gz 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64.tar.gz'
+  tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
+  mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
+  chmod 0755 /usr/local/bin/yq
+}
+
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
@@ -225,8 +233,9 @@ elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh firewalld
   systemctl enable sshd firewalld
 elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C yum install -y polkit curl wget nano jq yq openssh firewalld
+  LC_ALL=C yes | LC_ALL=C yum install -y polkit curl wget nano jq openssh firewalld
   systemctl enable sshd firewalld
+  download_yq
 fi
 
 # enable cockpit
