@@ -28,8 +28,8 @@ download_starship() {
 
 download_neovim() {
   echo ":: download nvim"
-  curl --fail --silent --location --output /tmp/nvim-x86_64.tar.gz 'https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz'
-  curl --fail --silent --location --output /tmp/nvim-x86_64.tar.gz.sha256 'https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz.sha256sum'
+  curl --fail --silent --location --output /tmp/nvim-x86_64.tar.gz 'https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz'
+  curl --fail --silent --location --output /tmp/nvim-x86_64.tar.gz.sha256 'https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz.sha256sum'
   newhash=$(sha256sum /tmp/nvim-x86_64.tar.gz | cut -d' ' -f1)
   knownhash=$(cat /tmp/nvim-x86_64.tar.gz.sha256 | cut -d' ' -f1)
   if [ -n "$newhash" ] && [ "$newhash" == "$knownhash" ]; then
