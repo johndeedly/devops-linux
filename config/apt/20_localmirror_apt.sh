@@ -4,11 +4,6 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install nginx firewalld
 
-if grep -q Debian /proc/version; then
-# enable non-free
-sed -i 's/main contrib$/main contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
-fi
-
 mkdir -p /var/cache/apt/mirror /var/empty
 
 if grep -q Ubuntu /proc/version; then
