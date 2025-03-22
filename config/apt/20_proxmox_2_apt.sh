@@ -11,12 +11,11 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 pveum group add admins
 pveum group add users
 
-# create local user pveadm
+# create local admin pveadm
 USERID=pveadm
 USERHASH=$(openssl passwd -6 -salt abcxyz "${USERID}")
 useradd -m -r -s /bin/bash "$USERID"
 sed -i 's/^'"$USERID"':[^:]*:/'"$USERID"':'"${USERHASH//\//\\/}"':/' /etc/shadow
-pveum user add "$USERID"@pam -groups admins
 
 # add permissions to groups and pools
 pveum acl modify / --roles Administrator -groups admins -propagate 1
