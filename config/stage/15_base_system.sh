@@ -99,7 +99,7 @@ elif [ -e /bin/yum ]; then
     lshw libxml2 jq man-db trash-cli \
     wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
-    openldap openldap-clients nss-pam-ldapd python3-pip python3-venv
+    openldap openldap-clients nss-pam-ldapd python3-pip
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C yum install -y \
