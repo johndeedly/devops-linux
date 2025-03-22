@@ -8,6 +8,14 @@ systemctl mask systemd-network-generator
 # mask systemd-hostnamed in pxe image
 systemctl mask systemd-hostnamed.socket systemd-hostnamed.service
 
+# disable sleep
+sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=poweroff/' /etc/systemd/logind.conf
+sed -i 's/^#\?HandleHibernateKey=.*/HandleHibernateKey=poweroff/' /etc/systemd/logind.conf
+sed -i 's/^#\?HandleLidSwitch=.*/HandleLidSwitch=poweroff/' /etc/systemd/logind.conf
+sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=poweroff/' /etc/systemd/logind.conf
+sed -i 's/^#\?AllowSuspend=.*/AllowSuspend=no/' /etc/systemd/sleep.conf
+systemctl mask suspend.target
+
 # create a squashfs snapshot based on rootfs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
@@ -25,6 +33,14 @@ elif [ -e /bin/pacman ]; then
   mksquashfs / /srv/pxe/arch/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
     -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*"
 fi
+
+# reenable sleep
+sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
+sed -i 's/^#\?HandleHibernateKey=.*/HandleHibernateKey=suspend/' /etc/systemd/logind.conf
+sed -i 's/^#\?HandleLidSwitch=.*/HandleLidSwitch=suspend/' /etc/systemd/logind.conf
+sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=suspend/' /etc/systemd/logind.conf
+sed -i 's/^#\?AllowSuspend=.*/AllowSuspend=yes/' /etc/systemd/sleep.conf
+systemctl unmask suspend.target
 
 # reenable systemd-hostnamed
 systemctl unmask systemd-hostnamed.socket systemd-hostnamed.service
