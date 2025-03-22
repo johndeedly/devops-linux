@@ -7,15 +7,9 @@ fi
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-# add the proxmox repository and some bookworm related stuff to the package sources
-tee -a /etc/apt/sources.list <<EOF
-
-deb http://ftp.debian.org/debian bookworm main contrib non-free non-free-firmware
-deb http://ftp.debian.org/debian bookworm-updates main contrib non-free non-free-firmware
-
-deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription
-
-deb http://security.debian.org/debian-security bookworm-security main contrib
+# add the proxmox repository to the package sources
+tee /etc/apt/sources.list.d/pve-install-repo.list <<EOF
+deb [arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription
 EOF
 
 # verify and install the proxmox repository key
