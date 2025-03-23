@@ -167,7 +167,7 @@ if [ $_archiso -eq 1 ]; then
     ARCHISO=$(yq -r '.images.archiso' config/setup.yml)
     ARCHISOURL=$(yq -r '.download.archiso' config/setup.yml)
     if ! [ -e "${ARCHISO}" ]; then
-        if ! wget -c -N --progress=dot:mega "${ARCHISOURL}"; then
+        if ! wget -c -N --progress=dot:giga "${ARCHISOURL}"; then
             echo 1>&2 "Download error"
             exit 1
         fi
