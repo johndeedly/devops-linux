@@ -65,6 +65,14 @@ then
     exit 1
 fi
 
+# check ovmf is installed
+if ! [ -f /usr/share/OVMF/x64/OVMF_CODE.secboot.4m.fd ] && ! [ -f /usr/share/OVMF/OVMF_CODE_4M.secboot.fd ]; then
+    echo 1>&2 "The uefi boot files could not be found. Please install the edk2-ovmf (Arch) or ovmf (Debian/Ubuntu) package to use this script."
+    echo 1>&2 "archlinux: https://archlinux.org/packages/extra/any/edk2-ovmf/"
+    echo 1>&2 "debian: https://packages.debian.org/bookworm/ovmf"
+    exit 1
+fi
+
 # check qemu-system-x86_64 is installed
 if ! command -v qemu-system-x86_64 2>&1 >/dev/null
 then
