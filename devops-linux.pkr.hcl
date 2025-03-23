@@ -125,7 +125,7 @@ build {
 
   provisioner "shell" {
     execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
-    inline           = ["cloud-init status --wait"]
+    inline           = ["cloud-init status --wait >/dev/null 2>&1"]
     valid_exit_codes = [143]
   }
 
@@ -157,7 +157,7 @@ build {
   provisioner "shell" {
     pause_before     = "5s"
     execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
-    inline           = ["cloud-init status --wait"]
+    inline           = ["cloud-init status --wait >/dev/null 2>&1"]
     valid_exit_codes = [143]
   }
 
@@ -183,7 +183,7 @@ build {
   provisioner "shell" {
     pause_before     = "5s"
     execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
-    inline           = ["cloud-init status --wait"]
+    inline           = ["cloud-init status --wait >/dev/null 2>&1"]
     valid_exit_codes = [143]
   }
 
