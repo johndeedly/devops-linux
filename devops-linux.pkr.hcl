@@ -37,7 +37,7 @@ variable "memory" {
 
 variable "headless" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "package_manager" {
@@ -124,8 +124,14 @@ build {
   sources = ["source.qemu.default", "source.virtualbox-iso.default"]
 
   provisioner "shell" {
-    inline            = ["cloud-init status --wait"]
-    valid_exit_codes  = [0, 2]
+    execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
+    inline           = ["cloud-init status --wait"]
+    valid_exit_codes = [143]
+  }
+
+  provisioner "shell" {
+    inline           = ["cloud-init status"]
+    valid_exit_codes = [0, 2]
   }
 
   provisioner "file" {
@@ -150,7 +156,13 @@ build {
   
   provisioner "shell" {
     pause_before     = "5s"
+    execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
     inline           = ["cloud-init status --wait"]
+    valid_exit_codes = [143]
+  }
+
+  provisioner "shell" {
+    inline           = ["cloud-init status"]
     valid_exit_codes = [0, 2]
   }
 
@@ -170,7 +182,13 @@ build {
   
   provisioner "shell" {
     pause_before     = "5s"
+    execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
     inline           = ["cloud-init status --wait"]
+    valid_exit_codes = [143]
+  }
+
+  provisioner "shell" {
+    inline           = ["cloud-init status"]
     valid_exit_codes = [0, 2]
   }
 

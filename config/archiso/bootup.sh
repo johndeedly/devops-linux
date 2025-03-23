@@ -18,6 +18,9 @@ linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)-setup.internal
 EOF
 hostnamectl hostname "$(</etc/hostname)"
 
+# create cidata log
+touch /cidata_log
+
 # sync everything to disk
 sync
 
