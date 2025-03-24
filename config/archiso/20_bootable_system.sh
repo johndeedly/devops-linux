@@ -159,7 +159,7 @@ elif [ -f /mnt/bin/yum ]; then
 fi
 
 # write the stage user-data to the cidata partition on disk
-xorrisofs -volid CIDATA -o /tmp/cidata.iso9660 /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data
+xorrisofs -volid CIDATA_PART -o /tmp/cidata.iso9660 /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data
 ISOSIZE=$(stat -c%s /tmp/cidata.iso9660)
 MAXSIZE=$(numfmt --from=iec-i 4Mi)
 if [ "$ISOSIZE" -le "$MAXSIZE" ]; then
@@ -168,6 +168,13 @@ else
   echo "!! Produced CIDATA iso9660 filesystem is larger than 4MiB"
   exit 1
 fi
+tee -a /mnt/etc/cloud/cloud.cfg <<EOF
+
+datasource_list: ["NoCloud"]
+datasource:
+  NoCloud:
+    fs_label: CIDATA_PART
+EOF
 
 # set local package mirror
 PKG_MIRROR=$(yq -r '.setup.pkg_mirror' /var/lib/cloud/instance/config/setup.yml)
@@ -254,14 +261,6 @@ sleep 5
 
 # sync everything to disk
 sync
-
-# double fork trick to prevent the subprocess from exiting
-echo "[ ## ] Wait for cloud-init to finish"
-( (
-  # valid exit codes are 0 or 2
-  cloud-init status --wait >/dev/null 2>&1 || true
-  echo "[ OK ] Please eject the installation medium and reboot the system"
-) & )
 
 # cleanup
 rm -- "${0}"

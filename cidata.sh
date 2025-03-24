@@ -39,10 +39,10 @@ fi
 _iso=1
 _archiso=0
 _ram=0
-_autoreboot=0
+_autoreboot=1
 parse_parameters() {
-    local _longopts="iso,archiso,isoinram,autoreboot"
-    local _opts="iarb"
+    local _longopts="iso,archiso,isoinram,no-autoreboot"
+    local _opts="iarn"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -62,8 +62,8 @@ parse_parameters() {
                 _ram=1
                 shift
                 ;;
-            -b|--autoreboot)
-                _autoreboot=1
+            -n|--no-autoreboot)
+                _autoreboot=0
                 shift
                 ;;
             --)
@@ -161,6 +161,9 @@ if [ $_archiso -eq 1 ]; then
         "build/stage/user-data:application/x-provision-config"
         "build/stage/meta-data:application/x-provision-config"
     )
+    if [ $_autoreboot -eq 1 ]; then
+        write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:text/x-shellscript" )
+    fi
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 
     echo "Download archiso when needed"

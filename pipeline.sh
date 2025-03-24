@@ -150,7 +150,7 @@ packer_buildappliance() {
     return -1
 }
 
-./cidata.sh --archiso --isoinram
+./cidata.sh --archiso --isoinram --no-autoreboot
 
 mkdir -p output
 VIRTENV=$(systemd-detect-virt || true)
