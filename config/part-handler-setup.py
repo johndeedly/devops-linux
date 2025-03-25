@@ -48,5 +48,6 @@ def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
             content = base64.b64decode(bio.readline())
 
     file.touch()
+    file.chmod(0o600)
     with file.open("wb") as f:
         f.write(content)
