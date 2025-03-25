@@ -77,8 +77,7 @@ ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed 
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
 LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${ROOT_PART[1]}" root \
-    resizepart "${ROOT_PART[1]}" -8MiB \
-    mkpart cidata fat32 -8MiB -4MiB
+    resizepart "${ROOT_PART[1]}" 100%
 
 # update partitions in kernel again
 partx -u "${TARGET_DEVICE}"
@@ -158,22 +157,16 @@ elif [ -f /mnt/bin/yum ]; then
     fi
 fi
 
-# write the stage user-data to the cidata partition on disk
-xorrisofs -volid CIDATA_PART -o /tmp/cidata.iso9660 /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data
-ISOSIZE=$(stat -c%s /tmp/cidata.iso9660)
-MAXSIZE=$(numfmt --from=iec-i 4Mi)
-if [ "$ISOSIZE" -le "$MAXSIZE" ]; then
-  cat /tmp/cidata.iso9660 /dev/zero | dd of=/dev/disk/by-partlabel/cidata bs=1M count=4 iflag=fullblock status=progress
-else
-  echo "!! Produced CIDATA iso9660 filesystem is larger than 4MiB"
-  exit 1
-fi
+# write the stage user-data to the cidata directory on disk
+install -d -m 0700 -o root -g root /mnt/cidata
+cp /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data /mnt/cidata/
+chmod 0600 /mnt/cidata/{meta,user}-data
 tee -a /mnt/etc/cloud/cloud.cfg <<EOF
 
 datasource_list: ["NoCloud"]
 datasource:
   NoCloud:
-    fs_label: CIDATA_PART
+    seedfrom: file:///cidata/
 EOF
 
 # set local package mirror
@@ -252,6 +245,7 @@ fi
 
 # finalize /mnt
 cp /cidata_log /mnt/cidata_log || true
+chmod 0600 /mnt/cidata_log || true
 sync
 umount -l /mnt
 
