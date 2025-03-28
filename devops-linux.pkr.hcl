@@ -245,7 +245,8 @@ mkdir -p "/tmp/swtpm.0"
   -rtc base=utc,clock=host \\
   -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
 
-# -netdev socket,id=user.0,listen=:23568 -device virtio-net,netdev=user.0
+# -netdev user,id=user.0,[...]
+# -netdev socket,id=user.1,listen=:23568 -device virtio-net,netdev=user.1
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.run.sh
 tee output/devops-linux/devops-linux-x86_64.pxe.sh <<EOF

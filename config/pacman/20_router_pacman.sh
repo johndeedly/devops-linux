@@ -16,7 +16,7 @@ DHCP_ADDITIONAL_SETUP=(
 
 DHCP_RANGES=(
   "dhcp-range=172.27.0.1,172.27.255.254,255.254.0.0,12h\n"
-  "dhcp-range=::1,::ffff,constructor:lan0,ra-names,64,12h\n"
+  "dhcp-range=::1,::ffff,constructor:eth1,ra-names,64,12h\n"
 )
 
 PXESETUP=(
@@ -51,13 +51,12 @@ OriginalName=*
 NamePolicy=keep
 EOF
 
-# eth0 is bridged to macvlan device lan0
+# configure eth0
 tee /etc/systemd/network/15-eth0.network <<EOF
 [Match]
 Name=eth0
 
 [Network]
-MACVLAN=lan0
 DHCP=yes
 MulticastDNS=yes
 DNSOverTLS=opportunistic
@@ -79,20 +78,10 @@ RouteMetric=10
 RouteMetric=10
 EOF
 
-# define virtual devices
-tee /etc/systemd/network/20-lan0-bridge.netdev <<EOF
-[NetDev]
-Name=lan0
-Kind=macvlan
-
-[MACVLAN]
-Mode=private
-EOF
-
-# configure lan0
-tee /etc/systemd/network/25-lan0.network <<EOF
+# configure eth1
+tee /etc/systemd/network/15-eth1.network <<EOF
 [Match]
-Name=lan0
+Name=eth1
 
 [Network]
 Address=172.26.0.1/15
