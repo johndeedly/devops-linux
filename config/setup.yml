@@ -88,6 +88,9 @@ files:
         stage: 1
       - path: apt/20_proxmox_2_apt.sh
         stage: 2
+    proxmox-devops:
+      - path: apt/30_proxmox_3_apt.sh
+        stage: 2
     podman-image:
       - path: podman/ZZ_podman_image.sh
         stage: 2
