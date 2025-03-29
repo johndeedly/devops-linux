@@ -40,6 +40,17 @@ qm create 201 --net0 virtio,bridge=vmbr0 --name debian-mirror --ostype l26 --cor
    --ide0 local:iso/archlinux-x86_64-201-debian-mirror.iso,media=cdrom --vga virtio
 qm disk resize 201 virtio0 1024G
 
+# podman debian server
+yq -y '(.setup.distro) = "debian"' config/setup.yml | sponge config/setup.yml
+yq -y '(.setup.options) = ["podman"]' config/setup.yml | sponge config/setup.yml
+yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
+./cidata.sh --archiso
+mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-202-debian-podman.iso
+qm create 202 --net0 virtio,bridge=vmbr0 --name debian-podman --ostype l26 --cores 2 --memory 2048 --machine q35 \
+   --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,discard=on" \
+   --ide0 local:iso/archlinux-x86_64-202-debian-podman.iso,media=cdrom --vga virtio
+qm disk resize 202 virtio0 512G
+
 # exit build environment
 popd
 popd
