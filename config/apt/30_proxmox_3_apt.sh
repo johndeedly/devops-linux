@@ -24,7 +24,7 @@ yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 ./cidata.sh --archiso
 mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-200-arch-mirror.iso
-qm create 200 --net0 virtio,bridge=vmbrlan0 --name arch-mirror --ostype l26 --cores 2 --memory 2048 --machine q35 \
+qm create 200 --net0 virtio,bridge=vmbr0 --name arch-mirror --ostype l26 --cores 2 --memory 2048 --machine q35 \
    --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,discard=on" \
    --ide0 local:iso/archlinux-x86_64-200-arch-mirror.iso,media=cdrom --vga virtio
 qm disk resize 200 virtio0 1024G
@@ -35,7 +35,7 @@ yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 ./cidata.sh --archiso
 mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-201-debian-mirror.iso
-qm create 201 --net0 virtio,bridge=vmbrlan0 --name debian-mirror --ostype l26 --cores 2 --memory 2048 --machine q35 \
+qm create 201 --net0 virtio,bridge=vmbr0 --name debian-mirror --ostype l26 --cores 2 --memory 2048 --machine q35 \
    --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,discard=on" \
    --ide0 local:iso/archlinux-x86_64-201-debian-mirror.iso,media=cdrom --vga virtio
 qm disk resize 201 virtio0 1024G
