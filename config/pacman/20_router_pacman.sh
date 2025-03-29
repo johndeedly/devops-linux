@@ -16,7 +16,7 @@ DHCP_ADDITIONAL_SETUP=(
 
 DHCP_RANGES=(
   "dhcp-range=172.27.0.1,172.27.255.254,255.254.0.0,12h\n"
-  "dhcp-range=::1,::ffff,constructor:eth1,ra-names,64,12h\n"
+  "dhcp-range=::1,::ffff,constructor:br0,ra-names,64,12h\n"
 )
 
 PXESETUP=(
@@ -82,6 +82,26 @@ EOF
 tee /etc/systemd/network/15-eth1.network <<EOF
 [Match]
 Name=eth1
+
+[Link]
+RequiredForOnline=no
+
+[Network]
+Bridge=br0
+EOF
+
+# configure br0
+tee /etc/systemd/network/15-br0.netdev <<EOF
+[NetDev]
+Name=br0
+Kind=bridge
+EOF
+tee /etc/systemd/network/25-br0.network <<EOF
+[Match]
+Name=br0
+
+[Link]
+RequiredForOnline=no
 
 [Network]
 Address=172.26.0.1/15
