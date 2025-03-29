@@ -74,6 +74,9 @@ files:
     plex:
       - path: podman/40_plex_podman.sh
         stage: 2
+    jellyfin:
+      - path: podman/40_jellyfin_podman.sh
+        stage: 2
     minecraft-cobblemon:
       - path: podman/40_minecraft_cobblemon_podman.sh
         stage: 2
@@ -169,6 +172,9 @@ files:
         stage: 2
     plex:
       - path: podman/40_plex_podman.sh
+        stage: 2
+    jellyfin:
+      - path: podman/40_jellyfin_podman.sh
         stage: 2
     minecraft-cobblemon:
       - path: podman/40_minecraft_cobblemon_podman.sh
