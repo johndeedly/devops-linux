@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-# enable and start dagu
+# enable and start homeassistant
 PROJECTNAME="homeassistant"
 TMPDIR="$(mktemp -d)"
 BUILDTMP="${TMPDIR}/${PROJECTNAME}"

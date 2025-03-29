@@ -16,7 +16,7 @@ tee /etc/udev/rules.d/60-render.rules <<EOF
 KERNEL=="renderD[0-9]*", NAME="dri/%k", GROUP="render", MODE="0666"
 EOF
 
-# enable and start dagu
+# enable and start plex
 PROJECTNAME="plex"
 TMPDIR="$(mktemp -d)"
 BUILDTMP="${TMPDIR}/${PROJECTNAME}"
