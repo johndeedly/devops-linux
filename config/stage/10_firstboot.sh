@@ -152,12 +152,24 @@ elif [ -e /bin/yum ]; then
 fi
 
 # modify grub
-GRUB_GLOBAL_CMDLINE="console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1"
+# vga=792: 1024x768x24
+GRUB_GLOBAL_CMDLINE="console=tty1 vga=792 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1"
 GRUB_CFGS=( /etc/default/grub /etc/default/grub.d/* )
 for cfg in "${GRUB_CFGS[@]}"; do
-  sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="'"$GRUB_GLOBAL_CMDLINE"'"/' "$cfg" || true
+  sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/' "$cfg" || true
   sed -i 's/^GRUB_CMDLINE_LINUX=/#GRUB_CMDLINE_LINUX=/' "$cfg" || true
-  sed -i 's/^GRUB_TERMINAL=.*/GRUB_TERMINAL=console/' "$cfg" || true
+  sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "$cfg" || true
+  sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "$cfg" || true
+  sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "$cfg" || true
+  tee -a "$cfg" <<EOF
+
+# provisioned
+GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_GLOBAL_CMDLINE}"
+GRUB_CMDLINE_LINUX=""
+GRUB_TERMINAL=console
+GRUB_GFXMODE=1024x768x24,1024x768
+GRUB_GFXPAYLOAD_LINUX=keep
+EOF
 done
 if [ -e /bin/apt ]; then
   grub-mkconfig -o /boot/grub/grub.cfg
