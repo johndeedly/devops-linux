@@ -4,11 +4,18 @@ PROMPT 0
 TIMEOUT 150
 ONTIMEOUT ArchHTTP
 
-MENU TITLE Arch Linux PXE Menu
+MENU TITLE Arch/Debian Linux PXE Menu
 
 MENU CLEAR
 MENU IMMEDIATE
 
+
+LABEL DebianHTTP
+MENU LABEL Boot Debian Linux using HTTP
+LINUX http://ipaddr/debian/x86_64/vmlinuz
+INITRD http://ipaddr/debian/x86_64/initrd.img
+APPEND boot=live components fetch=http://172.26.0.1/debian/x86_64/filesystem.squashfs
+SYSAPPEND 3
 
 LABEL ArchNFS
 MENU LABEL Boot Arch Linux using NFS
