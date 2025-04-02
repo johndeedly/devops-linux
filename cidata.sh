@@ -82,7 +82,7 @@ mkdir -p build/{archiso,stage}
 
 tee build/archiso/meta-data build/stage/meta-data >/dev/null <<EOF
 EOF
-tee build/ZZ_ZZ_autoreboot.sh >/dev/null <<'EOF'
+tee build/99_autoreboot.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 # double fork trick to prevent the subprocess from exiting
@@ -106,7 +106,7 @@ write_mime_params=(
     "config/stage/i18n.yml:text/cloud-config"
     "config/stage/user-skeleton.yml:text/cloud-config"
     "config/stage/10_firstboot.sh:text/x-shellscript"
-    "config/stage/ZZ_second_stage.sh:text/x-shellscript"
+    "config/stage/90_second_stage.sh:text/x-shellscript"
     "config/setup.yml:application/x-setup-config"
 )
 # deployment scripts stage 'config'
@@ -124,7 +124,7 @@ EOF
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.config) | .path' config/setup.yml)"
 # deployment scripts stage 1
 if [ $_autoreboot -eq 1 ]; then
-    write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:text/x-shellscript" )
+    write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot.sh:text/x-shellscript" )
 fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then
@@ -135,7 +135,7 @@ while read -r line; do
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' config/setup.yml)"
 # deployment scripts stage 2
 if [ $_autoreboot -eq 1 ]; then
-    write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:application/x-per-boot" )
+    write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot.sh:application/x-per-boot" )
 fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then
@@ -162,7 +162,7 @@ if [ $_archiso -eq 1 ]; then
         "build/stage/meta-data:application/x-provision-config"
     )
     if [ $_autoreboot -eq 1 ]; then
-        write_mime_params=( "${write_mime_params[@]}" "build/ZZ_ZZ_autoreboot.sh:text/x-shellscript" )
+        write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot.sh:text/x-shellscript" )
     fi
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 

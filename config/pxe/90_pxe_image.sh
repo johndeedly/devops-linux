@@ -86,13 +86,13 @@ if [ -e /bin/apt ]; then
 elif [ -e /bin/pacman ]; then
   echo ":: create skeleton for pxe boot mkinitcpio"
   mkdir -p /etc/initcpio/{install,hooks}
-  cp /var/lib/cloud/instance/provision/pxe/ZZ_pxe_image/install/* /etc/initcpio/install/
+  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/install/* /etc/initcpio/install/
   chmod a+x /etc/initcpio/install/*
-  cp /var/lib/cloud/instance/provision/pxe/ZZ_pxe_image/hooks/* /etc/initcpio/hooks/
+  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/hooks/* /etc/initcpio/hooks/
   chmod a+x /etc/initcpio/hooks/*
   mkdir -p /etc/mkinitcpio{,.conf}.d
-  cp /var/lib/cloud/instance/provision/pxe/ZZ_pxe_image/pxe.conf /etc/
-  cp /var/lib/cloud/instance/provision/pxe/ZZ_pxe_image/pxe.preset /etc/mkinitcpio.d/
+  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/pxe.conf /etc/
+  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/pxe.preset /etc/mkinitcpio.d/
 
   echo ":: create pxe boot initcpio"
   mkdir -p /var/tmp/mkinitcpio
