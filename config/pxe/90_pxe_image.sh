@@ -16,9 +16,6 @@ sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=power
 sed -i 's/^#\?AllowSuspend=.*/AllowSuspend=no/' /etc/systemd/sleep.conf
 systemctl mask suspend.target
 
-# disable cloud init
-touch /etc/cloud/cloud-init.disabled
-
 # create a squashfs snapshot based on rootfs
 if [ -e /bin/apt ]; then
   if grep -q Debian /proc/version; then
@@ -35,9 +32,6 @@ elif [ -e /bin/pacman ]; then
   mksquashfs / /srv/pxe/arch/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
     -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*"
 fi
-
-# reenable cloud init
-rm /etc/cloud/cloud-init.disabled
 
 # reenable sleep
 sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
