@@ -58,6 +58,19 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 fi
 
+# full system upgrade
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -Syu --needed --noconfirm
+elif [ -e /bin/yum ]; then
+  LC_ALL=C yes | LC_ALL=C dnf install -y epel-release
+  LC_ALL=C yes | LC_ALL=C dnf config-manager --enable crb
+  LC_ALL=C yes | LC_ALL=C dnf upgrade -y
+  LC_ALL=C yes | LC_ALL=C yum check-update
+  LC_ALL=C yes | LC_ALL=C yum update -y
+fi
+
 # Configure keyboard and console
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install locales keyboard-configuration console-setup console-data tzdata
@@ -136,10 +149,10 @@ if [ -e /bin/apt ]; then
 elif [ -e /bin/pacman ]; then
   case $VIRT_ENV in
     qemu | kvm)
-      LC_ALL=C yes | LC_ALL=C pacman -Syu --noconfirm qemu-guest-agent
+      LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm qemu-guest-agent
       ;;
     oracle)
-      LC_ALL=C yes | LC_ALL=C pacman -Syu --noconfirm virtualbox-guest-utils
+      LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm virtualbox-guest-utils
       systemctl enable vboxservice.service
       ;;
   esac
@@ -194,10 +207,8 @@ if [ -f /etc/mkinitcpio.conf ]; then
   sed -i 's/^MODULES=.*/MODULES=(usbhid xhci_hcd vfat)/g' /etc/mkinitcpio.conf
 fi
 
-# system upgrade
-if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
-elif [ -e /bin/pacman ]; then
+# configure chaotic keyring
+if [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm jq yq
   # main repo key from website
   LC_ALL=C yes | LC_ALL=C pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keys.gnupg.net
@@ -218,13 +229,6 @@ Server = https://cf-builds.garudalinux.org/repos/$repo/$arch
 EOF
   fi
   LC_ALL=C yes | LC_ALL=C pacman -Syu --noconfirm chaotic-keyring
-elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C dnf install -y epel-release
-  LC_ALL=C yes | LC_ALL=C dnf config-manager --enable crb
-  LC_ALL=C yes | LC_ALL=C dnf upgrade -y
-  LC_ALL=C yes | LC_ALL=C yum check-update
-  LC_ALL=C yes | LC_ALL=C yum update -y
-  LC_ALL=C yes | LC_ALL=C yum install -y systemd-container
 fi
 
 download_yq() {
@@ -245,7 +249,7 @@ elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh firewalld
   systemctl enable sshd firewalld
 elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C yum install -y polkit curl wget nano jq openssh firewalld
+  LC_ALL=C yes | LC_ALL=C yum install -y systemd-container polkit curl wget nano jq openssh firewalld
   systemctl enable sshd firewalld
   download_yq
 fi
