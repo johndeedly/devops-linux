@@ -40,9 +40,10 @@ _iso=1
 _archiso=0
 _ram=0
 _autoreboot=1
+_proxmox=0
 parse_parameters() {
-    local _longopts="iso,archiso,isoinram,no-autoreboot"
-    local _opts="iarn"
+    local _longopts="iso,archiso,isoinram,no-autoreboot,proxmox"
+    local _opts="iarnp:"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -64,6 +65,10 @@ parse_parameters() {
                 ;;
             -n|--no-autoreboot)
                 _autoreboot=0
+                shift
+                ;;
+            -p|--proxmox)
+                _proxmox=1
                 shift
                 ;;
             --)
@@ -146,7 +151,7 @@ while read -r line; do
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' config/setup.yml)"
 write-mime-multipart --output=build/stage/user-data "${write_mime_params[@]}"
 
-if [ $_archiso -eq 1 ]; then
+if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
     # prepare user-data for archiso, packed with stage
     write_mime_params=(
         "config/part-handler-setup.py:text/part-handler"
@@ -190,6 +195,30 @@ if [ $_archiso -eq 1 ]; then
             -map build/archiso/ / \
             -map database/ / \
             -boot_image any replay
+    
+    if [ $_proxmox -eq 1 ]; then
+        echo ":: Preparing proxmox"
+        _proxmox_vm=0
+        while [ $_proxmox_vm -lt 100 ] || [ $_proxmox_vm -gt 999999999 ]; do
+            read -p "Enter proxmox vm id [100..999999999]: " _proxmox_vm
+        done
+        read -p "Enter proxmox vm name: " _proxmox_name
+        _proxmox_name="${_proxmox_name// /-}"
+        read -e -p "Enter proxmox vm core count [2]: " -i "2" _proxmox_cores
+        read -e -p "Enter proxmox vm memory [2048]: " -i "2048" _proxmox_mem
+        read -e -p "Enter proxmox vm bridge [vmbr0]: " -i "vmbr0" _proxmox_bridge
+        read -e -p "Enter proxmox vm size [512G]: " -i "512G" _proxmox_size
+        mv archlinux-x86_64-cidata.iso "/var/lib/vz/template/iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
+        if ! qm create "${_proxmox_vm}" --net0 "virtio,bridge=${_proxmox_bridge}" --name "${_proxmox_name}" \
+          --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35 --bios ovmf \
+          --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,discard=on,iothread=1" --agent enabled=1 \
+          --efidisk0 local:0,efitype=4m,format=raw,pre-enrolled-keys=0 --tpmstate0 local:0,version=v2.0 \
+          --ide0 "local:iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio; then
+            rm "/var/lib/vz/template/iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
+        else
+            qm disk resize "${_proxmox_vm}" virtio0 "${_proxmox_size}"
+        fi
+    fi
 elif [ $_iso -eq 1 ]; then
     echo "Create cidata iso"
     CIDATAISO="cidata.iso"
