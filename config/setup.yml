@@ -83,6 +83,9 @@ files:
     minecraft-create:
       - path: podman/40_minecraft_create_podman.sh
         stage: 2
+    cicd:
+      - path: podman/60_cicd_podman.sh
+        stage: 2
     gitlab:
       - path: podman/40_gitlab_podman.sh
         stage: 2
@@ -181,6 +184,9 @@ files:
         stage: 2
     minecraft-create:
       - path: podman/40_minecraft_create_podman.sh
+        stage: 2
+    cicd:
+      - path: podman/60_cicd_podman.sh
         stage: 2
     gitlab:
       - path: podman/40_gitlab_podman.sh
