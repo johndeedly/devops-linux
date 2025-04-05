@@ -166,7 +166,7 @@ fi
 
 # modify grub
 # vga=792: 1024x768x24
-GRUB_GLOBAL_CMDLINE="console=tty1 vga=792 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1"
+GRUB_GLOBAL_CMDLINE="console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1"
 GRUB_CFGS=( /etc/default/grub /etc/default/grub.d/* )
 for cfg in "${GRUB_CFGS[@]}"; do
   sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/' "$cfg" || true
@@ -174,7 +174,8 @@ for cfg in "${GRUB_CFGS[@]}"; do
   sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "$cfg" || true
   sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "$cfg" || true
   sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "$cfg" || true
-  tee -a "$cfg" <<EOF
+done
+tee -a /etc/default/grub <<EOF
 
 # provisioned
 GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_GLOBAL_CMDLINE}"
@@ -183,7 +184,6 @@ GRUB_TERMINAL=console
 GRUB_GFXMODE=1024x768x24,1024x768
 GRUB_GFXPAYLOAD_LINUX=keep
 EOF
-done
 if [ -e /bin/apt ]; then
   grub-mkconfig -o /boot/grub/grub.cfg
   if [ -d /boot/efi/EFI/debian ]; then

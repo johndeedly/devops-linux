@@ -230,9 +230,9 @@ mkdir -p "/tmp/swtpm.0"
 /usr/bin/qemu-system-x86_64 \\
   -name devops-linux-x86_64 \\
   -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1 \\
+  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
   -vga none \\
-  -display gtk,gl=on,show-cursor=on \\
+  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
   -cpu host \\
   -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
   -device tpm-tis,tpmdev=tpm0 -tpmdev emulator,id=tpm0,chardev=vtpm -chardev socket,id=vtpm,path=/tmp/swtpm.0/vtpm.sock \\
