@@ -255,9 +255,9 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
 /usr/bin/qemu-system-x86_64 \\
   -name devops-linux-pxe-x86_64 \\
   -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1 \\
+  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
   -vga none \\
-  -display gtk,gl=on,show-cursor=on \\
+  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
   -cpu host \\
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev socket,id=user.0,connect=:23568 -device virtio-net,netdev=user.0 \\
