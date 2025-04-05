@@ -256,9 +256,13 @@ fi
 
 # enable cockpit
 if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install cockpit cockpit-storaged cockpit-packagekit \
-    libblockdev-btrfs2 libblockdev-crypto2 libblockdev-dm2 libblockdev-fs2 libblockdev-loop2 libblockdev-lvm2 libblockdev-mdraid2 \
-    libblockdev-mpath2 libblockdev-nvdimm2 libblockdev-part2 libblockdev-swap2
+  if grep -q Debian /proc/version; then
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install cockpit cockpit-storaged cockpit-packagekit \
+      libblockdev-btrfs2 libblockdev-crypto2 libblockdev-dm2 libblockdev-fs2 libblockdev-loop2 libblockdev-lvm2 libblockdev-mdraid2 \
+      libblockdev-mpath2 libblockdev-nvdimm2 libblockdev-part2 libblockdev-swap2
+  elif grep -q Ubuntu /proc/version; then
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install cockpit cockpit-storaged cockpit-packagekit
+  fi
   systemctl enable cockpit.socket
   firewall-offline-cmd --zone=public --add-port=9090/tcp
 elif [ -e /bin/pacman ]; then
