@@ -69,10 +69,10 @@ if [ -e /bin/apt ]; then
     echo ":: create pxe boot vmlinuz and initrd.img"
     mkdir -p /var/tmp/build
     pushd /var/tmp/build
-      lb config -d bookworm --archive-areas "main non-free-firmware" --debootstrap-options "--variant=minbase"
+      lb config --distribution bookworm --archive-areas "main non-free-firmware" --firmware-chroot true --debootstrap-options "--variant=minbase"
       lb build
-      VMLINUZ=$(find binary/live -name "vmlinuz*" | sort | head -n 1)
-      INITRD=$(find binary/live -name "initrd*" | sort | head -n 1)
+      VMLINUZ=$(find binary -name "vmlinuz*" | sort | head -n 1)
+      INITRD=$(find binary -name "initrd*" | sort | head -n 1)
       cp "$VMLINUZ" /srv/pxe/debian/x86_64/vmlinuz
       cp "$INITRD" /srv/pxe/debian/x86_64/initrd.img
     popd
