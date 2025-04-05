@@ -69,7 +69,10 @@ if [ -e /bin/apt ]; then
     echo ":: create pxe boot vmlinuz and initrd.img"
     mkdir -p /var/tmp/build
     pushd /var/tmp/build
-      lb config --distribution bookworm --archive-areas "main non-free-firmware" --firmware-chroot true --debootstrap-options "--variant=minbase"
+      lb config --distribution bookworm --archive-areas "main non-free-firmware" --firmware-chroot true --debootstrap-options "--include=eatmydata --variant=minbase"
+      tee -a config/environment.chroot <<EOF
+LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libeatmydata.so
+EOF
       lb build
       VMLINUZ=$(find binary -name "vmlinuz*" | sort | head -n 1)
       INITRD=$(find binary -name "initrd*" | sort | head -n 1)
