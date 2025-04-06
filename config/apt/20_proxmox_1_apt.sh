@@ -93,6 +93,12 @@ iface vmbr$cnt inet $(if [ $cnt -eq 0 ]; then echo "dhcp"; else echo "manual"; f
 EOF
 done
 
+# enable overcommit of vm memory
+sysctl -w vm.overcommit_memory=1
+tee /etc/sysctl.d/90-overcommit-memory.conf <<EOF
+vm.overcommit_memory=1
+EOF
+
 # do not wait for online interfaces
 systemctl mask systemd-networkd-wait-online
 systemctl mask NetworkManager-wait-online
