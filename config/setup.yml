@@ -221,7 +221,6 @@ setup:
   distro: archlinux
   options:
     - base
-  env_vars: []
   target: auto
   archiso_mirror: false
   pkg_mirror: false

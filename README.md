@@ -63,9 +63,6 @@ setup:
   ## which files to install via setup name and distro
   options:
     - [...]
-  ## legacy entry to define environment variables. I'm not sure whether it should be marked deprecated or not.
-  env_vars:
-    - [...]
   ## the path to the target device to write the cloud image onto. "auto" tries to find a hard drive on it's own, but errors out when nothing is found.
   target: auto
   ## (local) mirror link to the base of archive.archlinux.org
@@ -81,7 +78,7 @@ At this point the following options can be selected for installation:
 - **base** (_all_): Some programs installed for ease of use, performing most of the tasks inside the terminal. The graphics drivers for the most common (virtual) GPUs are placed here, too. They are not needed for the essential basics.
 - **mirror** (_all_): Local mirrors for all supported distributions, downloading updates every couple of days for all the packages while keeping the last two or more versions accessible. Instead of using the official default route, we iterate over all available packages, retrieve the download urls and instead of using apt or pacman for the job we download all packages through wget, allowing to timestamp every file and force "304 Not Modified" messages. This method is so much faster and more efficient than the throttled and overrun rsync connections and allows for local repositories that are not officially supported by the vendor.
 - **cinnamon** (_Arch_): Install the fully configured [cinnamon](https://github.com/linuxmint/cinnamon) desktop, including graphical tools like office programs, video players, etc.
-- **kde** (_Arch_): Install the fully configured [kde plasma](https://kde.org/de/plasma-desktop/) desktop, including some default kde applications, excluding unneeded utilities like "plasma-welcome", "kongress", "kteatime" and such.
+- **kde** (_Arch, Debian, Ubuntu_): Install the fully configured [kde plasma](https://kde.org/de/plasma-desktop/) desktop, including some default kde applications, excluding unneeded utilities like "plasma-welcome", "kongress", "kteatime" and such.
 - **podman** (_Arch, Debian, Ubuntu_): A docker replacement, that is fully compatible with all commands and hubs, and the new modern way to handle containers. In addition, [portainer](https://www.portainer.io/) is installed for easy container management via browser.
 - **postgres** (_Arch, Debian, Ubuntu_): Install [postgres](https://www.postgresql.org/) as a container.
 - **cronicle** (_Arch, Debian, Ubuntu_): Install [cronicle](https://github.com/jhuckaby/Cronicle) as a container.
@@ -92,7 +89,7 @@ At this point the following options can be selected for installation:
 - **router** (_Arch_): A fully functional virtual router with DHCP4, DHCP6, DNS, NTP, PXE boot and ACME certificate authority. Connect the router through ```-netdev socket,listen=...``` with subsequent virtual machines ```-netdev socket,connect=...```. To arm PXE boot with the prebuild initramfs, kernel and image, the ```📁output/📁artifacts``` folder in the default configuration can be mounted via ```mount -t 9p artifacts.0 /mnt``` and the contents then copied to ```cp /mnt/pxe/arch/x86_64/* /srv/pxe/arch/x86_64/```.
 - **proxmox** (_Debian_): Install [proxmox](https://www.proxmox.com/en/) to configure and spawn virtual machines and LXC container via gui.
 - **podman-image** (_Arch, Debian_): As the final step, take everything that was configured before and generate a fully functional OCI container, that can be uploaded to any docker or podman instance.
-- **pxe-image** (_Arch, Debian_): As the final step, take everything that was configured before and generate a fully functional pxe boot image, that can e.g. be used in conjunction with the router option above to netboot any device on the LAN. The Arch PXE image is able to be booted via CIFS, HTTP, ISCSI, NBD, NFS, NVMEOF and SCP (never saw that one before, right? 😉).
+- **pxe-image** (_Arch, Debian, Ubuntu_): As the final step, take everything that was configured before and generate a fully functional pxe boot image, that can e.g. be used in conjunction with the router option above to netboot any device on the LAN. The Arch PXE image is able to be booted via CIFS, HTTP, ISCSI, NBD, NFS, NVMEOF and SCP, the Debian and Ubuntu images only via HTTP (more to come).
 
 ## Common Setups (by me)
 
