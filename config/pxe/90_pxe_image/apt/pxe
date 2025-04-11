@@ -1,0 +1,268 @@
+#!/bin/sh -e
+
+export PATH=/usr/bin:/usr/sbin:/bin:/sbin
+
+. /scripts/functions
+
+init_network() {
+    [ -z "${arch}" ] && arch="$(uname -m)"
+    [ -z "${copytoram}" ] && copytoram="n"
+    [ -z "${copytoram_size}" ] && copytoram_size="75%"
+    [ -z "${copytoram_mnt}" ] && copytoram_mnt="/run/pxe/copytoram"
+    [ -z "${boot_mnt}" ] && boot_mnt="/run/pxe/bootmnt"
+    [ -z "${root_mnt}" ] && root_mnt="/run/pxe/rootmnt"
+    [ -z "${bootif_dev}" ] && bootif_dev=""
+    [ -z "${bootif_mac}" ] && bootif_mac=""
+
+    local i net_mac
+    # defined by ipconfig in /tmp/net-*.conf
+    local DEVICE IPV4ADDR IPV4BROADCAST IPV4NETMASK IPV4GATEWAY IPV4DNS0 IPV4DNS1
+    local HOSTNAME DNSDOMAIN NISDOMAIN ROOTSERVER ROOTPATH filename
+    
+    # wait for network devices
+    echo ":: Wait for udev"
+    udevadm trigger
+    udevadm settle
+
+    # configure interface relevant to pxe boot
+    echo ":: Received config ip='${ip}', BOOTIF='${BOOTIF}'"
+    if [ -n "${ip}" ]; then
+        if [ -n "${BOOTIF}" ]; then
+            temp_mac="${BOOTIF#*-}"
+            bootif_mac=""
+            IFS='-'
+            for x in $temp_mac; do
+                if [ -z "$bootif_mac" ]; then
+                    bootif_mac="$x"
+                else
+                    bootif_mac="$bootif_mac:$x"
+                fi
+            done
+            unset IFS
+            for i in /sys/class/net/*; do
+                if [ -f "$i/address" ]; then
+                    net_mac=$(cat "$i/address")
+                    if [ "${bootif_mac}" = "${net_mac}" ]; then
+                        bootif_dev=${i##*/}
+                        break
+                    fi
+                fi
+            done
+            if [ "${ip}" = "dhcp" ]; then
+                ip=":::::${bootif_dev}:dhcp"
+            else
+                ip="${ip}::${bootif_dev}"
+            fi
+        fi
+
+        if ipconfig -t 60 "ip=${ip}"; then
+            echo ":: Configured network for '$bootif_dev'"
+        else
+            panic "!! ERROR: no network configured to boot pxe with"
+        fi
+
+        for conf in /run/net-*.conf; do
+            [ -f "$conf" ] && . "$conf"
+        done
+
+        export pxeserver="${ROOTSERVER}"
+        echo ":: Configured pxe server '${pxeserver}'"
+    fi
+}
+
+run_hook() {
+    local boot_img="${boot_mnt}/${dist}/${arch}/pxeboot.img"
+    local copytoram_img="${copytoram_mnt}/pxeboot.img"
+    local copytoram_work="${copytoram_mnt}/workdir"
+    local copytoram_upper="${copytoram_mnt}/upperdir"
+
+    # 1st: check everything
+    if ! mountpoint -q "${boot_mnt}"; then
+        panic "!! ERROR: no pxe mount point '${boot_mnt}' found"
+    fi
+    if [ ! -e "${boot_img}" ]; then
+        panic "!! ERROR: no root filesystem '${boot_img}' found"
+    fi
+    
+    # 2nd: when copy to RAM is used, prepare everything and copy the image
+    if [ "${copytoram}" = "y" ]; then
+        if ! mountpoint -q "${copytoram_mnt}"; then
+            echo ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
+            mkdir -p "${copytoram_mnt}"
+            mount -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram "${copytoram_mnt}"
+        fi
+
+        echo ":: Copy image to RAM"
+        if command -v dd >/dev/null 2>&1; then
+            echo ""
+            (dd if="${boot_img}" of="${copytoram_img}" bs=1M iflag=fullblock status=progress)
+            local rc=$?
+        elif command -v pv >/dev/null 2>&1; then
+            echo ""
+            (pv "${boot_img}" >"${copytoram_img}")
+            local rc=$?
+        else
+            (cp -- "${boot_img}" "${copytoram_img}")
+            local rc=$?
+        fi
+        echo ":: Copy to '${boot_img}' finished"
+
+        if [ "$rc" != 0 ]; then
+            panic "!! ERROR: copy '${boot_img}' to '${copytoram_img}'"
+        fi
+
+        boot_img="${copytoram_img}"
+    fi
+
+    # 3rd: mount the boot squash image to the root mount point
+    echo ":: Mount '${boot_img}' to '${root_mnt}'"
+    mkdir -p "${root_mnt}"
+    if ! mount -t squashfs -o loop "${boot_img}" "${root_mnt}"; then
+        panic "!! ERROR: failed to mount '${boot_img}'"
+    fi
+
+    # 4th: mount the overlay filesystem on top of the loop device to allow write access
+    #      (when no copytoram was set, a tmpfs is mounted regardless)
+    if ! mountpoint -q "${copytoram_mnt}"; then
+        echo ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
+        mkdir -p "${copytoram_mnt}"
+        mount -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram "${copytoram_mnt}"
+    fi
+    echo ":: Mount new root filesystem '${newroot}'"
+    mkdir -p "${copytoram_work}" "${copytoram_upper}" "${newroot}"
+    if ! mount -t overlay -o "lowerdir=${root_mnt},upperdir=${copytoram_upper},workdir=${copytoram_work}" rootfs "${newroot}"; then
+        panic "!! ERROR: failed to mount '${newroot}'"
+    fi
+
+    # 5th: when copy to RAM is used, the original boot mount is no longer needed
+    if [ "${copytoram}" = "y" ]; then
+        umount -d "${boot_mnt}"
+        rmdir "${boot_mnt}"
+    fi
+
+    # 6th: when no copy to RAM is used, the booting network card has to keep it's settings
+    if [ "${copytoram}" = "n" ]; then
+        if [ -z "${bootif_dev}" ]; then
+            panic "!! ERROR: when copy to RAM is not used, a boot network device needs to be present"
+        fi
+        mkdir -p "${newroot}/etc/systemd/network"
+        echo ":: Network config for device '${bootif_dev}' ('${bootif_mac}')"
+        tee "${newroot}/etc/systemd/network/10-${bootif_dev}.network" >/dev/null <<EOF
+[Match]
+MACAddress=${bootif_mac}
+
+[Network]
+KeepConfiguration=yes
+DHCP=yes
+MulticastDNS=yes
+
+[DHCPv4]
+RouteMetric=10
+
+[IPv6AcceptRA]
+RouteMetric=10
+
+[DHCPPrefixDelegation]
+RouteMetric=10
+
+[IPv6Prefix]
+RouteMetric=10
+EOF
+        echo ":: Link config for device '${bootif_dev}' ('${bootif_mac}')"
+        tee "${newroot}/etc/systemd/network/10-${bootif_dev}.link" >/dev/null <<EOF
+[Match]
+MACAddress=${bootif_mac}
+
+[Link]
+NamePolicy=keep
+EOF
+        mkdir -p "${newroot}/etc/NetworkManager/conf.d"
+        echo ":: NetworkManager config for device '${bootif_dev}' ('${bootif_mac}')"
+        tee "${newroot}/etc/NetworkManager/conf.d/90-${bootif_dev}.conf" >/dev/null <<EOF
+[main]
+no-auto-default+=${bootif_mac}
+
+[device-${bootif_dev}-unmanage]
+match-device=mac:${bootif_mac}
+managed=0
+EOF
+        mkdir -p "${newroot}/etc/netplan"
+        echo ":: Netplan config for device '${bootif_dev}' ('${bootif_mac}')"
+        tee "${newroot}/etc/netplan/10-${bootif_dev}-unmanage.yaml" >/dev/null <<EOF
+network:
+  version: 2
+  ethernets:
+    ${bootif_dev}:
+      match:
+        macaddress: ${bootif_mac}
+      renderer: networkd
+      critical: true
+      dhcp4: true
+      dhcp4-overrides:
+        route-metric: 10
+      dhcp6: true
+      dhcp6-overrides:
+        route-metric: 10
+EOF
+        mkdir -p "${newroot}/etc/systemd/network/10-netplan-${bootif_dev}.network.d"
+        echo ":: Netplan drop-in config for device '${bootif_dev}' ('${bootif_mac}')"
+        tee "${newroot}/etc/systemd/network/10-netplan-${bootif_dev}.network.d/override.conf" >/dev/null <<EOF
+[Network]
+KeepConfiguration=yes
+MulticastDNS=yes
+EOF
+    fi
+
+    # 7th: generate a random hostname for the client
+    tee "${newroot}/etc/hostname" >/dev/null <<EOF
+linux-$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
+EOF
+    echo ":: Using the random hostname $(<"${newroot}/etc/hostname")"
+
+    # 8th: move the newroot mount to the final system mount position
+    mount -o move "${newroot}" "${rootmnt}" || mount -o bind "${newroot}" "${rootmnt}" || \
+        panic "!! Could not move mount '${newroot}' to '${rootmnt}'"
+}
+
+mountroot() {
+    newroot="/new_root"
+    
+    # parse kernel cmdline args
+    for x in $(cat /proc/cmdline); do
+        case $x in
+            dist=*)
+                export dist=${x#dist=}
+                ;;
+            arch=*)
+                export arch=${x#arch=}
+                ;;
+            copytoram=*)
+                export copytoram=${x#copytoram=}
+                ;;
+            copytoram_size=*)
+                export copytoram_size=${x#copytoram_size=}
+                ;;
+            copytoram_mnt=*)
+                export copytoram_mnt=${x#copytoram_mnt=}
+                ;;
+            boot_mnt=*)
+                export boot_mnt=${x#boot_mnt=}
+                ;;
+            root_mnt=*)
+                export root_mnt=${x#root_mnt=}
+                ;;
+            bootif_dev=*)
+                export bootif_dev=${x#bootif_dev=}
+                ;;
+            bootif_mac=*)
+                export bootif_mac=${x#bootif_mac=}
+                ;;
+        esac
+    done
+    
+    init_network
+    
+    pxe_http_hook
+    
+    run_hook
+}

@@ -1,0 +1,47 @@
+#!/bin/sh -e
+
+PREREQS=""
+
+# Output pre-requisites
+prereqs()
+{
+    echo "$PREREQS"
+}
+
+case "$1" in
+    prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+# overlay module
+copy_exec /sbin/losetup /sbin
+copy_exec /bin/mountpoint /bin
+manual_add_modules overlay
+
+# cifs boot
+if [ -x /sbin/mount.cifs ]; then
+    copy_exec /sbin/mount.cifs /sbin
+    for x in cifs md4 des_generic; do
+        manual_add_modules "$x"
+    done
+fi
+
+# squashfs
+manual_add_modules squashfs
+manual_add_modules loop
+
+# filesystems
+manual_add_modules vfat
+manual_add_modules nls_cp437
+manual_add_modules nls_utf8
+manual_add_modules nls_iso8859-1
+manual_add_modules ext3
+manual_add_modules ext4
+manual_add_modules btrfs
+
+# network modules
+auto_add_modules net

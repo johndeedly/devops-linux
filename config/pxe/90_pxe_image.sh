@@ -18,19 +18,24 @@ systemctl mask suspend.target
 
 # create a squashfs snapshot based on rootfs
 if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
   if grep -q Debian /proc/version; then
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
     mkdir -p /srv/pxe/debian/x86_64
     sync
-    mksquashfs / /srv/pxe/debian/x86_64/filesystem.squashfs -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-      -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/apt/*"
+    mksquashfs / /srv/pxe/debian/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
+      -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*"
+  elif grep -q Ubuntu /proc/version; then
+    mkdir -p /srv/pxe/ubuntu/x86_64
+    sync
+    mksquashfs / /srv/pxe/ubuntu/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
+      -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*"
   fi
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
   mkdir -p /srv/pxe/arch/x86_64
   sync
   mksquashfs / /srv/pxe/arch/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-    -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*"
+    -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/lib/cloud/*"
 fi
 
 # reenable sleep
@@ -48,9 +53,8 @@ systemctl unmask systemd-hostnamed.socket systemd-hostnamed.service
 systemctl unmask systemd-network-generator
 
 if [ -e /bin/apt ]; then
-  if grep -q Debian /proc/version; then
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install make git sudo live-build
-  fi
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install make git coreutils busybox
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y reinstall linux-image-$(uname -r)
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed sshpass mkinitcpio-nfs-utils curl ca-certificates-utils cifs-utils \
     nfs-utils nbd open-iscsi nvme-cli wireguard-tools
@@ -65,20 +69,32 @@ ACTION=="add", SUBSYSTEM=="scsi" , ATTR{type}=="0|7|14", RUN+="/bin/sh -c 'echo 
 EOF
 
 if [ -e /bin/apt ]; then
-  if grep -q Debian /proc/version; then
-    echo ":: create pxe boot vmlinuz and initrd.img"
-    mkdir -p /var/tmp/build
-    pushd /var/tmp/build
-      lb config --distribution bookworm --archive-areas "main non-free-firmware" --firmware-chroot true --debootstrap-options "--include=eatmydata --variant=minbase"
-      tee -a config/environment.chroot <<EOF
-LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libeatmydata.so
+  echo ":: create pxe boot vmlinuz and initrd.img"
+  tee /etc/initramfs-tools/hooks/pxe <<EOF
+$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/hook)
 EOF
-      lb build
-      VMLINUZ=$(find binary -name "vmlinuz*" | sort | head -n 1)
-      INITRD=$(find binary -name "initrd*" | sort | head -n 1)
-      cp "$VMLINUZ" /srv/pxe/debian/x86_64/vmlinuz
-      cp "$INITRD" /srv/pxe/debian/x86_64/initrd.img
-    popd
+  chmod +x /etc/initramfs-tools/hooks/pxe
+  tee -a /etc/initramfs-tools/modules <<EOF
+$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/modules)
+EOF
+  tee -a /etc/initramfs-tools/scripts/pxe <<EOF
+$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe)
+$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-http)
+EOF
+  chmod +x /etc/initramfs-tools/scripts/pxe
+  update-initramfs -v -c -k $(uname -r)
+  VMLINUZ=$(find /boot -name "vmlinuz*$(uname -r)*" | sort | head -n 1)
+  INITRD=$(find /boot -name "initrd*$(uname -r)*" | sort | head -n 1)
+  if grep -q Debian /proc/version; then
+    echo ":: copy $VMLINUZ"
+    cp "$VMLINUZ" /srv/pxe/debian/x86_64/vmlinuz
+    echo ":: copy $INITRD"
+    cp "$INITRD" /srv/pxe/debian/x86_64/initrd.img
+  elif grep -q Ubuntu /proc/version; then
+    echo ":: copy $VMLINUZ"
+    cp "$VMLINUZ" /srv/pxe/ubuntu/x86_64/vmlinuz
+    echo ":: copy $INITRD"
+    cp "$INITRD" /srv/pxe/ubuntu/x86_64/initrd.img
   fi
 elif [ -e /bin/pacman ]; then
   echo ":: create skeleton for pxe boot mkinitcpio"

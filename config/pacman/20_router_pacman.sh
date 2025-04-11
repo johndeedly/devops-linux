@@ -139,7 +139,7 @@ ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi32/pxelinux.cfg/default
 ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi64/pxelinux.cfg/default
 
 # configure http
-mkdir -p /srv/pxe/arch/x86_64
+mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
 mkdir -p /etc/systemd/system/darkhttpd.service.d
 tee /etc/systemd/system/darkhttpd.service.d/override.conf <<EOF
 [Service]

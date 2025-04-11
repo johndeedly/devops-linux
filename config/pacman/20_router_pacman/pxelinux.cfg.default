@@ -14,7 +14,14 @@ LABEL DebianHTTP
 MENU LABEL Boot Debian Linux using HTTP
 LINUX http://ipaddr/debian/x86_64/vmlinuz
 INITRD http://ipaddr/debian/x86_64/initrd.img
-APPEND boot=live components fetch=http://172.26.0.1/debian/x86_64/filesystem.squashfs
+APPEND boot=pxe dist=debian pxe_http_srv=http://${pxeserver}/ cow_spacesize=75%
+SYSAPPEND 3
+
+LABEL UbuntuHTTP
+MENU LABEL Boot Ubuntu Linux using HTTP
+LINUX http://ipaddr/ubuntu/x86_64/vmlinuz
+INITRD http://ipaddr/ubuntu/x86_64/initrd.img
+APPEND boot=pxe dist=ubuntu pxe_http_srv=http://${pxeserver}/ cow_spacesize=75%
 SYSAPPEND 3
 
 LABEL ArchNFS

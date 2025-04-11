@@ -103,45 +103,13 @@ files:
     pxe-image:
       - path: pxe/90_pxe_image.sh
         stage: 2
-      - path: pxe/90_pxe_image/hooks/pxe
+      - path: pxe/90_pxe_image/apt/hook
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_cifs
+      - path: pxe/90_pxe_image/apt/modules
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_http
+      - path: pxe/90_pxe_image/apt/pxe
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_iscsi
-        config: true
-      - path: pxe/90_pxe_image/hooks/pxe_nbd
-        config: true
-      - path: pxe/90_pxe_image/hooks/pxe_nfs
-        config: true
-      - path: pxe/90_pxe_image/hooks/pxe_nvmeof
-        config: true
-      - path: pxe/90_pxe_image/hooks/pxe_scp
-        config: true
-      - path: pxe/90_pxe_image/hooks/pxe_wg
-        config: true
-      - path: pxe/90_pxe_image/install/pxe
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_cifs
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_http
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_iscsi
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_nbd
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_nfs
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_nvmeof
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_scp
-        config: true
-      - path: pxe/90_pxe_image/install/pxe_wg
-        config: true
-      - path: pxe/90_pxe_image/pxe.conf
-        config: true
-      - path: pxe/90_pxe_image/pxe.preset
+      - path: pxe/90_pxe_image/apt/pxe-http
         config: true
   pacman:
     base:
