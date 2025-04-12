@@ -81,10 +81,14 @@ At this point the following options can be selected for installation:
 - **kde** (_Arch, Debian, Ubuntu_): Install the fully configured [kde plasma](https://kde.org/de/plasma-desktop/) desktop, including some default kde applications, excluding unneeded utilities like "plasma-welcome", "kongress", "kteatime" and such.
 - **podman** (_Arch, Debian, Ubuntu_): A docker replacement, that is fully compatible with all commands and hubs, and the new modern way to handle containers. In addition, [portainer](https://www.portainer.io/) is installed for easy container management via browser.
 - **postgres** (_Arch, Debian, Ubuntu_): Install [postgres](https://www.postgresql.org/) as a container.
+- **homeassistant** (_Arch, Debian, Ubuntu_): Install [homeassistant](https://www.home-assistant.io/) as a container.
 - **cronicle** (_Arch, Debian, Ubuntu_): Install [cronicle](https://github.com/jhuckaby/Cronicle) as a container.
 - **dagu** (_Arch, Debian, Ubuntu_): Install [dagu](https://github.com/dagu-org/dagu) as a container.
 - **plex** (_Arch, Debian, Ubuntu_): Install [plex media server](https://www.plex.tv/) as a container including shared gpu passthrough and configuration of the host.
-- **minecraft** (_Arch, Debian, Ubuntu_): Install [minecraft](https://www.minecraft.net/de-de) as a container.
+- **jellyfin** (_Arch, Debian, Ubuntu_): Install [jellyfin](https://jellyfin.org/) as a container including shared gpu passthrough and configuration of the host.
+- **minecraft-cobblemon** (_Arch, Debian, Ubuntu_): Install [minecraft](https://www.minecraft.net/de-de) as a container with preconfigured cobblemon mod.
+- **minecraft-create** (_Arch, Debian, Ubuntu_): Install [minecraft](https://www.minecraft.net/de-de) as a container with preconfigured create mod.
+- **cicd** (_Arch, Debian, Ubuntu_): Create some preconfigured ISOs to download and install DevOps-Linux with.
 - **gitlab** (_Arch, Debian, Ubuntu_): Install [gitlab](https://about.gitlab.com/) as a container.
 - **router** (_Arch_): A fully functional virtual router with DHCP4, DHCP6, DNS, NTP, PXE boot and ACME certificate authority. Connect the router through ```-netdev socket,listen=...``` with subsequent virtual machines ```-netdev socket,connect=...```. To arm PXE boot with the prebuild initramfs, kernel and image, the ```📁output/📁artifacts``` folder in the default configuration can be mounted via ```mount -t 9p artifacts.0 /mnt``` and the contents then copied to ```cp /mnt/pxe/arch/x86_64/* /srv/pxe/arch/x86_64/```.
 - **proxmox** (_Debian_): Install [proxmox](https://www.proxmox.com/en/) to configure and spawn virtual machines and LXC container via gui.
