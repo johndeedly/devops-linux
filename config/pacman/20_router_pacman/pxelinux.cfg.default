@@ -4,7 +4,7 @@ PROMPT 0
 TIMEOUT 150
 ONTIMEOUT ArchHTTP
 
-MENU TITLE Arch/Debian Linux PXE Menu
+MENU TITLE Arch/Debian/Ubuntu PXE Menu
 
 MENU CLEAR
 MENU IMMEDIATE
@@ -14,98 +14,98 @@ LABEL DebianHTTP
 MENU LABEL Boot Debian Linux using HTTP
 LINUX http://ipaddr/debian/x86_64/vmlinuz
 INITRD http://ipaddr/debian/x86_64/initrd.img
-APPEND boot=pxe dist=debian pxe_http_srv=http://${pxeserver}/ cow_spacesize=75%
+APPEND boot=pxe dist=debian pxe_http_srv=http://${pxeserver}/ cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL UbuntuHTTP
 MENU LABEL Boot Ubuntu Linux using HTTP
 LINUX http://ipaddr/ubuntu/x86_64/vmlinuz
 INITRD http://ipaddr/ubuntu/x86_64/initrd.img
-APPEND boot=pxe dist=ubuntu pxe_http_srv=http://${pxeserver}/ cow_spacesize=75%
+APPEND boot=pxe dist=ubuntu pxe_http_srv=http://${pxeserver}/ cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchNFS
 MENU LABEL Boot Arch Linux using NFS
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_nfs_srv=${pxeserver}:/srv/pxe copytoram=n cow_spacesize=75%
+APPEND pxe_nfs_srv=${pxeserver}:/srv/pxe copytoram=n cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchNFSCopy
 MENU LABEL Boot Arch Linux using NFS (Copy to RAM)
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_nfs_srv=${pxeserver}:/srv/pxe copytoram=y cow_spacesize=75%
+APPEND pxe_nfs_srv=${pxeserver}:/srv/pxe copytoram=y cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchNBD
 MENU LABEL Boot Arch Linux using NBD
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_nbd_srv=${pxeserver} copytoram=n cow_spacesize=75%
+APPEND pxe_nbd_srv=${pxeserver} copytoram=n cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchNBDCopy
 MENU LABEL Boot Arch Linux using NBD (Copy to RAM)
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_nbd_srv=${pxeserver} copytoram=y cow_spacesize=75%
+APPEND pxe_nbd_srv=${pxeserver} copytoram=y cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchHTTP
 MENU LABEL Boot Arch Linux using HTTP
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_http_srv=http://${pxeserver}/ cow_spacesize=75%
+APPEND pxe_http_srv=http://${pxeserver}/ cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchCIFS
 MENU LABEL Boot Arch Linux using CIFS
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_cifs_srv=//${pxeserver}/pxe copytoram=n cow_spacesize=75%
+APPEND pxe_cifs_srv=//${pxeserver}/pxe copytoram=n cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchCIFSCopy
 MENU LABEL Boot Arch Linux using CIFS (Copy to RAM)
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_cifs_srv=//${pxeserver}/pxe copytoram=y cow_spacesize=75%
+APPEND pxe_cifs_srv=//${pxeserver}/pxe copytoram=y cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchSCP
 MENU LABEL Boot Arch Linux using SCP
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_scp_srv=${pxeserver} cow_spacesize=75%
+APPEND pxe_scp_srv=${pxeserver} cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchiSCSI
 MENU LABEL Boot Arch Linux using iSCSI
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_iscsi_srv=${pxeserver} copytoram=n cow_spacesize=75%
+APPEND pxe_iscsi_srv=${pxeserver} copytoram=n cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchiSCSICopy
 MENU LABEL Boot Arch Linux using iSCSI (Copy to RAM)
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_iscsi_srv=${pxeserver} copytoram=y cow_spacesize=75%
+APPEND pxe_iscsi_srv=${pxeserver} copytoram=y cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchNVMeoF
 MENU LABEL Boot Arch Linux using NVMeoF
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_nvmeof_srv=${pxeserver} copytoram=n cow_spacesize=75%
+APPEND pxe_nvmeof_srv=${pxeserver} copytoram=n cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchNVMeoFCopy
 MENU LABEL Boot Arch Linux using NVMeoF (Copy to RAM)
 LINUX http://ipaddr/arch/x86_64/vmlinuz-linux
 INITRD http://ipaddr/arch/x86_64/initramfs-linux-pxe.img
-APPEND pxe_nvmeof_srv=${pxeserver} copytoram=y cow_spacesize=75%
+APPEND pxe_nvmeof_srv=${pxeserver} copytoram=y cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL LocalDrive

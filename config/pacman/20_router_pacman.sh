@@ -126,6 +126,9 @@ sed -i '0,/^#\?dhcp-boot=.*/s//'"${PXESETUP[*]}"'/' /etc/dnsmasq.conf
 sed -i '0,/^#\?dhcp-option-force=209.*/s//'"${DHCP_209_SETUP[*]}"'/' /etc/dnsmasq.conf
 sed -i '0,/^#\?dhcp-option-force=210.*/s//'"${DHCP_210_SETUP[*]}"'/' /etc/dnsmasq.conf
 
+# configure pxe folders
+mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
+
 # configure tftp
 mkdir -p /srv/tftp/{,bios,efi32,efi64}/pxelinux.cfg
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/bios/ /srv/tftp/bios/
@@ -139,7 +142,6 @@ ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi32/pxelinux.cfg/default
 ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi64/pxelinux.cfg/default
 
 # configure http
-mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
 mkdir -p /etc/systemd/system/darkhttpd.service.d
 tee /etc/systemd/system/darkhttpd.service.d/override.conf <<EOF
 [Service]
