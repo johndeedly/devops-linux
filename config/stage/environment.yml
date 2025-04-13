@@ -32,7 +32,7 @@ chpasswd:
 
 growpart:
   mode: 'off'
-resize_rootfs: noblock
+resize_rootfs: false
 
 write_files:
   # sshd config -> allow root, password auth, use pam
