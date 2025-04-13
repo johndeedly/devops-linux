@@ -130,7 +130,7 @@ build {
   }
 
   provisioner "shell" {
-    inline           = ["cloud-init status"]
+    inline           = ["cloud-init status --long --format yaml"]
     valid_exit_codes = [0, 2]
   }
 
@@ -162,7 +162,7 @@ build {
   }
 
   provisioner "shell" {
-    inline           = ["cloud-init status"]
+    inline           = ["cloud-init status --long --format yaml"]
     valid_exit_codes = [0, 2]
   }
 
@@ -188,7 +188,7 @@ build {
   }
 
   provisioner "shell" {
-    inline           = ["cloud-init status"]
+    inline           = ["cloud-init status --long --format yaml"]
     valid_exit_codes = [0, 2]
   }
 
