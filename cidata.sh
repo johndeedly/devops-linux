@@ -94,9 +94,15 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 echo "[ ## ] Wait for cloud-init to finish"
 ( (
   # valid exit codes are 0 or 2
-  cloud-init status --wait >/dev/null 2>&1 || true
-  echo "[ OK ] Rebooting the system"
-  reboot now
+  cloud-init status --wait >/dev/null 2>&1
+  ret=$?
+  if [ $ret -eq 0 ] || [ $ret -eq 2 ]; then
+    echo "[ OK ] Rebooting the system"
+    reboot now
+  else
+    echo "[ FAILED ] Unrecoverable error in provision steps"
+    cloud-init status --long --format yaml | sed -e 's/^/>>> /g'
+  fi
 ) & )
 # cleanup
 rm -- "${0}"
