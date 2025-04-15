@@ -130,7 +130,12 @@ build {
   }
 
   provisioner "shell" {
-    inline           = ["cloud-init status --long --format yaml"]
+    inline           = [
+      "cloud-init status",
+      "rc=$?",
+      "[ $rc -eq 1 ] && cloud-init status --long --format yaml",
+      "exit $rc"
+    ]
     valid_exit_codes = [0, 2]
   }
 
@@ -162,7 +167,12 @@ build {
   }
 
   provisioner "shell" {
-    inline           = ["cloud-init status --long --format yaml"]
+    inline           = [
+      "cloud-init status",
+      "rc=$?",
+      "[ $rc -eq 1 ] && cloud-init status --long --format yaml",
+      "exit $rc"
+    ]
     valid_exit_codes = [0, 2]
   }
 
@@ -188,7 +198,12 @@ build {
   }
 
   provisioner "shell" {
-    inline           = ["cloud-init status --long --format yaml"]
+    inline           = [
+      "cloud-init status",
+      "rc=$?",
+      "[ $rc -eq 1 ] && cloud-init status --long --format yaml",
+      "exit $rc"
+    ]
     valid_exit_codes = [0, 2]
   }
 
