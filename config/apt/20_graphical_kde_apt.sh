@@ -5,7 +5,7 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit \
   xorg xinit x11-xserver-utils xclip xsel brightnessctl arandr dunst libnotify4 engrampa \
-  libinput10 xserver-xorg-input-libinput xinput kitty dex xrdp lightdm lightdm-gtk-greeter \
+  libinput10 xserver-xorg-input-libinput xinput kitty dex xrdp lightdm slick-greeter \
   elementary-icon-theme fonts-dejavu fonts-liberation fonts-font-awesome fonts-hanazono \
   fonts-baekmuk fonts-noto-color-emoji \
   cups ipp-usb libreoffice libreoffice-l10n-de krita freerdp3-x11 freerdp3-wayland gitg keepassxc pdf-presenter-console \
@@ -98,6 +98,40 @@ flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/
 
 # install obsidian as flatpak
 flatpak install --system flathub md.obsidian.Obsidian
+
+# compile elementary wallpapers
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install meson git gettext
+WALLPAPER_TMP=$(mktemp -d)
+if [ -d "$WALLPAPER_TMP" ]; then
+  pushd "$WALLPAPER_TMP"
+  git clone --depth 1 https://github.com/elementary/wallpapers.git
+  pushd wallpapers
+  meson build --prefix=/usr
+  pushd build
+  ninja install
+  popd
+  popd
+  popd
+  rm -r "$WALLPAPER_TMP"
+fi
+
+# set slick greeter as default
+sed -i 's/^#\?greeter-show-manual-login=.*/greeter-show-manual-login=true/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?greeter-hide-users=.*/greeter-hide-users=true/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?greeter-session=.*/greeter-session=slick-greeter/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?user-session=.*/user-session=plasmawayland/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?guest-session=.*/guest-session=plasmawayland/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?autologin-session=.*/autologin-session=plasmawayland/' /etc/lightdm/lightdm.conf
+
+# configuration for slick-greeter
+tee /etc/lightdm/slick-greeter.conf <<EOF
+[Greeter]
+# LightDM GTK+ Configuration
+#
+background=/usr/share/backgrounds/elementaryos-default
+show-hostname=true
+clock-format=%H:%M
+EOF
 
 # enable lightdm
 rm /etc/systemd/system/display-manager.service || true

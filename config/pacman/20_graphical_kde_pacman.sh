@@ -104,6 +104,9 @@ flatpak install --system flathub md.obsidian.Obsidian
 sed -i 's/^#\?greeter-show-manual-login=.*/greeter-show-manual-login=true/' /etc/lightdm/lightdm.conf
 sed -i 's/^#\?greeter-hide-users=.*/greeter-hide-users=true/' /etc/lightdm/lightdm.conf
 sed -i 's/^#\?greeter-session=.*/greeter-session=lightdm-slick-greeter/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?user-session=.*/user-session=plasmawayland/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?guest-session=.*/guest-session=plasmawayland/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?autologin-session=.*/autologin-session=plasmawayland/' /etc/lightdm/lightdm.conf
 
 # configuration for slick-greeter
 tee /etc/lightdm/slick-greeter.conf <<EOF
