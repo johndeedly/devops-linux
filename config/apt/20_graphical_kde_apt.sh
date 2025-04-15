@@ -5,7 +5,7 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit \
   xorg xinit x11-xserver-utils xclip xsel brightnessctl arandr dunst libnotify4 engrampa \
-  libinput10 xserver-xorg-input-libinput xinput kitty dex xrdp lightdm slick-greeter \
+  libinput10 xserver-xorg-input-libinput xinput kitty dex lightdm slick-greeter \
   elementary-icon-theme fonts-dejavu fonts-liberation fonts-font-awesome fonts-hanazono \
   fonts-baekmuk fonts-noto-color-emoji \
   cups ipp-usb libreoffice libreoffice-l10n-de krita freerdp3-x11 freerdp3-wayland gitg keepassxc pdf-presenter-console \
