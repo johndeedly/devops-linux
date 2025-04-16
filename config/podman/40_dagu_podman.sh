@@ -8,6 +8,28 @@ TMPDIR="$(mktemp -d)"
 BUILDTMP="${TMPDIR}/${PROJECTNAME}"
 mkdir -p "${BUILDTMP}"
 
+mkdir "${BUILDTMP}/dagu"
+tee "${BUILDTMP}/dagu/example.yaml" <<'EOF'
+# https://github.com/dagu-org/dagu?tab=readme-ov-file#minimal-examples
+
+params:
+  - NAME: "Dagu"
+
+steps:
+  - name: Hello world
+    command: echo Hello $NAME
+  - name: Done
+    command: echo Done!
+    depends:
+      - Hello world
+EOF
+tee "${BUILDTMP}/dagu/Dockerfile" <<EOF
+FROM ghcr.io/dagu-org/dagu:latest
+
+COPY ./example.yaml /config/dags/
+EOF
+
+
 tee "${BUILDTMP}/podman-compose.yml" <<EOF
 name: ${PROJECTNAME}
 networks:
@@ -16,7 +38,7 @@ volumes:
   config:
 services:
   main:
-    image: ghcr.io/dagu-org/dagu:latest
+    build: ./dagu
     restart: unless-stopped
     networks:
       - lan
