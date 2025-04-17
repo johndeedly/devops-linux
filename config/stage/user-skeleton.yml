@@ -14,10 +14,6 @@ write_files:
       [[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc
 
       [[ -f ~/.bashrc ]] && source ~/.bashrc
-
-      if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ] && [ -f /bin/startx ]; then
-        exec startx
-      fi
     owner: 'root:root'
     permissions: '0644'
   - path: /etc/skel/.bashrc
