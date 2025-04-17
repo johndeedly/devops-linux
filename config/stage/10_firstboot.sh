@@ -11,12 +11,6 @@ fi
 tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
 sed -e '/DEBUG/d' /var/log/cloud-init.log | tee -a /cidata_log >/dev/null
 
-# wait online (not on rocky, as rocky does not have wait-online preinstalled)
-if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then
-  echo ":: wait for any interface to be online"
-  /usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any
-fi
-
 # generate random hostname once
 tee /etc/hostname >/dev/null <<EOF
 linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal

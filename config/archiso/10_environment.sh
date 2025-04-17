@@ -19,10 +19,6 @@ mkdir -p /var/log/journal
 systemd-tmpfiles --create --prefix /var/log/journal
 systemctl restart systemd-journald
 
-# wait online
-echo ":: wait for any interface to be online"
-/usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any
-
 # locate the cidata iso and mount it to /iso
 CIDATA_DEVICE=$(lsblk -no PATH,LABEL,FSTYPE | sed -e '/cidata/I!d' -e '/iso9660/I!d' | head -n1 | cut -d' ' -f1)
 test -n "$CIDATA_DEVICE" && mount -o X-mount.mkdir "$CIDATA_DEVICE" /iso

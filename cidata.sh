@@ -87,6 +87,19 @@ mkdir -p build/{archiso,stage}
 
 tee build/archiso/meta-data build/stage/meta-data >/dev/null <<EOF
 EOF
+tee build/00_waitonline.sh >/dev/null <<'EOF'
+#!/usr/bin/env bash
+exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+# wait online (not on rocky, as rocky does not have wait-online preinstalled)
+if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then
+  echo "[ ## ] Wait for any interface to be routable"
+  /usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any
+  echo "[ ## ] Wait for dns resolver"
+  until resolvectl status >/dev/null 2>&1; do sleep 2; done
+fi
+# cleanup
+rm -- "${0}"
+EOF
 tee build/99_autoreboot.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
@@ -119,6 +132,8 @@ write_mime_params=(
     "config/stage/10_firstboot.sh:text/x-shellscript"
     "config/stage/90_second_stage.sh:text/x-shellscript"
     "config/setup.yml:application/x-setup-config"
+    "build/00_waitonline.sh:text/x-shellscript"
+    "build/00_waitonline.sh:application/x-per-boot"
 )
 # deployment scripts stage 'config'
 while read -r line; do
@@ -169,6 +184,7 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
         "config/archiso/15_system_base_setup.sh:text/x-shellscript"
         "config/archiso/20_bootable_system.sh:text/x-shellscript"
         "config/setup.yml:application/x-setup-config"
+        "build/00_waitonline.sh:text/x-shellscript"
         "build/stage/user-data:application/x-provision-config"
         "build/stage/meta-data:application/x-provision-config"
     )
