@@ -15,6 +15,11 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install 
   ghostscript gsfonts foomatic-db-engine foomatic-db printer-driver-gutenprint hplip \
   kde-standard libpam-kwallet5 system-config-printer
 
+# Ubuntu wayland session fix
+if grep -q Ubuntu /proc/version; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install plasma-workspace-wayland
+fi
+
 if grep -q Debian /proc/version; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install firefox-esr
 elif grep -q Ubuntu /proc/version; then
@@ -116,12 +121,15 @@ if [ -d "$WALLPAPER_TMP" ]; then
 fi
 
 # set slick greeter as default
-sed -i 's/^#\?greeter-show-manual-login=.*/greeter-show-manual-login=true/' /etc/lightdm/lightdm.conf
-sed -i 's/^#\?greeter-hide-users=.*/greeter-hide-users=true/' /etc/lightdm/lightdm.conf
-sed -i 's/^#\?greeter-session=.*/greeter-session=slick-greeter/' /etc/lightdm/lightdm.conf
-sed -i 's/^#\?user-session=.*/user-session=plasmawayland/' /etc/lightdm/lightdm.conf
-sed -i 's/^#\?guest-session=.*/guest-session=plasmawayland/' /etc/lightdm/lightdm.conf
-sed -i 's/^#\?autologin-session=.*/autologin-session=plasmawayland/' /etc/lightdm/lightdm.conf
+tee -a /etc/lightdm/lightdm.conf <<EOF
+[Seat:*]
+greeter-show-manual-login=true
+greeter-hide-users=true
+greeter-session=slick-greeter
+user-session=plasmawayland
+guest-session=plasmawayland
+autologin-session=plasmawayland
+EOF
 
 # configuration for slick-greeter
 tee /etc/lightdm/slick-greeter.conf <<EOF
