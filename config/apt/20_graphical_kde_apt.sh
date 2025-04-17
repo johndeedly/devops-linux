@@ -102,7 +102,7 @@ done
 flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # install obsidian as flatpak
-flatpak install --system flathub md.obsidian.Obsidian
+flatpak install -y --noninteractive --system flathub md.obsidian.Obsidian
 
 # compile elementary wallpapers
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install meson git gettext
