@@ -11,7 +11,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install 
   cups ipp-usb libreoffice libreoffice-l10n-de krita freerdp3-x11 freerdp3-wayland gitg keepassxc pdf-presenter-console \
   bluez blueman \
   texlive-binaries xdg-desktop-portal xdg-desktop-portal-kde wine wine64 winetricks mpv gpicview \
-  flatpak chromium virt-manager \
+  flatpak virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db printer-driver-gutenprint hplip \
   kde-standard libpam-kwallet5 system-config-printer
 
@@ -20,10 +20,38 @@ if grep -q Ubuntu /proc/version; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install plasma-workspace-wayland
 fi
 
+# install chromium
+if grep -q Debian /proc/version; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install chromium
+elif grep -q Ubuntu /proc/version; then
+  add-apt-repository ppa:xtradeb/apps
+  tee /etc/apt/preferences.d/xtradebppa <<EOF
+Package: chromium*
+Pin: release o=LP-PPA-xtradeb*
+Pin-Priority: 1001
+
+Package: chromium*
+Pin: release o=Ubuntu
+Pin-Priority: -1
+EOF
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install chromium
+fi
+
+# install firefox
 if grep -q Debian /proc/version; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install firefox-esr
 elif grep -q Ubuntu /proc/version; then
   add-apt-repository ppa:mozillateam/ppa
+  tee /etc/apt/preferences.d/mozillateamppa <<EOF
+Package: firefox*
+Pin: release o=LP-PPA-mozillateam*
+Pin-Priority: 1001
+
+Package: firefox*
+Pin: release o=Ubuntu
+Pin-Priority: -1
+EOF
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install firefox-esr
 fi
@@ -157,7 +185,7 @@ keysym Menu = Super_R
 EOF
 
 # configure firefox
-mkdir -p /usr/lib/firefox/distribution
+mkdir -p /usr/lib/firefox-esr/distribution
 (
   jq -Rs '{"policies":{"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
 adguard-adblocker adguardadblocker@adguard.com
@@ -168,7 +196,7 @@ forget_me_not forget-me-not@lusito.info
 return-youtube-dislikes {762f9885-5a13-4abd-9c77-433dcd38b8fd}
 adblock-for-youtube-tm {0ac04bdb-d698-452f-8048-bcef1a3f4b0d}
 EOF
-) | tee /usr/lib/firefox/distribution/policies.json
+) | tee /usr/lib/firefox-esr/distribution/policies.json
 
 # configure chromium
 mkdir -p /etc/chromium/policies/managed
