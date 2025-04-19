@@ -53,7 +53,8 @@ systemctl unmask systemd-hostnamed.socket systemd-hostnamed.service
 systemctl unmask systemd-network-generator
 
 if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install make git coreutils busybox pv
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install make git coreutils busybox pv cifs-utils \
+    nfs-common
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y reinstall linux-image-$(uname -r)
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed sshpass mkinitcpio-nfs-utils curl ca-certificates-utils cifs-utils \
@@ -80,6 +81,7 @@ EOF
   tee -a /etc/initramfs-tools/scripts/pxe <<EOF
 $(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe)
 $(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-http)
+$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-nfs)
 EOF
   chmod +x /etc/initramfs-tools/scripts/pxe
   update-initramfs -v -c -k $(uname -r)

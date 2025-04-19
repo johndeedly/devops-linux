@@ -23,12 +23,18 @@ copy_exec /bin/mountpoint /bin
 manual_add_modules overlay
 
 # cifs boot
-if [ -x /sbin/mount.cifs ]; then
-    copy_exec /sbin/mount.cifs /sbin
-    for x in cifs md4 des_generic; do
-        manual_add_modules "$x"
-    done
-fi
+copy_exec /sbin/mount.cifs /sbin
+for x in cifs md4 des_generic; do
+    manual_add_modules "$x"
+done
+
+# nfs boot
+copy_exec /sbin/mount.nfs /sbin
+copy_exec /sbin/mount.nfs4 /sbin
+copy_exec /bin/timeout /bin
+for x in nfs sunrpc; do
+    manual_add_modules "$x"
+done
 
 # squashfs
 copy_exec /bin/pv /bin
