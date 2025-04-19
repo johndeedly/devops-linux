@@ -31,6 +31,7 @@ if [ -x /sbin/mount.cifs ]; then
 fi
 
 # squashfs
+copy_exec /bin/pv /bin
 manual_add_modules squashfs
 manual_add_modules loop
 

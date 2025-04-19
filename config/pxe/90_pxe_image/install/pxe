@@ -16,10 +16,10 @@ build() {
     add_binary /usr/lib/initcpio/ipconfig /usr/bin/ipconfig
 
     # add support for a progressbar if pv is installed
-    if command -v dd >/dev/null 2>&1; then
-        add_binary dd
-    elif command -v pv >/dev/null 2>&1; then
+    if command -v pv >/dev/null 2>&1; then
         add_binary pv
+    elif command -v dd >/dev/null 2>&1; then
+        add_binary dd
     else
         warning 'dd nor pv found; falling back to cp for copy to RAM'
     fi

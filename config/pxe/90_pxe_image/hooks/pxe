@@ -105,13 +105,13 @@ pxe_mount_handler() {
         fi
 
         msg ":: Copy image to RAM"
-        if command -v dd >/dev/null 2>&1; then
+        if command -v pv >/dev/null 2>&1; then
+            echo ""
+            (pv -W -f "${boot_img}" >"${copytoram_img}")
+            local rc=$?
+        elif command -v dd >/dev/null 2>&1; then
             echo ""
             (dd if="${boot_img}" of="${copytoram_img}" bs=1M iflag=fullblock status=progress)
-            local rc=$?
-        elif command -v pv >/dev/null 2>&1; then
-            echo ""
-            (pv "${boot_img}" >"${copytoram_img}")
             local rc=$?
         else
             (cp -- "${boot_img}" "${copytoram_img}")
