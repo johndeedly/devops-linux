@@ -264,6 +264,7 @@ mountroot() {
     
     pxe_http_hook
     pxe_nfs_hook
+    pxe_cifs_hook
     
     run_hook
 }

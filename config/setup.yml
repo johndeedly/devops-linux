@@ -113,6 +113,8 @@ files:
         config: true
       - path: pxe/90_pxe_image/apt/pxe-nfs
         config: true
+      - path: pxe/90_pxe_image/apt/pxe-cifs
+        config: true
   pacman:
     base:
       - path: stage/15_base_system.sh

@@ -31,6 +31,20 @@ INITRD http://ipaddr/debian/x86_64/initrd.img
 APPEND boot=pxe dist=debian pxe_http_srv=http://${pxeserver}/ cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
+LABEL DebianCIFS
+MENU LABEL Boot Debian Linux using CIFS
+LINUX http://ipaddr/debian/x86_64/vmlinuz
+INITRD http://ipaddr/debian/x86_64/initrd.img
+APPEND boot=pxe dist=debian pxe_cifs_srv=//${pxeserver}/pxe copytoram=n cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
+SYSAPPEND 3
+
+LABEL DebianCIFSCopy
+MENU LABEL Boot Debian Linux using CIFS (Copy to RAM)
+LINUX http://ipaddr/debian/x86_64/vmlinuz
+INITRD http://ipaddr/debian/x86_64/initrd.img
+APPEND boot=pxe dist=debian pxe_cifs_srv=//${pxeserver}/pxe copytoram=y cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
+SYSAPPEND 3
+
 LABEL UbuntuNFS
 MENU LABEL Boot Ubuntu Linux using NFS
 LINUX http://ipaddr/ubuntu/x86_64/vmlinuz
@@ -50,6 +64,20 @@ MENU LABEL Boot Ubuntu Linux using HTTP
 LINUX http://ipaddr/ubuntu/x86_64/vmlinuz
 INITRD http://ipaddr/ubuntu/x86_64/initrd.img
 APPEND boot=pxe dist=ubuntu pxe_http_srv=http://${pxeserver}/ cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
+SYSAPPEND 3
+
+LABEL UbuntuCIFS
+MENU LABEL Boot Ubuntu Linux using CIFS
+LINUX http://ipaddr/ubuntu/x86_64/vmlinuz
+INITRD http://ipaddr/ubuntu/x86_64/initrd.img
+APPEND boot=pxe dist=ubuntu pxe_cifs_srv=//${pxeserver}/pxe copytoram=n cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
+SYSAPPEND 3
+
+LABEL UbuntuCIFSCopy
+MENU LABEL Boot Ubuntu Linux using CIFS (Copy to RAM)
+LINUX http://ipaddr/ubuntu/x86_64/vmlinuz
+INITRD http://ipaddr/ubuntu/x86_64/initrd.img
+APPEND boot=pxe dist=ubuntu pxe_cifs_srv=//${pxeserver}/pxe copytoram=y cow_spacesize=75% console=tty1 vga=792 video=1024x768 rw loglevel=3 acpi=force acpi_osi=Linux nvidia_drm.modeset=1 
 SYSAPPEND 3
 
 LABEL ArchNFS

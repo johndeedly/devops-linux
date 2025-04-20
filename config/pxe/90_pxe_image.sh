@@ -82,6 +82,7 @@ EOF
 $(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe)
 $(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-http)
 $(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-nfs)
+$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-cifs)
 EOF
   chmod +x /etc/initramfs-tools/scripts/pxe
   update-initramfs -v -c -k $(uname -r)
