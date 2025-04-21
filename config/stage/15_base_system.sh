@@ -82,7 +82,7 @@ if [ -e /bin/apt ]; then
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     pacman-contrib starship ttf-terminus-nerd ttf-nerd-fonts-symbols powershell-bin base-devel neovim yq \
-    zstd rsyslog npm htop btop git \
+    zstd rsyslog npm htop btop git lazygit \
     bash-completion ncdu viu pv mc ranger fzf moreutils dotnet-runtime \
     lshw libxml2 jq core/man man-pages-de trash-cli \
     wireguard-tools nfs-utils \
@@ -91,6 +91,24 @@ elif [ -e /bin/pacman ]; then
   systemctl enable systemd-networkd systemd-resolved systemd-homed nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
+  mkdir -p /etc/skel/.config/lazygit
+  tee /etc/skel/.config/lazygit/config.yml <<EOF
+git:
+  merging:
+    args: "--ff-only --autostash"
+  log:
+    showGraph: always
+  branchLogCmd: "git log --graph --all --color=always --decorate --date=relative --oneline {{branchName}} --"
+customCommands:
+  - key: '<c-r>'
+    context: 'localBranches'
+    command: "git rebase --committer-date-is-author-date --ignore-date {{.SelectedLocalBranch.Name | quote}}"
+    description: 'Rebase branch on selected branch ignoring commit and author dates'
+    prompts:
+      - type: 'confirm'
+        title: 'Ignore commit and author dates'
+        body: 'Reset all dates while rebasing {{.CheckedOutBranch.Name | quote}} on branch {{.SelectedLocalBranch.Name | quote}}?'
+EOF
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y \
     systemd-networkd cmake make automake gcc gcc-c++ kernel-devel \
