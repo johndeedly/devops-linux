@@ -257,21 +257,32 @@ systemctl --global enable userlogin.service
 
 # graphics driver for amd, intel, nvidia, vmware and virtio-gpu
 if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-    xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
-    xserver-xorg-video-intel \
-    xserver-xorg-video-vmware \
-    xserver-xorg-video-qxl
   if grep -q Debian /proc/version; then
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install xserver-xorg-video-nvidia
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
+      firmware-linux-nonfree \
+      xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
+      xserver-xorg-video-nvidia \
+      xserver-xorg-video-intel \
+      xserver-xorg-video-vmware \
+      xserver-xorg-video-qxl
   elif grep -q Ubuntu /proc/version; then
+    KRNL_VER=$(uname -r)
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
+      linux-firmware "linux-modules-$KRNL_VER" "linux-modules-extra-$KRNL_VER" \
+      xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
+      xserver-xorg-video-intel \
+      xserver-xorg-video-vmware \
+      xserver-xorg-video-qxl
     NVIDIA_XORG_VERSION=$(LC_ALL=C apt list 'xserver-xorg-video-nvidia-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
     if [ -n "${NVIDIA_XORG_VERSION}" ]; then
       LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${NVIDIA_XORG_VERSION}"
     fi
   fi
-  tee /etc/modprobe.d/nvidia.conf <<EOF
-options nvidia-drm modeset=1
+  tee /etc/modules-load.d/kms.conf <<EOF
+$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "$x"; done )
+EOF
+  tee /etc/modprobe.d/kms.conf <<EOF
+$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
 EOF
   # ignore failed service when no nvidia card is present - the system is
   # not in a degraded state when this happens, nvidia...
@@ -283,17 +294,22 @@ ExecStopPost=
 ExecStart=-/usr/bin/nvidia-persistenced --user nvpd
 ExecStopPost=-/bin/rm -rf /var/run/nvidia-persistenced
 EOF
-  LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
+  ls -1 /lib/modules | while read -r line; do
+    depmod -a "$line"
+  done
+  LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u -k all
 elif [ -e /bin/pacman ]; then
-  sed -i 's/^MODULES=(/MODULES=(amdgpu radeon nvidia nvidia_modeset nvidia_uvm nvidia_drm i915 virtio-gpu vmwgfx /g' /etc/mkinitcpio.conf
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     xf86-video-ati xf86-video-amdgpu mesa vulkan-radeon libva-mesa-driver mesa-vdpau libva-utils nvtop \
     nvidia nvidia-utils nvidia-prime libva-nvidia-driver \
     xf86-video-intel vulkan-intel libva-intel-driver \
     xf86-video-vmware \
     xf86-video-qxl
-  tee /etc/modprobe.d/nvidia.conf <<EOF
-options nvidia-drm modeset=1
+  tee /etc/modules-load.d/kms.conf <<EOF
+$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "$x"; done )
+EOF
+  tee /etc/modprobe.d/kms.conf <<EOF
+$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
 EOF
   mkinitcpio -P
 fi
