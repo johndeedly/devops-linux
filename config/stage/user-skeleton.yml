@@ -388,7 +388,7 @@ write_files:
       local lspconfig = require "lspconfig"
 
       -- EXAMPLE
-      local servers = { "html", "cssls", "tsserver", "clangd", "omnisharp", "pyright", "dockerls", "texlab", "marksman" }
+      local servers = { }
       local nvlsp = require "nvchad.configs.lspconfig"
 
       -- lsps with default config
@@ -432,46 +432,9 @@ write_files:
               -- bash
               "beautysh",
               
-              -- dotnet
-              "omnisharp",
-              "netcoredbg",
-              
-              -- python
-              "pyright",
-              "debugpy",
-              "pylint",
-              
-              -- docker
-              "dockerfile-language-server",
-              
-              -- latex
-              "texlab",
-              "latexindent",
-              
-              -- markdown
-              "marksman",
-              "markdownlint",
-
-              -- cpp
-              "clangd",
-              "cpplint",
-              
               -- lua stuff
               "lua-language-server",
-              "stylua",
-
-              -- web dev stuff
-              "css-lsp",
-              "htmlhint",
-              "html-lsp",
-              "typescript-language-server",
-              "deno",
-              "prettier",
-              "jsonlint",
-
-              -- c/cpp stuff
-              "clangd",
-              "clang-format"
+              "stylua"
             },
           },
         },
@@ -480,22 +443,7 @@ write_files:
           "nvim-treesitter/nvim-treesitter",
           opts = {
             ensure_installed = {
-              "vim",
-              "lua",
-              "vimdoc",
-              "html",
-              "css",
-              "php",
-              "javascript",
-              "typescript",
-              "tsx",
-              "c",
-              "cpp",
-              "c_sharp",
-              "json",
-              "yaml",
-              "markdown",
-              "markdown_inline"
+              "lua"
             },
           },
         },

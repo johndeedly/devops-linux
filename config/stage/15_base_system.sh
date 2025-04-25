@@ -41,25 +41,6 @@ download_neovim() {
   fi
 }
 
-download_dotnet_debian() {
-  echo ":: download dotnet"
-  wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb
-  dpkg -i /tmp/packages-microsoft-prod.deb
-  rm /tmp/packages-microsoft-prod.deb
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
-  DOTNET_VERSION=$(LC_ALL=C apt list 'dotnet-runtime-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
-  if [ -n "${DOTNET_VERSION}" ]; then
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${DOTNET_VERSION}"
-  fi
-}
-
-download_dotnet_yum() {
-  echo ":: download dotnet"
-  dnf update
-  rpm -Uvh https://packages.microsoft.com/config/centos/9/packages-microsoft-prod.rpm
-  dnf install dotnet-runtime
-}
-
 # install basic packages
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
@@ -75,7 +56,6 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     luajit libluajit-5.1-dev lua-mpack lua-lpeg libunibilium-dev libmsgpack-dev libtermkey-dev
   download_neovim
-  download_dotnet_debian
   systemctl enable systemd-networkd systemd-resolved systemd-homed nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -123,7 +103,6 @@ elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y \
     compat-lua-libs libtermkey libtree-sitter libvterm luajit luajit2.1-luv msgpack unibilium xsel
   download_neovim
-  download_dotnet_yum
   systemctl enable systemd-networkd systemd-resolved nslcd
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -151,7 +130,7 @@ systemctl mask hibernate.target suspend-then-hibernate.target hybrid-sleep.targe
 echo ":: prepare NvChad environment"
 mkdir -p /etc/skel/.local/share
 echo ":: setup NvChad environment"
-( HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh omnisharp netcoredbg pyright debugpy pylint dockerfile-language-server texlab latexindent marksman markdownlint clangd cpplint lua-language-server stylua css-lsp htmlhint html-lsp typescript-language-server deno prettier jsonlint clangd clang-format" -c ":qall!" || true' ) &
+( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh lua-language-server stylua" -c ":qall!" || true' ) &
 pid=$!
 echo ":: wait for NvChad to finish"
 wait $pid
