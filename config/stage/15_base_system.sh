@@ -245,13 +245,15 @@ if [ -e /bin/apt ]; then
       xserver-xorg-video-vmware \
       xserver-xorg-video-qxl
   elif grep -q Ubuntu /proc/version; then
-    KRNL_VER=$(uname -r)
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-      linux-firmware "linux-modules-$KRNL_VER" "linux-modules-extra-$KRNL_VER" \
+      linux-firmware linux-generic \
       xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
       xserver-xorg-video-intel \
       xserver-xorg-video-vmware \
       xserver-xorg-video-qxl
+    ls -1 /lib/modules | while read -r line; do
+      LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "linux-modules-$line" "linux-modules-extra-$line"
+    done
     NVIDIA_XORG_VERSION=$(LC_ALL=C apt list 'xserver-xorg-video-nvidia-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
     if [ -n "${NVIDIA_XORG_VERSION}" ]; then
       LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${NVIDIA_XORG_VERSION}"
@@ -276,7 +278,7 @@ EOF
   ls -1 /lib/modules | while read -r line; do
     depmod -a "$line"
   done
-  LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u -k all
+  LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     xf86-video-ati xf86-video-amdgpu mesa vulkan-radeon libva-mesa-driver mesa-vdpau libva-utils nvtop \
