@@ -172,6 +172,7 @@ EOF
 # enable lightdm
 rm /etc/systemd/system/display-manager.service || true
 ln -s /usr/lib/systemd/system/lightdm.service /etc/systemd/system/display-manager.service
+systemctl enable display-manager
 
 # create profile for X11 sessions
 tee /etc/skel/.xprofile <<EOF
