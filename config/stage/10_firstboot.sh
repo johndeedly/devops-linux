@@ -39,6 +39,9 @@ if [ -e /bin/apt ]; then
     # new format
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
+    # switch from archive.ubuntu.com to mirror.ams.macarne.com (NL), as archive.ubuntu.com is unreliable _all_ the time
+    sed -i 's/archive.ubuntu.com/mirror.ams.macarne.com/' /etc/apt/sources.list
+    sed -i 's/archive.ubuntu.com/mirror.ams.macarne.com/' /etc/apt/sources.list.d/ubuntu.sources
   fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 fi
@@ -54,6 +57,15 @@ fi
 
 # full system upgrade
 if [ -e /bin/apt ]; then
+  if grep -q Ubuntu /proc/version; then
+    # switch from linux-virtual to linux-generic
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install linux-generic
+    ls -1 /lib/modules | while read -r line; do
+      depmod -a "$line"
+    done
+    LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
+    update-grub
+  fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -Syu --needed --noconfirm
