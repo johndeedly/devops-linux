@@ -180,6 +180,7 @@ if [ -n "$PKG_MIRROR" ] && [ "false" != "$PKG_MIRROR" ]; then
 #   URIs: http://mirror.internal:8080/debian
 #   Suites: bookworm bookworm-updates bookworm-backports bookworm-security
 #   Components: main contrib non-free non-free-firmware
+#   Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 # </example>
 
 ${PKG_MIRROR}
