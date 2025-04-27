@@ -50,13 +50,13 @@ write_files:
     content: |
       [Service]
       ExecStart=
-      ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any --timeout=10
+      ExecStart=-/usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any --timeout=10
     owner: 'root:root'
     permissions: '0644'
   - path: /etc/systemd/system/NetworkManager-wait-online.service.d/wait-online-any.conf
     content: |
       [Service]
       ExecStart=
-      ExecStart=/usr/bin/nm-online -x -q -t 10
+      ExecStart=-/usr/bin/nm-online -x -q -t 10
     owner: 'root:root'
     permissions: '0644'

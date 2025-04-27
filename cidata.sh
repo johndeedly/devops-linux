@@ -92,10 +92,8 @@ tee build/00_waitonline.sh >/dev/null <<'EOF'
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 # wait online (not on rocky, as rocky does not have wait-online preinstalled)
 if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then
-  echo "[ ## ] Wait for any interface to be routable"
-  /usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any
-  echo "[ ## ] Wait for dns resolver"
-  until resolvectl status >/dev/null 2>&1; do sleep 2; done
+  echo "[ ## ] Wait for any interface to be routable and at least one dns server to be reachable (30s)"
+  /usr/lib/systemd/systemd-networkd-wait-online --dns --any --timeout=30
 fi
 # cleanup
 rm -- "${0}"
