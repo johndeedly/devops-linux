@@ -11,13 +11,6 @@ merge_how:
 disable_ec2_metadata: true
 
 write_files:
-  - path: /etc/cloud/cloud.cfg.d/99-custom-networking.cfg
-    content: |
-      network:
-        config: disabled
-      disable_network_activation: true
-    owner: 'root:root'
-    permissions: '0644'
   # all interfaces perform a dhcp lookup
   # breaking change bug
   # see: https://github.com/canonical/cloud-init/issues/5809
