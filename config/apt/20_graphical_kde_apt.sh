@@ -2,6 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit \
   xorg xinit x11-xserver-utils xclip xsel brightnessctl arandr dunst libnotify4 engrampa \
@@ -171,8 +172,7 @@ EOF
 
 # enable lightdm
 rm /etc/systemd/system/display-manager.service || true
-ln -s /usr/lib/systemd/system/lightdm.service /etc/systemd/system/display-manager.service
-systemctl enable display-manager
+systemctl enable lightdm
 
 # create profile for X11 sessions
 tee /etc/skel/.xprofile <<EOF
