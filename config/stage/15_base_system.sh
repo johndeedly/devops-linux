@@ -262,6 +262,23 @@ EOF
   tee /etc/modprobe.d/kms.conf <<EOF
 $( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
 EOF
+  tee /etc/initramfs-tools/hooks/zz_omit <<'EOF'
+#!/bin/sh
+PREREQ=""
+case $1 in
+prereqs)
+  echo "$PREREQ"
+  exit 0
+  ;;
+esac
+. /usr/share/initramfs-tools/hook-functions
+for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do
+  find "${DESTDIR}" -type f -wholename "*${x}*" -print | while read -r line; do
+    echo Remove mod/fw ${line#"$DESTDIR"} && rm "${line}"
+  done
+done
+EOF
+  chmod 755 /etc/initramfs-tools/hooks/zz_omit
   # ignore failed service when no nvidia card is present - the system is
   # not in a degraded state when this happens, nvidia...
   mkdir -p /etc/systemd/system/nvidia-persistenced.service.d
