@@ -172,7 +172,7 @@ EOF
 
 # enable lightdm
 rm /etc/systemd/system/display-manager.service || true
-systemctl enable lightdm
+DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive lightdm
 
 # create profile for X11 sessions
 tee /etc/skel/.xprofile <<EOF
