@@ -283,6 +283,14 @@ ln -sfn /dev/null /etc/motd.d/cockpit
 ln -sfn /dev/null /etc/issue.d/cockpit.issue
 sed -i '/^root$/d' /etc/cockpit/disallowed-users
 
+# assign a sub uid and gid range to each possible (wanted) user
+idcounter=$((100000))
+idnum=$((65536))
+( echo 0; seq 1000 65535 ) | while read -r line; do
+  echo "${line}:${idcounter}:${idnum}"
+  idcounter=$((idcounter + idnum))
+done | tee /etc/subuid /etc/subgid >/dev/null
+
 # sync everything to disk
 sync
 
