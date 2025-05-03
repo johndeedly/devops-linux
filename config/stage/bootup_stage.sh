@@ -17,6 +17,7 @@ swapon /swapfile
 tee /etc/fstab <<EOF
 /swapfile        none        swap        defaults      0 0
 EOF
+systemctl daemon-reload
 
 # sync everything to disk
 sync
