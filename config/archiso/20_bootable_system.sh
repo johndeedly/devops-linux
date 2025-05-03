@@ -157,6 +157,23 @@ elif [ -f /mnt/bin/yum ]; then
     fi
 fi
 
+# create a 2GiB swap file
+# https://btrfs.readthedocs.io/en/latest/Swapfile.html
+if [ -d /mnt/swap ]; then
+  rm -r /mnt/swap
+fi
+install -d -m 0700 -o root -g root /mnt/swap
+truncate -s 0 /mnt/swap/swapfile
+chattr +C /mnt/swap/swapfile
+fallocate -l 2G /mnt/swap/swapfile
+chmod 0600 /mnt/swap/swapfile
+mkswap /mnt/swap/swapfile
+if ! grep -q '/swap/swapfile' /mnt/etc/fstab; then
+  tee -a /mnt/etc/fstab <<EOF
+/swap/swapfile none swap defaults 0 0
+EOF
+fi
+
 # write the stage user-data to the cidata directory on disk
 install -d -m 0700 -o root -g root /mnt/cidata
 cp /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data /mnt/cidata/
