@@ -17,6 +17,17 @@ linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
 EOF
 hostnamectl hostname "$(</etc/hostname)"
 
+# Make the journal log persistent when folder structure is present
+# and forward everything to rsyslog
+mkdir -p /var/log/journal /etc/systemd/journald.conf.d
+systemd-tmpfiles --create --prefix /var/log/journal
+tee /etc/systemd/journald.conf.d/provision.conf <<EOF
+[Journal]
+Storage=auto
+ForwardToSyslog=yes
+EOF
+systemctl restart systemd-journald
+
 # initialize pacman keyring
 if [ -e /bin/pacman ]; then
   sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf
