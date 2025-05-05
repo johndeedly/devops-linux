@@ -12,7 +12,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install 
   libinput10 xserver-xorg-input-libinput xinput kitty dex lightdm slick-greeter \
   elementary-icon-theme fonts-dejavu fonts-liberation fonts-font-awesome fonts-hanazono \
   fonts-baekmuk fonts-noto-color-emoji \
-  cups ipp-usb libreoffice libreoffice-l10n-de krita freerdp3-x11 freerdp3-wayland gitg keepassxc pdf-presenter-console \
+  cups ipp-usb libreoffice libreoffice-l10n-de krita krdc gitg keepassxc pdf-presenter-console \
   bluez blueman \
   texlive-binaries xdg-desktop-portal xdg-desktop-portal-kde wine wine64 winetricks mpv gpicview \
   flatpak virt-manager \

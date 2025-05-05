@@ -8,7 +8,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   libinput xf86-input-libinput xorg-xinput kitty dex lightdm lightdm-slick-greeter \
   archlinux-wallpaper elementary-wallpapers elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
   ttf-hannom ttf-baekmuk noto-fonts-emoji ttf-ms-fonts \
-  cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita freerdp gitg keepassxc pdfpc \
+  cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita krdc gitg keepassxc pdfpc \
   bluez blueman \
   texlive-bin xdg-desktop-portal xdg-desktop-portal-kde wine-wow64 winetricks mpv gpicview drawio-desktop code \
   pamac flatpak firefox chromium virt-manager \
