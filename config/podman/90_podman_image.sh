@@ -48,7 +48,7 @@ sed -i 's|/var/lib/containers/storage|/var/tmp/buildah/var/storage|g' /etc/conta
 buildah info
 
 # see https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container#the_quest
-buildah --cap-add=SYS_CHROOT,NET_ADMIN,NET_RAW --name worker from scratch
+buildah --cap-add=SYS_CHROOT,NET_RAW,MKNOD --name worker from scratch
 buildah config --entrypoint '["/usr/lib/systemd/systemd", "--log-level=info", "--unit=multi-user.target"]' \
   --stop-signal 'SIGRTMIN+3' --workingdir "/root" --port '22/tcp' --port '9090/tcp' \
   --user "root:root" --volume "/run" --volume "/tmp" --volume "/sys/fs/cgroup" worker
@@ -72,6 +72,41 @@ mkdir -p /srv/docker
 buildah push "devops-linux-${DISTRO_NAME}" "docker-archive:/srv/docker/devops-linux-${DISTRO_NAME}.tar"
 zstd -4 "/srv/docker/devops-linux-${DISTRO_NAME}.tar"
 buildah rm worker
+
+# create docker compose
+# BUG in systemd with resolved: https://github.com/systemd/systemd/issues/34565
+# resolved fails instead of silently exiting
+# will be fixed in systemd version 258
+tee "/srv/docker/docker-compose-${DISTRO_NAME}.yml" <<EOF
+name: ${DISTRO_NAME}
+networks:
+  lan:
+services:
+  main:
+    image: localhost/devops-linux-${DISTRO_NAME}
+    restart: unless-stopped
+    networks:
+      - lan
+    ports:
+      - '2221:22/tcp'
+      - '9091:9090/tcp'
+    stop_signal: SIGRTMIN+3
+    cap_add:
+      - SYS_CHROOT
+      - NET_RAW
+      - MKNOD
+    tty: true
+    volumes:
+      - type: tmpfs
+        target: /run
+        tmpfs:
+          mode: 755
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          mode: 1777
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+EOF
 
 # sync everything to disk
 sync
