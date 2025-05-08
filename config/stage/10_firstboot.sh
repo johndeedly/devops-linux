@@ -50,6 +50,11 @@ if [ -e /bin/apt ]; then
     # new format
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
+    # archive.ubuntu.com is unreliable
+    sed -i 's|archive[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list
+    sed -i 's|archive[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
+    sed -i 's|security[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list
+    sed -i 's|security[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
   fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 fi
