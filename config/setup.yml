@@ -79,6 +79,9 @@ files:
     dagu:
       - path: podman/40_dagu_podman.sh
         stage: 2
+    nextcloud:
+      - path: podman/40_nextcloud_podman.sh
+        stage: 2
     plex:
       - path: podman/40_plex_podman.sh
         stage: 2
@@ -152,6 +155,9 @@ files:
         stage: 2
     dagu:
       - path: podman/40_dagu_podman.sh
+        stage: 2
+    nextcloud:
+      - path: podman/40_nextcloud_podman.sh
         stage: 2
     plex:
       - path: podman/40_plex_podman.sh
