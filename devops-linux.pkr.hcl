@@ -12,19 +12,6 @@ packer {
 }
 
 
-variable "sound_driver" {
-  type = string
-}
-
-variable "accel_graphics" {
-  type = string
-}
-
-variable "verbose" {
-  type    = bool
-  default = false
-}
-
 variable "cpu_cores" {
   type    = number
   default = 4
@@ -95,27 +82,37 @@ source "qemu" "default" {
 
 source "virtualbox-iso" "default" {
   shutdown_command         = "/sbin/poweroff"
+  boot_wait                = "3s"
+  boot_command             = ["<enter>"]
   disk_size                = 524288
   memory                   = var.memory
   format                   = "ova"
   guest_additions_mode     = "disable"
-  guest_os_type            = "ArchLinux_64"
+  guest_os_type            = "Linux_64"
   hard_drive_discard       = true
   hard_drive_interface     = "virtio"
   hard_drive_nonrotational = true
+  chipset                  = "ich9"
+  firmware                 = "efi"
+  cpus                     = var.cpu_cores
+  usb                      = true
+  nic_type                 = "virtio"
+  gfx_controller           = "vboxsvga"
+  gfx_accelerate_3d        = true
+  gfx_vram_size            = 64
   headless                 = var.headless
   iso_checksum             = "none"
   iso_interface            = "virtio"
   iso_url                  = "archlinux-x86_64-cidata.iso"
   output_directory         = "output/devops-linux"
-  output_filename          = "../devops-linux-x86_64"
+  output_filename          = "devops-linux-x86_64"
   ssh_username             = "root"
   ssh_password             = "packer-build-passwd"
   ssh_timeout              = "10m"
-  vboxmanage               = [["modifyvm", "{{ .Name }}", "--chipset", "ich9", "--firmware", "efi", "--cpus", "${var.cpu_cores}", "--audio-driver", "${var.sound_driver}", "--audio-out", "on", "--audio-enabled", "on", "--usb", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--graphicscontroller", "vmsvga", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--accelerate3d", "${var.accel_graphics}", "--accelerate2dvideo", "on", "--vram", "128", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--nictype1", "virtio", "--macaddress1", "auto"], ["sharedfolder", "add", "{{ .Name }}", "--name", "host.0", "--hostpath", "output/"]]
-  vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"], ["sharedfolder", "remove", "{{ .Name }}", "--name", "host.0"]]
+  vboxmanage               = [["modifyvm", "{{ .Name }}", "--tpm-type", "2.0", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"]]
+  vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"]]
   vm_name                  = local.build_name_virtualbox
-  skip_export              = true
+  skip_export              = false
   keep_registered          = true
 }
 

@@ -83,6 +83,39 @@ then
 fi
 
 
+_headless="true"
+_vbox=0
+_cache="false"
+parse_parameters() {
+    local _longopts="show-window,force-virtualbox,create-cache"
+    local _opts="wvc"
+    local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
+    # read getopt’s output this way to handle the quoting right:
+    eval set -- "$_parsed"
+    while true; do
+        case "$1" in
+            -w|--show-window)
+                _headless="false"
+                shift
+                ;;
+            -v|--force-virtualbox)
+                _vbox=1
+                shift
+                ;;
+            -c|--create-cache)
+                _cache="true"
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+        esac
+    done
+}
+parse_parameters "$@"
+
+
 packer_buildappliance() {
     local _longopts="search,filter,args"
     local _opts="s:f:a:"
@@ -134,15 +167,15 @@ packer_buildappliance() {
             wsl)
                 # windows
                 env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
-                    PKR_VAR_sound_driver=dsound PKR_VAR_accel_graphics=off \
-                    PKR_VAR_package_manager="${_package_manager}" /bin/packer "${_args[@]}"
+                    PKR_VAR_package_manager="${_package_manager}" PKR_VAR_package_cache="${_cache}" \
+                    PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
                 return $?
                 ;;
             *)
                 # others, including linux
                 env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
-                    PKR_VAR_sound_driver=pulse PKR_VAR_accel_graphics=on \
-                    PKR_VAR_package_manager="${_package_manager}" /bin/packer "${_args[@]}"
+                    PKR_VAR_package_manager="${_package_manager}" PKR_VAR_package_cache="${_cache}" \
+                    PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
                 return $?
                 ;;
         esac
@@ -161,7 +194,11 @@ case $VIRTENV in
         ;;
     *)
         # others, including linux
-        packer_buildappliance -s "*devops-linux*.qcow2" -a "build -force -on-error=ask -only=qemu.default devops-linux.pkr.hcl"
+        if [ $_vbox -eq 1 ]; then
+          packer_buildappliance -s "*devops-linux*.ova" -a "build -force -on-error=ask -only=virtualbox-iso.default devops-linux.pkr.hcl"
+        else
+          packer_buildappliance -s "*devops-linux*.qcow2" -a "build -force -on-error=ask -only=qemu.default devops-linux.pkr.hcl"
+        fi
         ;;
 esac
 
