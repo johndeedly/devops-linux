@@ -131,6 +131,7 @@ write_mime_params=(
     "config/stage/user-skeleton.yml:text/cloud-config"
     "config/stage/10_firstboot.sh:text/x-shellscript"
     "config/stage/90_second_stage.sh:text/x-shellscript"
+    "config/stage/90_final_stage.sh:application/x-per-boot"
     "config/setup.yml:application/x-setup-config"
     "build/00_waitonline.sh:text/x-shellscript"
     "build/00_waitonline.sh:application/x-per-boot"
