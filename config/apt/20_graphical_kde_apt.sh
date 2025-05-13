@@ -197,7 +197,6 @@ keepassxc-browser keepassxc-browser@keepassxc.org
 single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
 sponsorblock sponsorBlocker@ajay.app
 forget_me_not forget-me-not@lusito.info
-return-youtube-dislikes {762f9885-5a13-4abd-9c77-433dcd38b8fd}
 adblock-for-youtube-tm {0ac04bdb-d698-452f-8048-bcef1a3f4b0d}
 EOF
 ) | tee /usr/lib/firefox-esr/distribution/policies.json
@@ -228,8 +227,6 @@ mpiodijhokgodhhofbcjdecpffjipkle
 mnjggcdmjocbbbhaepdhchncahnbgone
 cmedhionkhpnakcndndgjdbohmhepckk
 oboonakemofpalcgghocfoadofidjkkk
-hdadmgabliibighlbejhlglfjgplfmhb
-gebbhagfogifgggkldgodflihgfeippi
 cnkdjjdmfiffagllbiiilooaoofcoeff
 EOF
 ) | tee /etc/chromium/policies/managed/extensions-default.json
