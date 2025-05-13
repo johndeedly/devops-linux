@@ -230,12 +230,13 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
         read -e -p "Enter proxmox vm core count [2]: " -i "2" _proxmox_cores
         read -e -p "Enter proxmox vm memory [2048]: " -i "2048" _proxmox_mem
         read -e -p "Enter proxmox vm bridge [vmbr0]: " -i "vmbr0" _proxmox_bridge
+        read -e -p "Enter proxmox vm storage [local]: " -i "local" _proxmox_storage
         read -e -p "Enter proxmox vm size [512G]: " -i "512G" _proxmox_size
         mv archlinux-x86_64-cidata.iso "/var/lib/vz/template/iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
         if ! qm create "${_proxmox_vm}" --net0 "virtio,bridge=${_proxmox_bridge}" --name "${_proxmox_name}" \
           --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35 --bios ovmf \
-          --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,discard=on,iothread=1" --agent enabled=1 \
-          --efidisk0 local:0,efitype=4m,format=raw,pre-enrolled-keys=0 --tpmstate0 local:0,version=v2.0 \
+          --boot "order=virtio0;ide0" --virtio0 "${_proxmox_storage}:0,format=qcow2,discard=on,iothread=1,size=${_proxmox_size}" --agent enabled=1 \
+          --efidisk0 "${_proxmox_storage}:0,efitype=4m,format=raw,pre-enrolled-keys=0" --tpmstate0 "${_proxmox_storage}:0,version=v2.0" \
           --ide0 "local:iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio; then
             rm "/var/lib/vz/template/iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
         else
