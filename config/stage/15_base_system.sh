@@ -254,7 +254,7 @@ prereqs)
   ;;
 esac
 . /usr/share/initramfs-tools/hook-functions
-for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do
+for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm nouveau i915 virtio-gpu vmwgfx ; do
   find "${DESTDIR}" -type f -wholename "*${x}*" -print | while read -r line; do
     echo Remove mod/fw ${line#"$DESTDIR"} && rm "${line}"
   done
@@ -289,6 +289,19 @@ EOF
   tee /etc/modprobe.d/kms.conf <<EOF
 $( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
 EOF
+  tee /etc/initcpio/install/zz_omit <<'EOF'
+#!/usr/bin/env bash
+
+build() {
+  for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm nouveau i915 virtio-gpu vmwgfx ; do
+    find "${BUILDROOT}" -type f -wholename "*${x}*" -print | while read -r line; do
+      echo Remove mod/fw ${line#"$BUILDROOT"} && rm "${line}"
+    done
+  done
+}
+EOF
+  chmod 755 /etc/initcpio/install/zz_omit
+  sed -i 's/^\(HOOKS=[^)]*\)/\1 zz_omit/' /etc/mkinitcpio.conf
   mkinitcpio -P
 fi
 
