@@ -225,6 +225,25 @@ write_files:
       Invoke-Expression (&starship init powershell)
     owner: 'root:root'
     permissions: '0644'
+  - path: /etc/skel/.config/lazygit/config.yml
+    content: |
+      git:
+        merging:
+          args: "--ff-only --autostash"
+        log:
+          showGraph: always
+        branchLogCmd: "git log --graph --all --color=always --decorate --date=relative --oneline {{branchName}} --"
+      customCommands:
+        - key: '<c-r>'
+          context: 'localBranches'
+          command: "git rebase --committer-date-is-author-date --ignore-date {{.SelectedLocalBranch.Name | quote}}"
+          description: 'Rebase branch on selected branch ignoring commit and author dates'
+          prompts:
+            - type: 'confirm'
+              title: 'Ignore commit and author dates'
+              body: 'Reset all dates while rebasing {{.CheckedOutBranch.Name | quote}} on branch {{.SelectedLocalBranch.Name | quote}}?'
+    owner: 'root:root'
+    permissions: '0644'
   - path: /etc/skel/.config/nvim/init.lua
     content: |
       vim.g.base46_cache = vim.fn.stdpath "data" .. "/base46/"

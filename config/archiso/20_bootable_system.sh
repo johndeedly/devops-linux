@@ -72,7 +72,6 @@ partx -u "${TARGET_DEVICE}"
 sleep 1
 
 # resize main ext4/btrfs partition
-# create cidata partition at the end of the disk
 ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/root\|linux filesystem/I!d' | head -n1) )
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
 LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
@@ -125,7 +124,7 @@ else
   echo "!! neither efi nor boot partitions found"
   exit 1
 fi
-# remove duplicate "cloud-ready-image" entries
+# remove duplicate efi entries
 efibootmgr | sed -e '/'"${DISTRO_NAME}"'/I!d' | while read -r bootentry; do
     bootnum=$(echo "$bootentry" | grep -Po "[A-F0-9]{4}" | head -n1)
     if [ -n "$bootnum" ]; then
@@ -139,7 +138,7 @@ efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l /
 # mount detected root filesystem
 mount "${ROOT_PART[0]}" /mnt
 
-# copy over package cache
+# prefill package cache
 if [ -f /mnt/bin/apt ]; then
     if [ -d /iso/stage/apt ]; then
         mkdir -p /mnt/var/cache/apt
@@ -164,7 +163,7 @@ if [ -d /mnt/swap ]; then
 fi
 install -d -m 0700 -o root -g root /mnt/swap
 truncate -s 0 /mnt/swap/swapfile
-chattr +C /mnt/swap/swapfile
+chattr +C /mnt/swap/swapfile || true
 fallocate -l 2G /mnt/swap/swapfile
 chmod 0600 /mnt/swap/swapfile
 mkswap /mnt/swap/swapfile
