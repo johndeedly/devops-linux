@@ -129,6 +129,11 @@ write_files:
       }
       export -f du
 
+      function passwdgen() {
+          command xkcdpass -w ger-anlx -n 4 "$@"
+      }
+      export -f du
+      
       if command -v starship >/dev/null; then
         eval "$(starship init bash)"
       else
