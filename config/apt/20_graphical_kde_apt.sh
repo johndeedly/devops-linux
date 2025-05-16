@@ -8,7 +8,7 @@ fi
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit \
-  xorg xinit x11-xserver-utils xclip xsel brightnessctl arandr dunst libnotify4 engrampa \
+  xorg xinit x11-xserver-utils xclip xsel wl-clipboard brightnessctl arandr dunst libnotify4 engrampa \
   libinput10 xserver-xorg-input-libinput xinput kitty dex lightdm slick-greeter \
   elementary-icon-theme fonts-dejavu fonts-liberation fonts-font-awesome fonts-hanazono \
   fonts-baekmuk fonts-noto-color-emoji \
