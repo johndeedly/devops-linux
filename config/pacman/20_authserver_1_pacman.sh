@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+
+LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed openldap xkcdpass firewalld
+
+install -m 0700 -o ldap -g ldap -d /var/lib/openldap/openldap-data
+install -m 0760 -o root -g ldap -d /etc/openldap/slapd.d
+
+BASEDC="internal"
+BASEDN="dc=${BASEDC}"
+PASSWD=$(xkcdpass -w ger-anlx -R -D '1234567890' -v '[A-Xa-x]' --min=4 --max=8 -n 3)
+
+tee /etc/openldap/config.ldif <<EOF
+# The root config entry
+dn: cn=config
+objectClass: olcGlobal
+cn: config
+olcArgsFile: /run/openldap/slapd.args
+olcPidFile: /run/openldap/slapd.pid
+
+# Schemas
+dn: cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: schema
+
+# TODO: Include further schemas as necessary
+include: file:///etc/openldap/schema/core.ldif
+# RFC1274: Cosine and Internet X.500 schema
+include: file:///etc/openldap/schema/cosine.ldif
+# RFC2307: An Approach for Using LDAP as a Network Information Service
+include: file:///etc/openldap/schema/nis.ldif
+# RFC2798: Internet Organizational Person
+include: file:///etc/openldap/schema/inetorgperson.ldif
+
+# The config database
+dn: olcDatabase=config,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: config
+olcRootDN: cn=Manager,${BASEDN}
+
+# The database for our entries
+dn: olcDatabase=mdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcMdbConfig
+olcDatabase: mdb
+olcSuffix: ${BASEDN}
+olcRootDN: cn=Manager,${BASEDN}
+olcRootPW: $PASSWD
+olcDbDirectory: /var/lib/openldap/openldap-data
+# TODO: Create further indexes
+olcDbIndex: objectClass eq
+olcDbIndex: uid pres,eq
+olcDbIndex: mail pres,sub,eq
+olcDbIndex: cn,sn pres,sub,eq
+olcDbIndex: dc eq
+EOF
+slapadd -n 0 -F /etc/openldap/slapd.d/ -l /etc/openldap/config.ldif
+
+# grant access from localhost
+tee -a /etc/conf.d/slapd <<EOF
+SLAPD_URLS="ldap://127.0.0.1/ ldap://[::1]/"
+SLAPD_OPTIONS=
+EOF
+
+# access control list
+tee -a /etc/openldap/slapd.conf <<EOF
+
+# allow password change only by self
+# disallow anonymous to read the password field
+access to attrs=userPassword
+       by self write
+       by anonymous auth
+       by users auth
+
+# anyone and everyone can read the rest
+access to * by * read
+EOF
+
+# Enable all configured services
+systemctl enable slapd.service
+
+# sync everything to disk
+find /etc/openldap/slapd.d/ -d -print
+sync
+
+# cleanup
+chown -R ldap:ldap /etc/openldap/*
+rm -- "${0}"

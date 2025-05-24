@@ -133,6 +133,11 @@ files:
     mirror:
       - path: pacman/20_localmirror_pacman.sh
         stage: 1
+    authserver:
+      - path: pacman/20_authserver_1_pacman.sh
+        stage: 1
+      - path: pacman/20_authserver_2_pacman.sh
+        stage: 2
     cinnamon:
       - path: pacman/20_graphical_cinnamon_pacman.sh
         stage: 2

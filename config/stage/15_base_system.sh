@@ -147,11 +147,19 @@ fi
 if [ -f /etc/nslcd.conf ]; then
   chmod 0600 /etc/nslcd.conf
   sed -i 's|^uri .*|uri ldap://0.0.0.0/|' /etc/nslcd.conf
+  sed -i 's|^base .*|base   dc=internal\nbase   group  ou=Groups,dc=internal\nbase   passwd ou=People,dc=internal\nbase   shadow ou=People,dc=internal|' /etc/nslcd.conf
 fi
 if [ -f /etc/nsswitch.conf ]; then
     sed -i 's/^\(passwd.*\)/\1 ldap/' /etc/nsswitch.conf
     sed -i 's/^\(group.*\)/\1 ldap/' /etc/nsswitch.conf
     sed -i 's/^\(shadow.*\)/\1 ldap/' /etc/nsswitch.conf
+fi
+if [ -f /etc/openldap/ldap.conf ]; then
+  tee -a /etc/openldap/ldap.conf <<EOF
+
+BASE    dc=internal
+URI     ldap://0.0.0.0/
+EOF
 fi
 if [ -f /etc/pam.d/sudo ]; then
     sed -i 's/^\(auth.*pam_unix.so\)/auth      sufficient    pam_ldap.so\n\1 try_first_pass/' /etc/pam.d/sudo
