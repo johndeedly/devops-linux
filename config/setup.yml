@@ -1,3 +1,11 @@
+setup:
+  distro: archlinux
+  options:
+    - base
+  target: auto
+  archiso_mirror: false
+  pkg_mirror: false
+  chaotic_mirror: false
 distros:
   archlinux: pacman
   debian: apt
@@ -240,11 +248,3 @@ files:
     mirror:
       - path: yum/20_localmirror_yum.sh
         stage: 1
-setup:
-  distro: archlinux
-  options:
-    - base
-  target: auto
-  archiso_mirror: false
-  pkg_mirror: false
-  chaotic_mirror: false
