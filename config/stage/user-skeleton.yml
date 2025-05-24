@@ -130,7 +130,8 @@ write_files:
       export -f du
 
       function passwdgen() {
-          command xkcdpass -w ger-anlx -n 4 "$@"
+          # more than 50 bits of entropy
+          command xkcdpass -w ger-anlx -R -D '1234567890' -v '[A-Xa-x]' --min=4 --max=8 -n 4 "$@"
       }
       export -f du
       
