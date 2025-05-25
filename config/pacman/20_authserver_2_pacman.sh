@@ -40,31 +40,17 @@ rm /tmp/base.ldif
 
 # counters
 _uid=$((10000))
+_firstadmin=$((1))
+_firstuser=$((1))
 
-# adding groups
-tee -a /tmp/groups.ldif <<EOF
-dn: cn=usr,ou=Groups,${BASEDN}
-objectClass: top
-objectClass: posixGroup
-cn: usr
-gidNumber: 9999
-
-dn: cn=adm,ou=Groups,${BASEDN}
-objectClass: top
-objectClass: posixGroup
-cn: adm
-gidNumber: 9998
-EOF
-echo -en "${PASSWD}\n" | (ldapadd -D "cn=Manager,${BASEDN}" -W -f /tmp/groups.ldif)
-rm /tmp/groups.ldif
-
-# adding users
+# adding users and groups
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then
     if [ "$uid" -eq 0 ] || [ "$uid" -ge 1000 ]; then
       echo ":: add $username to LDAP users [$uid:$gid]"
       USERHASH=$(grep -oP "^$username:\\K[^:]+" /etc/shadow)
       tee "/tmp/usr_$username.ldif" <<EOF
+# New User, ${BASEDC}
 dn: uid=$username,ou=People,${BASEDN}
 objectClass: top
 objectClass: person
@@ -81,27 +67,71 @@ uidNumber: ${_uid}
 gidNumber: ${_uid}
 homeDirectory: /home/$username/
 
+# New User Group, ${BASEDC}
 dn: cn=$username,ou=Groups,${BASEDN}
 objectClass: top
 objectClass: posixGroup
+objectClass: groupOfNames
 cn: $username
 gidNumber: ${_uid}
 memberUid: $username
+member: uid=$username,ou=People,${BASEDN}
 
 EOF
       if [ "$uid" -eq 0 ]; then
-        tee -a "/tmp/usr_$username.ldif" <<EOF
+        if [ "$_firstadmin" -eq 1 ]; then
+          tee -a "/tmp/usr_$username.ldif" <<EOF
+# New Admin Group, ${BASEDC}
+dn: cn=adm,ou=Groups,${BASEDN}
+objectClass: top
+objectClass: posixGroup
+objectClass: groupOfNames
+cn: adm
+gidNumber: 9998
+memberUid: $username
+member: uid=$username,ou=People,${BASEDN}
+
+EOF
+          _firstadmin=$((0))
+        else
+          tee -a "/tmp/usr_$username.ldif" <<EOF
+# Add to Admin Group, ${BASEDC}
 dn: cn=adm,ou=Groups,${BASEDN}
 changetype: modify
 add: memberUid
 memberUid: $username
+-
+add: member
+member: uid=$username,ou=People,${BASEDN}
+
 EOF
-      elif [ "$uid" -ge 1000 ]; then
+        fi
+      fi
+      if [ "$_firstuser" -eq 1 ]; then
         tee -a "/tmp/usr_$username.ldif" <<EOF
+# New User Group, ${BASEDC}
+dn: cn=usr,ou=Groups,${BASEDN}
+objectClass: top
+objectClass: posixGroup
+objectClass: groupOfNames
+cn: usr
+gidNumber: 9999
+memberUid: $username
+member: uid=$username,ou=People,${BASEDN}
+
+EOF
+        _firstuser=$((0))
+      else
+        tee -a "/tmp/usr_$username.ldif" <<EOF
+# Add to User Group, ${BASEDC}
 dn: cn=usr,ou=Groups,${BASEDN}
 changetype: modify
 add: memberUid
 memberUid: $username
+-
+add: member
+member: uid=$username,ou=People,${BASEDN}
+
 EOF
       fi
       echo -en "${PASSWD}\n" | (ldapadd -D "cn=Manager,${BASEDN}" -W -f "/tmp/usr_$username.ldif")

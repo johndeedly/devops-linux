@@ -4,6 +4,10 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed openldap xkcdpass firewalld
 
+tee /etc/openldap/schema/rfc2307bis.ldif >/dev/null <<EOF
+$(</var/lib/cloud/instance/provision/pacman/20_authserver_pacman/rfc2307bis.ldif)
+EOF
+
 install -m 0700 -o ldap -g ldap -d /var/lib/openldap/openldap-data
 install -m 0760 -o root -g ldap -d /etc/openldap/slapd.d
 
@@ -29,7 +33,7 @@ include: file:///etc/openldap/schema/core.ldif
 # RFC1274: Cosine and Internet X.500 schema
 include: file:///etc/openldap/schema/cosine.ldif
 # RFC2307: An Approach for Using LDAP as a Network Information Service
-include: file:///etc/openldap/schema/nis.ldif
+include: file:///etc/openldap/schema/rfc2307bis.ldif
 # RFC2798: Internet Organizational Person
 include: file:///etc/openldap/schema/inetorgperson.ldif
 
@@ -54,6 +58,41 @@ olcDbIndex: uid pres,eq
 olcDbIndex: mail pres,sub,eq
 olcDbIndex: cn,sn pres,sub,eq
 olcDbIndex: dc eq
+
+# Module memberOf
+dn: cn=module,cn=config
+cn: module
+objectClass: olcModuleList
+objectClass: top
+olcModuleLoad: memberof.so
+olcModulePath: /usr/lib/openldap
+
+dn: olcOverlay=memberof,olcDatabase={1}mdb,cn=config
+olcOverlay: memberof
+objectClass: olcConfig
+objectClass: olcMemberOf
+objectClass: olcOverlayConfig
+objectClass: top
+olcMemberOfRefint: TRUE
+
+# Module refint
+dn: cn=module,cn=config
+cn: module
+objectClass: olcModuleList
+objectClass: top
+olcModuleLoad: refint.so
+olcModulePath: /usr/lib/openldap
+
+dn: olcOverlay=refint,olcDatabase={1}mdb,cn=config
+olcOverlay: refint
+objectClass: olcConfig
+objectClass: olcOverlayConfig
+objectClass: olcRefintConfig
+objectClass: top
+olcRefintAttribute: memberof
+olcRefintAttribute: member
+olcRefintAttribute: manager
+olcRefintAttribute: owner
 EOF
 slapadd -n 0 -F /etc/openldap/slapd.d/ -l /etc/openldap/config.ldif
 
