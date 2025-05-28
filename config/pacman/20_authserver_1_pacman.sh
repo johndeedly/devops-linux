@@ -52,6 +52,14 @@ olcSuffix: ${BASEDN}
 olcRootDN: cn=Manager,${BASEDN}
 olcRootPW: $PASSWD
 olcDbDirectory: /var/lib/openldap/openldap-data
+# TODO: Access Control List (https://www.openldap.org/doc/admin24/access-control.html)
+#   The first ACL allows users to update (but not read) their passwords, anonymous users
+#   to authenticate against this attribute, and (implicitly) denying all access to others.
+olcAccess: to attrs=userPassword by self =xw by anonymous auth by * none
+#   The second ACL grants authentication against the rootdn only from the local machine.
+olcAccess: to dn.base="cn=Manager,${BASEDN}" by peername.regex=127\.0\.0\.1 auth by users none by * none
+#   The third ACL allows (implicitly) everyone and anyone read access to all other entries.
+olcAccess: to * by * read
 # TODO: Create further indexes
 olcDbIndex: objectClass eq
 olcDbIndex: uid pres,eq
@@ -100,20 +108,6 @@ slapadd -n 0 -F /etc/openldap/slapd.d/ -l /etc/openldap/config.ldif
 tee -a /etc/conf.d/slapd <<EOF
 SLAPD_URLS="ldap://127.0.0.1/ ldap://[::1]/"
 SLAPD_OPTIONS=
-EOF
-
-# access control list
-tee -a /etc/openldap/slapd.conf <<EOF
-
-# allow password change only by self
-# disallow anonymous to read the password field
-access to attrs=userPassword
-       by self write
-       by anonymous auth
-       by users auth
-
-# anyone and everyone can read the rest
-access to * by * read
 EOF
 
 # Enable all configured services
