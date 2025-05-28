@@ -64,6 +64,9 @@ files:
     base:
       - path: stage/15_base_system.sh
         stage: 1
+    ldap:
+      - path: stage/18_ldap.sh
+        stage: 1
     mirror:
       - path: apt/20_localmirror_apt.sh
         stage: 1
@@ -137,6 +140,9 @@ files:
   pacman:
     base:
       - path: stage/15_base_system.sh
+        stage: 1
+    ldap:
+      - path: stage/18_ldap.sh
         stage: 1
     mirror:
       - path: pacman/20_localmirror_pacman.sh
@@ -246,6 +252,9 @@ files:
   yum:
     base:
       - path: stage/15_base_system.sh
+        stage: 1
+    ldap:
+      - path: stage/18_ldap.sh
         stage: 1
     mirror:
       - path: yum/20_localmirror_yum.sh

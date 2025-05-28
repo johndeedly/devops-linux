@@ -50,13 +50,13 @@ if [ -e /bin/apt ]; then
     lshw libxml2 jq man manpages-de trash-cli \
     wireguard-tools nfs-kernel-server \
     gvfs gvfs-backends cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
-    libnss-ldap libpam-ldap ldap-utils nslcd python3-pip python3-venv
+    python3-pip python3-venv
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     luajit libluajit-5.1-dev lua-mpack lua-lpeg libunibilium-dev libmsgpack-dev libtermkey-dev
   download_neovim
-  systemctl enable systemd-networkd systemd-resolved systemd-homed nslcd
+  systemctl enable systemd-networkd systemd-resolved systemd-homed
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/pacman ]; then
@@ -67,8 +67,8 @@ elif [ -e /bin/pacman ]; then
     lshw libxml2 jq core/man man-pages-de trash-cli \
     wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
-    openldap nss-pam-ldapd python-pip
-  systemctl enable systemd-networkd systemd-resolved systemd-homed nslcd
+    python-pip
+  systemctl enable systemd-networkd systemd-resolved systemd-homed
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/yum ]; then
@@ -79,13 +79,13 @@ elif [ -e /bin/yum ]; then
     lshw libxml2 jq man-db trash-cli \
     wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
-    openldap openldap-clients nss-pam-ldapd python3-pip
+    python3-pip
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C yum install -y \
     compat-lua-libs libtermkey libtree-sitter libvterm luajit luajit2.1-luv msgpack unibilium xsel
   download_neovim
-  systemctl enable systemd-networkd systemd-resolved nslcd
+  systemctl enable systemd-networkd systemd-resolved
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 fi
@@ -116,53 +116,12 @@ echo ":: setup NvChad environment"
 pid=$!
 echo ":: wait for NvChad to finish"
 wait $pid
-echo ":: create user homes on login"
 
+echo ":: create user homes on login"
 # see https://wiki.archlinux.org/title/LDAP_authentication for more details
 # TODO: on ubuntu system-login is missing - investigate!
 if [ -f /etc/pam.d/system-login ]; then
     sed -i 's/^\(session.*pam_env.so\)/\1\nsession    required   pam_mkhomedir.so     skel=\/etc\/skel umask=0077/' /etc/pam.d/system-login
-fi
-
-echo ':: enable optional ldap pam and nss authentication, disabling nss by commenting out connection string'
-echo ':: to re-enable nss, provide a valid ldap connection string'
-if [ -f /etc/pam.d/system-auth ]; then
-    sed -i '0,/^auth/s//auth       sufficient                  pam_ldap.so\nauth/' /etc/pam.d/system-auth
-    sed -i '0,/^account/s//account    sufficient                  pam_ldap.so\naccount/' /etc/pam.d/system-auth
-    sed -i '0,/^password/s//password   sufficient                  pam_ldap.so\npassword/' /etc/pam.d/system-auth
-    sed -i '0,/^session/s//session    optional                    pam_ldap.so\nsession/' /etc/pam.d/system-auth
-fi
-if [ -f /etc/pam.d/su ]; then
-    sed -i '0,/pam_rootok.so/s//pam_rootok.so\nauth            sufficient      pam_ldap.so/' /etc/pam.d/su
-    sed -i 's/^\(auth.*pam_unix.so\)/\1 use_first_pass/' /etc/pam.d/su
-    sed -i '0,/^account/s//account         sufficient      pam_ldap.so\naccount/' /etc/pam.d/su
-    sed -i '0,/^session/s//session         sufficient      pam_ldap.so\nsession/' /etc/pam.d/su
-fi
-if [ -f /etc/pam.d/su-l ]; then
-    sed -i '0,/pam_rootok.so/s//pam_rootok.so\nauth            sufficient      pam_ldap.so/' /etc/pam.d/su-l
-    sed -i 's/^\(auth.*pam_unix.so\)/\1 use_first_pass/' /etc/pam.d/su-l
-    sed -i '0,/^account/s//account         sufficient      pam_ldap.so\naccount/' /etc/pam.d/su-l
-    sed -i '0,/^session/s//session         sufficient      pam_ldap.so\nsession/' /etc/pam.d/su-l
-fi
-if [ -f /etc/nslcd.conf ]; then
-  chmod 0600 /etc/nslcd.conf
-  sed -i 's|^uri .*|uri ldap://0.0.0.0/|' /etc/nslcd.conf
-  sed -i 's|^base .*|base   dc=internal\nbase   group  ou=Groups,dc=internal\nbase   passwd ou=People,dc=internal\nbase   shadow ou=People,dc=internal|' /etc/nslcd.conf
-fi
-if [ -f /etc/nsswitch.conf ]; then
-    sed -i 's/^\(passwd.*\)/\1 ldap/' /etc/nsswitch.conf
-    sed -i 's/^\(group.*\)/\1 ldap/' /etc/nsswitch.conf
-    sed -i 's/^\(shadow.*\)/\1 ldap/' /etc/nsswitch.conf
-fi
-if [ -f /etc/openldap/ldap.conf ]; then
-  tee -a /etc/openldap/ldap.conf <<EOF
-
-BASE    dc=internal
-URI     ldap://0.0.0.0/
-EOF
-fi
-if [ -f /etc/pam.d/sudo ]; then
-    sed -i 's/^\(auth.*pam_unix.so\)/auth      sufficient    pam_ldap.so\n\1 try_first_pass/' /etc/pam.d/sudo
 fi
 
 echo ":: enable ntfs3 kernel support for read/write/repair of partitions"
