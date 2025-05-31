@@ -217,7 +217,7 @@ build {
   }
 
   provisioner "shell" {
-    inline = ["mkdir -p /srv/pxe /srv/docker"]
+    inline = ["mkdir -p /srv/pxe /srv/docker /srv/archiso"]
   }
 
   provisioner "file" {
@@ -228,6 +228,12 @@ build {
 
   provisioner "file" {
     source      = "/srv/docker/"
+    destination = "output/artifacts"
+    direction   = "download"
+  }
+
+  provisioner "file" {
+    source      = "/srv/archiso/"
     destination = "output/artifacts"
     direction   = "download"
   }

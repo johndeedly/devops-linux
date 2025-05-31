@@ -249,6 +249,9 @@ files:
         config: true
       - path: pxe/90_pxe_image/pxe.preset
         config: true
+    archiso-disc:
+      - path: pacman/90_archiso_disc.sh
+        stage: 2
   yum:
     base:
       - path: stage/15_base_system.sh

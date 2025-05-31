@@ -2,6 +2,17 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
+# check if build chain is installed
+if [ -f /devops-linux ]; then
+    # sync everything to disk
+    sync
+    # cleanup
+    rm -- "${0}"
+    # finished
+    exit 0
+fi
+# otherwise a standard archiso off the shelf is expected from here on
+
 # Wait for pacman keyring init to be done
 systemctl restart pacman-init.service
 while ! systemctl show pacman-init.service | grep SubState=exited; do
