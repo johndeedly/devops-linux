@@ -160,6 +160,9 @@ files:
     kde:
       - path: pacman/20_graphical_kde_pacman.sh
         stage: 2
+    cosmic:
+      - path: pacman/20_graphical_cosmic_pacman.sh
+        stage: 2
     podman:
       - path: pacman/20_podman_pacman.sh
         stage: 1
