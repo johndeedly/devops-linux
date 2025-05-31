@@ -161,6 +161,61 @@ setup:
     - dagu
 ```
 
+## Boot DevOps Linux Setup via PXE (Network Install)
+
+### Basic components needed
+
+- PXE capable DHCP server (e.g. _Setup #2_)
+- HTTP server (e.g. _Setup #2_, too)
+- The modified ArchISO image containing the cloud init config files
+
+### Configuration steps
+
+- Mount the ArchISO image to access it's files:
+  - In most distros inside a graphical environment you just need to doubleclick the file
+  - Inside a shell you create a folder and mount the iso: ```mkdir -p /mnt/iso; mount -o loop,ro archlinux-x86_64-cidata.iso /mnt/iso```
+- Five files are needed:
+  | Path on CD | Purpose | Target Location (when _Setup #2_ is used) | Remarks |
+  |--|---|--|-|
+  | arch/boot/x86_64/vmlinuz-linux | The ArchISO kernel | /srv/pxe/__arch/x86_64/vmlinuz-linux__ | |
+  | arch/boot/x86_64/initramfs-linux.img | The ArchISO minimal ramdisk | /srv/pxe/__arch/x86_64/initramfs-linux.img__ | |
+  | arch/x86_64/airootfs.sfs | The root filesystem (squashfs) | /srv/pxe/__arch/x86_64/airootfs.sfs__ | |
+  | meta-data | Cloud Init meta data (probably just an empty file) | /srv/pxe/__config/meta-data__ | The path to ```/srv/pxe/config``` probably needs to be created |
+  | user-data | Cloud Init user data (the whole DevOps-Linux setup, packaged as ```Content-Type: multipart/mixed```) | /srv/pxe/__config/user-data__ | The path to ```/srv/pxe/config``` probably needs to be created |
+- Modify the ```/srv/tftp/pxelinux.cfg/default``` (_Setup #2_) bootmenu file
+  ```
+  UI menu.c32
+  SERIAL 0 115200
+  PROMPT 0
+  TIMEOUT 150
+  ONTIMEOUT DevOpsHTTP
+  
+  MENU TITLE DevOps-Linux PXE Installation
+  
+  MENU CLEAR
+  MENU IMMEDIATE
+  
+  LABEL DevOpsHTTP
+  MENU LABEL DevOps-Linux PXE Installation using HTTP
+  LINUX http://10.42.42.42/arch/x86_64/vmlinuz-linux
+  INITRD http://10.42.42.42/arch/x86_64/initramfs-linux.img
+  APPEND archiso_pxe_http=http://10.42.42.42/ cow_spacesize=75% ds=nocloud;s=http://10.42.42.42/config/ console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+  SYSAPPEND 3
+  ```
+
+### Common Gotchas
+
+- Did you check the access rights for the ```/srv/pxe/*``` subfolders and files? The folders are owned by ```root```, probably. As non-root users need to access the files, too, the folders need ```rwxr-xr-x``` (```0755```) permission and the files ```rw-r--r--``` (```0644```). A quick fix would be the following code snippet:
+  ```bash
+  find /srv/pxe -type d -print | while read -r line; do
+    chmod 0755 "$line"
+  done
+  find /srv/pxe -type f -print | while read -r line; do
+    chmod 0644 "$line"
+  done
+  ```
+- The package cache that is placed in the ```database/``` folder on the ArchISO cannot be used with this method. You either need to configure a package mirror as described in _Setup #4_ and configure your sources, or skip caching completely.
+
 ## License
 
 Licensed under the [0BSD](LICENSE.txt) license.
