@@ -2,51 +2,64 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
+LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed xkcdpass
+
 # enable and start nextcloud
 PROJECTNAME="nextcloud"
 TMPDIR="$(mktemp -d)"
 BUILDTMP="${TMPDIR}/${PROJECTNAME}"
 mkdir -p "${BUILDTMP}"
 
+ROOTPASSWD=$(xkcdpass -w ger-anlx -d '' -v '[A-Xa-x]' --min=4 --max=8 -n 6)
+PASSWDGEN=$(xkcdpass -w ger-anlx -d '' -v '[A-Xa-x]' --min=4 --max=8 -n 6)
+
 tee "${BUILDTMP}/podman-compose.yml" <<EOF
 name: ${PROJECTNAME}
 networks:
-  frontend:
-volumes: 
-  nextcloud_aio_mastercontainer:
-    name: nextcloud_aio_mastercontainer
+  lan:
+volumes:
+  nextcloud:
+  db:
 services:
-  main:
-    image: ghcr.io/nextcloud-releases/all-in-one:latest
+  db:
+    image: mariadb:10.6
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
     restart: unless-stopped
-    init: true
-    name: nextcloud-aio-mastercontainer
-    networks:
-      - frontend
-    ports:
-      - '80:80'
-      - '8080:8080'
-      - '8443:8443'
-    environment:
-      APACHE_PORT: 11000
-      APACHE_IP_BINDING: 127.0.0.1
-      APACHE_ADDITIONAL_NETWORK: frontend
-      SKIP_DOMAIN_VALIDATION: true
     volumes:
-      - nextcloud_aio_mastercontainer:/mnt/docker-aio-config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - db:/var/lib/mysql
+    networks:
+      - lan
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ROOTPASSWD}
+      MYSQL_PASSWORD: ${PASSWDGEN}
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+  main:
+    image: nextcloud
+    ports:
+      - 8080:80
+    links:
+      - db
+    networks:
+      - lan
+    volumes:
+      - nextcloud:/var/www/html
+    environment:
+      MYSQL_PASSWORD: ${PASSWDGEN}
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_HOST: db
+    restart: unless-stopped
 EOF
 pushd "${BUILDTMP}"
   podman-compose up --no-start
 popd
 pushd /etc/systemd/system
-  podman generate systemd --new --name "nextcloud-aio-mastercontainer" -f
+  podman generate systemd --new --name "${PROJECTNAME}_main_1" -f
 popd
-systemctl enable "container-nextcloud-aio-mastercontainer"
+systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=80/tcp
 firewall-offline-cmd --zone=public --add-port=8080/tcp
-firewall-offline-cmd --zone=public --add-port=8443/tcp
 
 # sync everything to disk
 sync
