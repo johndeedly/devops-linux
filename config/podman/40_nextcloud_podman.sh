@@ -55,8 +55,12 @@ pushd "${BUILDTMP}"
   podman-compose up --no-start
 popd
 pushd /etc/systemd/system
-  podman generate systemd --new --name "${PROJECTNAME}_main_1" -f
+  podman generate systemd --new --name "${PROJECTNAME}_db_1" -f
+  podman generate systemd --new --name "${PROJECTNAME}_main_1" \
+    "--after=container-${PROJECTNAME}_db_1.service" \
+    "--requires=container-${PROJECTNAME}_db_1.service" -f
 popd
+systemctl enable "container-${PROJECTNAME}_db_1"
 systemctl enable "container-${PROJECTNAME}_main_1"
 
 firewall-offline-cmd --zone=public --add-port=8080/tcp
