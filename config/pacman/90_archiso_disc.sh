@@ -25,6 +25,9 @@ jq
 libguestfs
 libisoburn
 lvm2
+mkinitcpio
+mkinitcpio-archiso
+mkinitcpio-nfs-utils
 mtools
 nano
 nbd
@@ -47,6 +50,11 @@ yq
 xfsprogs
 EOF
 sort -u -o /var/tmp/archlive/baseline/packages.x86_64 /var/tmp/archlive/baseline/packages.x86_64
+
+# merging releng hooks into baseline archiso.conf to enable pxe boot
+tee /var/tmp/archlive/baseline/airootfs/etc/mkinitcpio.conf.d/archiso.conf <<EOF
+HOOKS=(base udev microcode modconf archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs block filesystems)
+EOF
 
 # fingerprint
 tee -a /var/tmp/archlive/baseline/airootfs/devops-linux <<EOF
