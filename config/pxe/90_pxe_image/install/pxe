@@ -2,7 +2,6 @@
 
 build() {
     add_module "loop"
-    add_module "dm_crypt"
     add_module "overlay"
     add_all_modules "/drivers/net/"
     
@@ -12,7 +11,6 @@ build() {
     add_binary head
     add_binary blockdev
     add_binary losetup
-    add_binary cryptsetup
     add_binary /usr/lib/initcpio/ipconfig /usr/bin/ipconfig
 
     # add support for a progressbar if pv is installed

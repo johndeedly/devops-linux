@@ -84,8 +84,6 @@ pxe_mount_handler() {
     local copytoram_img="${copytoram_mnt}/pxeboot.img"
     local copytoram_work="${copytoram_mnt}/workdir"
     local copytoram_upper="${copytoram_mnt}/upperdir"
-    local encrypt_name="pxeboot"
-    local encrypt_mnt="/dev/mapper/${encrypt_name}"
     
     # 1st: check everything
     if ! mountpoint -q "${boot_mnt}"; then
@@ -127,26 +125,15 @@ pxe_mount_handler() {
         boot_img="${copytoram_img}"
     fi
 
-    # 3rd: prepare the loop device for the image to be used as a mount point
-    local img_loopdev="$(losetup --find --show --read-only -- "${boot_img}")"
-
-    # 4th: unlock the loop device when encrypted
-    if cryptsetup isLuks "${img_loopdev}" >/dev/null 2>&1; then
-        msg ":: Open encrypted '${img_loopdev}' to '${encrypt_mnt}'"
-        while ! cryptsetup open "${img_loopdev}" ${encrypt_name}; do
-            sleep 3;
-        done
-        img_loopdev="${encrypt_mnt}"
-    fi
-
-    # 5th: mount the loop device to the root mount point
-    msg ":: Mount '${img_loopdev}' to '${root_mnt}'"
-    if ! mount --mkdir -o defaults -r "${img_loopdev}" "${root_mnt}"; then
-        echo "!! ERROR: failed to mount '${img_loopdev}'"
+    # 3rd: mount the boot squash image to the root mount point
+    echo ":: Mount '${boot_img}' to '${root_mnt}'"
+    mkdir -p "${root_mnt}"
+    if ! mount -t squashfs -o loop "${boot_img}" "${root_mnt}"; then
+        echo "!! ERROR: failed to mount '${boot_img}'"
         launch_interactive_shell
     fi
-
-    # 6th: mount the overlay filesystem on top of the loop device to allow write access
+    
+    # 4th: mount the overlay filesystem on top of the loop device to allow write access
     #      (when no copytoram was set, a tmpfs is mounted regardless)
     if ! mountpoint -q "${copytoram_mnt}"; then
         msg ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
@@ -159,13 +146,13 @@ pxe_mount_handler() {
         launch_interactive_shell
     fi
 
-    # 7th: when copy to RAM is used, the original boot mount is no longer needed
+    # 5th: when copy to RAM is used, the original boot mount is no longer needed
     if [ "${copytoram}" = "y" ]; then
         umount -d "${boot_mnt}"
         rmdir "${boot_mnt}"
     fi
 
-    # 8th: when no copy to RAM is used, the booting network card has to keep it's settings
+    # 6th: when no copy to RAM is used, the booting network card has to keep it's settings
     if [ "${copytoram}" = "n" ]; then
         if [ -z "${bootif_dev}" ]; then
             echo "!! ERROR: when copy to RAM is not used, a boot network device needs to be present"
@@ -239,7 +226,7 @@ MulticastDNS=yes
 EOF
     fi
 
-    # 9th: generate a random hostname for the client
+    # 7th: generate a random hostname for the client
     tee "${newroot}/etc/hostname" >/dev/null <<EOF
 linux-$(tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
 EOF
