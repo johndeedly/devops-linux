@@ -3,13 +3,6 @@
 build() {
     add_runscript
 
-    if command -v wget >/dev/null 2>&1; then
-        add_binary wget
-    else
-        warning 'wget not found; falling back to curl'
-        add_binary curl
-    fi
-
     add_file /etc/ssl/certs/ca-certificates.crt
 }
 
