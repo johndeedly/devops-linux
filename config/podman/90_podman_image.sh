@@ -22,7 +22,7 @@ fi
 mkdir -p /srv/img
 sync
 mksquashfs / /srv/img/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-  -e "boot/*" "cidata*" "dev/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "media/*" "tmp/*" "swap/*" "usr/lib/firmware/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/lib/cloud/*"
+  -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "media/*" "tmp/*" "swap/*" "usr/lib/firmware/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/lib/cloud/*"
 
 # reenable sleep
 sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
