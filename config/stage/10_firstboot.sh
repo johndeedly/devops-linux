@@ -260,14 +260,14 @@ download_yq() {
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
-    jq yq openssh-server openssh-client systemd-container unattended-upgrades firewalld xkcdpass
+    jq yq openssh-server openssh-client systemd-container unattended-upgrades firewalld xkcdpass cryptsetup
   systemctl enable ssh firewalld
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
 elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh firewalld xkcdpass
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh firewalld xkcdpass cryptsetup
   systemctl enable sshd firewalld
 elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C yum install -y systemd-container polkit curl wget nano jq openssh firewalld
+  LC_ALL=C yes | LC_ALL=C yum install -y systemd-container polkit curl wget nano jq openssh firewalld cryptsetup
   systemctl enable sshd firewalld
   download_yq
 fi

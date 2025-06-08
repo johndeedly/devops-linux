@@ -3,6 +3,10 @@ setup:
   options:
     - base
   target: auto
+  encrypt:
+    enabled: no
+    password: packer-build-passwd
+    image: devops-linux-archlinux.tar.gz
   archiso_mirror: false
   pkg_mirror: false
   chaotic_mirror: false

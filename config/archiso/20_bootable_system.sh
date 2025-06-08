@@ -74,13 +74,33 @@ sleep 1
 # resize main ext4/btrfs partition
 ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/root\|linux filesystem/I!d' | head -n1) )
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
-LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
+ENCRYPT_ENABLED="$(yq -r '.setup.encrypt.enabled' /var/lib/cloud/instance/config/setup.yml)"
+ENCRYPT_PASSWD="$(yq -r '.setup.encrypt.password' /var/lib/cloud/instance/config/setup.yml)"
+ENCRYPT_IMAGE="$(yq -r '.setup.encrypt.image' /var/lib/cloud/instance/config/setup.yml)"
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+  LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
+    name "${ROOT_PART[1]}" root \
+    resizepart "${ROOT_PART[1]}" 16GiB \
+    mkpart nextroot ext4 16GiB 100%
+else
+  LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${ROOT_PART[1]}" root \
     resizepart "${ROOT_PART[1]}" 100%
+fi
 
 # update partitions in kernel again
 partx -u "${TARGET_DEVICE}"
 sleep 1
+
+# encrypt and open the provided system root
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+  NEWROOT_PART=( $(lsblk -no PATH,PARTN,PARTLABEL "${TARGET_DEVICE}" | sed -e '/nextroot/I!d' | head -n1) )
+  echo "NEWROOT: ${TARGET_DEVICE}, partition ${NEWROOT_PART[1]}"
+  echo "Encrypt device ${NEWROOT_PART[0]}"
+  printf "%s" "${ENCRYPT_PASSWD}" | (cryptsetup luksFormat --verbose -d - "${NEWROOT_PART[0]}")
+  printf "%s" "${ENCRYPT_PASSWD}" | (cryptsetup luksOpen -d - "${NEWROOT_PART[0]}" nextroot)
+  cryptsetup luksDump "${NEWROOT_PART[0]}"
+fi
 
 # resize main filesystem
 if [[ "${ROOT_PART[2]}" =~ [bB][tT][rR][fF][sS] ]]; then
@@ -102,6 +122,11 @@ elif [[ "${ROOT_PART[2]}" =~ [xX][fF][sS] ]]; then
     xfs_growfs -d /mnt
     sync
     umount -l /mnt
+fi
+
+# create ext4 filesystem in encrypted partition
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+  mkfs.ext4 -L nextroot /dev/mapper/nextroot
 fi
 
 # bootable system
@@ -265,6 +290,23 @@ cp /cidata_log /mnt/cidata_log || true
 chmod 0600 /mnt/cidata_log || true
 sync
 umount -l /mnt
+
+# mount encrypted filesystem and prefill it with the tarball under /iso/tar/*.tar.gz
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+  mount /dev/mapper/nextroot /mnt
+  if [ -d /iso/tar ] && [ -f "/iso/tar/${ENCRYPT_IMAGE}" ]; then
+    echo ":: Extract tarball /iso/tar/${ENCRYPT_IMAGE}"
+    tar -xf "/iso/tar/${ENCRYPT_IMAGE}" -C /mnt
+  fi
+
+  # finalize /mnt again
+  cp /cidata_log /mnt/cidata_log || true
+  chmod 0600 /mnt/cidata_log || true
+  sync
+  umount -l /mnt
+  cryptsetup luksClose nextroot
+  sync
+fi
 
 sleep 1
 lsblk -o +LABEL,PARTLABEL,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}"
