@@ -124,9 +124,9 @@ elif [[ "${ROOT_PART[2]}" =~ [xX][fF][sS] ]]; then
     umount -l /mnt
 fi
 
-# create ext4 filesystem in encrypted partition
+# create btrfs filesystem in encrypted partition
 if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
-  mkfs.ext4 -L nextroot /dev/mapper/nextroot
+  mkfs.btrfs -L nextroot /dev/mapper/nextroot
 fi
 
 # bootable system
