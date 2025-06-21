@@ -160,6 +160,7 @@ http {
     include /etc/nginx/sites-enabled/*;
 }
 EOF
+rm /etc/nginx/sites-enabled/default
 
 tee -a /etc/fstab <<EOF
 
