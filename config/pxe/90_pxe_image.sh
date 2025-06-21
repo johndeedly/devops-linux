@@ -93,11 +93,15 @@ EOF
     cp "$VMLINUZ" /srv/pxe/debian/x86_64/vmlinuz
     echo ":: copy $INITRD"
     cp "$INITRD" /srv/pxe/debian/x86_64/initrd.img
+    chmod 644 /srv/pxe/debian/x86_64/*
+    chown root:root /srv/pxe/debian/x86_64/*
   elif grep -q Ubuntu /proc/version; then
     echo ":: copy $VMLINUZ"
     cp "$VMLINUZ" /srv/pxe/ubuntu/x86_64/vmlinuz
     echo ":: copy $INITRD"
     cp "$INITRD" /srv/pxe/ubuntu/x86_64/initrd.img
+    chmod 644 /srv/pxe/ubuntu/x86_64/*
+    chown root:root /srv/pxe/ubuntu/x86_64/*
   fi
 elif [ -e /bin/pacman ]; then
   echo ":: create skeleton for pxe boot mkinitcpio"
