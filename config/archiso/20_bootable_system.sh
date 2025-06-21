@@ -8,7 +8,7 @@ if [ -z "$ENDOFLIFEURL" ] || [[ "$ENDOFLIFEURL" =~ [nN][uU][lL][lL] ]]; then
     echo ":: rolling release distro"
 else
     ENDOFLIFEFILE="$(mktemp)"
-    wget -c -N -O "${ENDOFLIFEFILE}" --progress=dot "${ENDOFLIFEURL}"
+    wget -c -O "${ENDOFLIFEFILE}" --progress=dot "${ENDOFLIFEURL}"
     eoldate=$(jq -r '.eol' "${ENDOFLIFEFILE}")
     epoch=$(date -d "$eoldate" +%s)
     rm "$ENDOFLIFEFILE"
@@ -52,7 +52,7 @@ if ! [ -f "${CLOUD_IMAGE_PATH}" ]; then
         exit 1
     fi
     CLOUD_IMAGE_PATH="$(mktemp -d)/$(yq -r '.setup as $setup | .images[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
-    wget -c -N -O "${CLOUD_IMAGE_PATH}" --progress=dot:giga "${DOWNLOAD_IMAGE_PATH}"
+    wget -c -O "${CLOUD_IMAGE_PATH}" --progress=dot:giga "${DOWNLOAD_IMAGE_PATH}"
 fi
 echo "CLOUD-IMAGE: ${CLOUD_IMAGE_PATH}, TARGET: ${TARGET_DEVICE}"
 
