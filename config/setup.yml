@@ -130,6 +130,11 @@ files:
     proxmox-devops:
       - path: apt/30_proxmox_3_apt.sh
         stage: 2
+    router:
+      - path: apt/20_router_apt.sh
+        stage: 2
+      - path: apt/20_router_apt/pxelinux.cfg.default
+        config: true
     podman-image:
       - path: podman/90_podman_image.sh
         stage: 2
