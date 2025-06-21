@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install net-tools syslinux dnsmasq iptraf-ng \
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install net-tools syslinux syslinux-efi pxelinux dnsmasq iptraf-ng \
   ntp nginx nfs-kernel-server portmap nfs-common samba nbd-server tgt firewalld rsync
 
 DHCP_ADDITIONAL_SETUP=(
@@ -131,8 +131,11 @@ mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
 # configure tftp
 mkdir -p /srv/tftp/{,bios,efi32,efi64}/pxelinux.cfg
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/modules/bios/ /srv/tftp/bios/
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/PXELINUX/ /srv/tftp/bios/
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/modules/efi32/ /srv/tftp/efi32/
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/SYSLINUX.EFI/efi32/ /srv/tftp/efi32/
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/modules/efi64/ /srv/tftp/efi64/
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/SYSLINUX.EFI/efi64/ /srv/tftp/efi64/
 tee /srv/tftp/pxelinux.cfg/default <<EOF
 $(</var/lib/cloud/instance/provision/apt/20_router_apt/pxelinux.cfg.default)
 EOF
