@@ -74,6 +74,13 @@ files:
     mirror:
       - path: apt/20_localmirror_apt.sh
         stage: 1
+    authserver:
+      - path: apt/20_authserver_1_apt.sh
+        stage: 1
+      - path: apt/20_authserver_2_apt.sh
+        stage: 2
+      - path: apt/20_authserver_apt/rfc2307bis.ldif
+        config: true
     kde:
       - path: apt/20_graphical_kde_apt.sh
         stage: 2

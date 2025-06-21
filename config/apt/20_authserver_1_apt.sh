@@ -2,20 +2,20 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed openldap xkcdpass firewalld
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install slapd ldap-utils xkcdpass firewalld
 
-tee /etc/openldap/schema/rfc2307bis.ldif >/dev/null <<EOF
-$(</var/lib/cloud/instance/provision/pacman/20_authserver_pacman/rfc2307bis.ldif)
+tee /etc/ldap/schema/rfc2307bis.ldif >/dev/null <<EOF
+$(</var/lib/cloud/instance/provision/apt/20_authserver_apt/rfc2307bis.ldif)
 EOF
 
-install -m 0700 -o ldap -g ldap -d /var/lib/openldap/openldap-data
-install -m 0760 -o root -g ldap -d /etc/openldap/slapd.d
+install -m 0700 -o openldap -g openldap -d /var/lib/ldap/openldap-data
+install -m 0760 -o root -g openldap -d /etc/ldap/slapd.d
 
 BASEDC="internal"
 BASEDN="dc=${BASEDC}"
 PASSWD=$(xkcdpass -w ger-anlx -R -D '1234567890' -v '[A-Xa-x]' --min=4 --max=8 -n 3)
 
-tee /etc/openldap/config.ldif <<EOF
+tee /etc/ldap/config.ldif <<EOF
 # The root config entry
 dn: cn=config
 objectClass: olcGlobal
@@ -35,7 +35,7 @@ cn: module
 objectClass: olcModuleList
 objectClass: top
 olcModuleLoad: back_mdb.so
-olcModulePath: /usr/lib/openldap
+olcModulePath: /usr/lib/ldap
 
 # Schemas
 dn: cn=schema,cn=config
@@ -43,13 +43,13 @@ objectClass: olcSchemaConfig
 cn: schema
 
 # TODO: Include further schemas as necessary
-include: file:///etc/openldap/schema/core.ldif
+include: file:///etc/ldap/schema/core.ldif
 # RFC1274: Cosine and Internet X.500 schema
-include: file:///etc/openldap/schema/cosine.ldif
+include: file:///etc/ldap/schema/cosine.ldif
 # RFC2307: An Approach for Using LDAP as a Network Information Service
-include: file:///etc/openldap/schema/rfc2307bis.ldif
+include: file:///etc/ldap/schema/rfc2307bis.ldif
 # RFC2798: Internet Organizational Person
-include: file:///etc/openldap/schema/inetorgperson.ldif
+include: file:///etc/ldap/schema/inetorgperson.ldif
 
 # The database for our entries
 dn: olcDatabase=mdb,cn=config
@@ -59,7 +59,7 @@ olcDatabase: mdb
 olcSuffix: ${BASEDN}
 olcRootDN: cn=Manager,${BASEDN}
 olcRootPW: $PASSWD
-olcDbDirectory: /var/lib/openldap/openldap-data
+olcDbDirectory: /var/lib/ldap/openldap-data
 # TODO: Access Control List (https://www.openldap.org/doc/admin24/access-control.html)
 #   The first ACL allows users to update (but not read) their passwords, anonymous users
 #   to authenticate against this attribute, and (implicitly) denying all access to others.
@@ -81,7 +81,7 @@ cn: module
 objectClass: olcModuleList
 objectClass: top
 olcModuleLoad: memberof.so
-olcModulePath: /usr/lib/openldap
+olcModulePath: /usr/lib/ldap
 
 dn: olcOverlay=memberof,olcDatabase={1}mdb,cn=config
 olcOverlay: memberof
@@ -97,7 +97,7 @@ cn: module
 objectClass: olcModuleList
 objectClass: top
 olcModuleLoad: refint.so
-olcModulePath: /usr/lib/openldap
+olcModulePath: /usr/lib/ldap
 
 dn: olcOverlay=refint,olcDatabase={1}mdb,cn=config
 olcOverlay: refint
@@ -110,10 +110,10 @@ olcRefintAttribute: member
 olcRefintAttribute: manager
 olcRefintAttribute: owner
 EOF
-if [ "$(ls -A /etc/openldap/slapd.d)" ]; then
-  rm -r /etc/openldap/slapd.d/*
+if [ "$(ls -A /etc/ldap/slapd.d)" ]; then
+  rm -r /etc/ldap/slapd.d/*
 fi
-slapadd -n 0 -F /etc/openldap/slapd.d/ -l /etc/openldap/config.ldif
+slapadd -n 0 -F /etc/ldap/slapd.d/ -l /etc/ldap/config.ldif
 
 # grant access from localhost
 mkdir -p /etc/conf.d
@@ -126,9 +126,9 @@ EOF
 systemctl enable slapd.service
 
 # sync everything to disk
-find /etc/openldap/slapd.d/ -d -print
+find /etc/ldap/slapd.d/ -d -print
 sync
 
 # cleanup
-chown -R ldap:ldap /etc/openldap/*
+chown -R openldap:openldap /etc/ldap/*
 rm -- "${0}"
