@@ -93,6 +93,18 @@ iface vmbr$cnt inet $(if [ $cnt -eq 0 ]; then echo "dhcp"; else echo "manual"; f
 EOF
 done
 
+# one internal bridge for everything behind a virtual router
+tee -a /etc/network/interfaces <<EOF
+
+auto vmbrlan0
+iface vmbrlan0 inet manual
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+EOF
+
 # enable overcommit of vm memory
 sysctl -w vm.overcommit_memory=1
 tee /etc/sysctl.d/90-overcommit-memory.conf <<EOF

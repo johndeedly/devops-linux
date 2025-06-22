@@ -18,49 +18,65 @@ pushd "$BUILDDIR"
 git clone https://github.com/johndeedly/devops-linux.git
 pushd devops-linux
 
+# debian router
+yq -y '(.setup.distro) = "debian"' config/setup.yml | sponge config/setup.yml
+yq -y '(.setup.options) = ["router"]' config/setup.yml | sponge config/setup.yml
+yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
+./cidata.sh --archiso
+mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-300-debian-router.iso
+qm create 300 --net0 virtio,bridge=vmbr0 --net1 virtio,bridge=vmbrlan0 --name debian-router --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
+   --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,detect_zeroes=1,discard=on,iothread=1" --agent enabled=1 \
+   --ide0 local:iso/archlinux-x86_64-300-debian-router.iso,media=cdrom --vga virtio \
+   --onboot 1 --reboot 1 --serial0 socket --kvm 1 --protection 1
+qm disk resize 300 virtio0 128G
+
 # archlinux mirror server
 yq -y '(.setup.distro) = "archlinux"' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 ./cidata.sh --archiso
-mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-200-arch-mirror.iso
-qm create 200 --net0 virtio,bridge=vmbr0 --name arch-mirror --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
-   --boot "order=virtio0;ide0" --virtio0 "local:1024,format=qcow2,discard=on" --agent enabled=1 \
-   --ide0 local:iso/archlinux-x86_64-200-arch-mirror.iso,media=cdrom --vga virtio \
-   --onboot 1 --reboot 1 --serial0 socket --kvm 1 --protection 1
+mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-500-arch-mirror.iso
+qm create 500 --net0 virtio,bridge=vmbrlan0 --name arch-mirror --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
+   --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,detect_zeroes=1,discard=on,iothread=1" --agent enabled=1 \
+   --ide0 local:iso/archlinux-x86_64-500-arch-mirror.iso,media=cdrom --vga virtio \
+   --onboot 0 --reboot 1 --serial0 socket --kvm 1 --protection 1
+qm disk resize 500 virtio0 1T
 
-# debian mirror server
-yq -y '(.setup.distro) = "debian"' config/setup.yml | sponge config/setup.yml
+# debian bookworm mirror server
+yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 ./cidata.sh --archiso
-mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-201-debian-mirror.iso
-qm create 201 --net0 virtio,bridge=vmbr0 --name debian-mirror --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
-   --boot "order=virtio0;ide0" --virtio0 "local:1024,format=qcow2,discard=on" --agent enabled=1 \
-   --ide0 local:iso/archlinux-x86_64-201-debian-mirror.iso,media=cdrom --vga virtio \
-   --onboot 1 --reboot 1 --serial0 socket --kvm 1 --protection 1
+mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-501-debian-mirror.iso
+qm create 501 --net0 virtio,bridge=vmbrlan0 --name debian-bookworm-mirror --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
+   --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,detect_zeroes=1,discard=on,iothread=1" --agent enabled=1 \
+   --ide0 local:iso/archlinux-x86_64-501-debian-mirror.iso,media=cdrom --vga virtio \
+   --onboot 0 --reboot 1 --serial0 socket --kvm 1 --protection 1
+qm disk resize 501 virtio0 1T
 
-# ubuntu mirror server
-yq -y '(.setup.distro) = "ubuntu"' config/setup.yml | sponge config/setup.yml
+# ubuntu noble mirror server
+yq -y '(.setup.distro) = "ubuntu-24"' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 ./cidata.sh --archiso
-mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-202-ubuntu-mirror.iso
-qm create 202 --net0 virtio,bridge=vmbr0 --name debian-mirror --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
-   --boot "order=virtio0;ide0" --virtio0 "local:1024,format=qcow2,discard=on" --agent enabled=1 \
-   --ide0 local:iso/archlinux-x86_64-202-ubuntu-mirror.iso,media=cdrom --vga virtio \
-   --onboot 1 --reboot 1 --serial0 socket --kvm 1 --protection 1
+mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-502-ubuntu-mirror.iso
+qm create 502 --net0 virtio,bridge=vmbrlan0 --name ubuntu-noble-mirror --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
+   --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,detect_zeroes=1,discard=on,iothread=1" --agent enabled=1 \
+   --ide0 local:iso/archlinux-x86_64-502-ubuntu-mirror.iso,media=cdrom --vga virtio \
+   --onboot 0 --reboot 1 --serial0 socket --kvm 1 --protection 1
+qm disk resize 502 virtio0 1T
 
 # podman debian server
 yq -y '(.setup.distro) = "debian"' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.options) = ["podman","dagu","cicd"]' config/setup.yml | sponge config/setup.yml
 yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 ./cidata.sh --archiso
-mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-203-debian-podman.iso
-qm create 203 --net0 virtio,bridge=vmbr0 --name debian-podman --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
-   --boot "order=virtio0;ide0" --virtio0 "local:512,format=qcow2,discard=on" --agent enabled=1 \
-   --ide0 local:iso/archlinux-x86_64-203-debian-podman.iso,media=cdrom --vga virtio \
-   --onboot 1 --reboot 1 --serial0 socket --kvm 1 --protection 1
+mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-503-debian-podman.iso
+qm create 503 --net0 virtio,bridge=vmbrlan0 --name debian-podman --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
+   --boot "order=virtio0;ide0" --virtio0 "local:0,format=qcow2,discard=on" --agent enabled=1 \
+   --ide0 local:iso/archlinux-x86_64-503-debian-podman.iso,media=cdrom --vga virtio \
+   --onboot 0 --reboot 1 --serial0 socket --kvm 1 --protection 1
+qm disk resize 503 virtio0 512G
 
 # exit build environment
 popd
