@@ -62,7 +62,7 @@ then
         pacman -S --noconfirm --needed git python3
         git clone --depth=1 https://github.com/canonical/cloud-utils.git ~/cloud-utils
         cp ~/cloud-utils/bin/* /usr/bin/
-        rm -r ~/cloud-utils
+        rm -rf ~/cloud-utils
     else
         echo 1>&2 "The command 'write-mime-multipart' could not be found. Please install cloud-image-utils to use this script."
         echo 1>&2 "archlinux: https://archlinux.org/packages/extra/any/cloud-image-utils/"

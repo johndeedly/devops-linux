@@ -8,31 +8,51 @@ err_report() {
 }
 trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
 
+ismsys2env=""
+if [ -f /etc/os-release ] && grep -E 'ID=msys2' /etc/os-release >/dev/null; then
+  ismsys2env="YES"
+fi
+
 # check wget is installed
 if ! command -v wget 2>&1 >/dev/null
 then
-    echo 1>&2 "The command 'wget' could not be found. Please install wget to use this script."
-    echo 1>&2 "archlinux: https://archlinux.org/packages/extra/x86_64/wget/"
-    echo 1>&2 "debian: https://packages.debian.org/bookworm/wget"
-    exit 1
+    if [ -n "$ismsys2env" ]; then
+        pacman -S --noconfirm --needed wget
+    else
+        echo 1>&2 "The command 'wget' could not be found. Please install wget to use this script."
+        echo 1>&2 "archlinux: https://archlinux.org/packages/extra/x86_64/wget/"
+        echo 1>&2 "debian: https://packages.debian.org/bookworm/wget"
+        exit 1
+    fi
 fi
 
 # check xorriso is installed
 if ! command -v xorriso 2>&1 >/dev/null
 then
-    echo 1>&2 "The command 'xorriso' could not be found. Please install libisoburn to use this script."
-    echo 1>&2 "archlinux: https://archlinux.org/packages/extra/x86_64/libisoburn/"
-    echo 1>&2 "debian: https://packages.debian.org/bookworm/xorriso"
-    exit 1
+    if [ -n "$ismsys2env" ]; then
+        pacman -S --noconfirm xorriso
+    else
+        echo 1>&2 "The command 'xorriso' could not be found. Please install xorriso to use this script."
+        echo 1>&2 "archlinux: https://archlinux.org/packages/extra/x86_64/libisoburn/"
+        echo 1>&2 "debian: https://packages.debian.org/bookworm/xorriso"
+        exit 1
+    fi
 fi
 
 # check write-mime-multipart is installed
 if ! command -v write-mime-multipart 2>&1 >/dev/null
 then
-    echo 1>&2 "The command 'write-mime-multipart' could not be found. Please install cloud-image-utils to use this script."
-    echo 1>&2 "archlinux: https://archlinux.org/packages/extra/any/cloud-image-utils/"
-    echo 1>&2 "debian: https://packages.debian.org/bookworm/cloud-image-utils"
-    exit 1
+    if [ -n "$ismsys2env" ]; then
+        pacman -S --noconfirm --needed git python3
+        git clone --depth=1 https://github.com/canonical/cloud-utils.git ~/cloud-utils
+        cp ~/cloud-utils/bin/* /usr/bin/
+        rm -rf ~/cloud-utils
+    else
+        echo 1>&2 "The command 'write-mime-multipart' could not be found. Please install cloud-image-utils to use this script."
+        echo 1>&2 "archlinux: https://archlinux.org/packages/extra/any/cloud-image-utils/"
+        echo 1>&2 "debian: https://packages.debian.org/bookworm/cloud-image-utils"
+        exit 1
+    fi
 fi
 
 
