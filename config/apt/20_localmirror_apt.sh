@@ -41,7 +41,7 @@ EOX
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
 # ignore robots.txt, download to target path, load download list from file, show progress in larger size steps per dot
-wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-i386.*|.*debian-installer.*|.*dist-upgrader-all.*|.*source.*" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=dot:mega 
+wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-i386.*|.*debian-installer.*|.*dist-upgrader-all.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=dot:mega 
 rm /tmp/mirror_url_list.txt
 EOF
 else
@@ -76,13 +76,17 @@ https://deb.debian.org/debian/dists/${VERSION_CODENAME}/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-updates/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-backports/
 https://deb.debian.org/debian-security/dists/${VERSION_CODENAME}-security/
+http://download.proxmox.com/debian/pve/dists/${VERSION_CODENAME}/
 EOX
 )
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
 # ignore robots.txt, download to target path, load download list from file, show progress in larger size steps per dot
-wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-arm64.*|.*-armel.*|.*-armhf.*|.*-i386.*|.*-mips64el.*|.*-mipsel.*|.*-ppc64el.*|.*-s390x.*|.*source.*" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=dot:mega 
+wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-arm64.*|.*-armel.*|.*-armhf.*|.*-i386.*|.*-mips64el.*|.*-mipsel.*|.*-ppc64el.*|.*-s390x.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=dot:mega 
 rm /tmp/mirror_url_list.txt
+EOF
+tee /etc/apt/sources.list.d/pve-install-repo.list <<EOF
+deb [arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription
 EOF
 fi
 chmod +x /usr/local/bin/aptsync.sh
