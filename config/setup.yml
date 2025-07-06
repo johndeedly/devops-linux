@@ -20,54 +20,74 @@ setup:
 distros:
   archlinux: pacman
   debian: apt
+  debian-edge: apt
+  debian-13: apt
   debian-12: apt
   ubuntu: apt
+  ubuntu-edge: apt
   ubuntu-24: apt
   ubuntu-22: apt
   ubuntu-20: apt
   fedora: yum
+  fedora-edge: yum
   fedora-42: yum
   rocky: yum
+  rocky-edge: yum
   rocky-9: yum
   rocky-8: yum
 download:
   archiso: https://geo.mirror.pkgbuild.com/iso/latest/archlinux-x86_64.iso
   archlinux: https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
   debian: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
+  debian-edge: https://cloud.debian.org/images/cloud/trixie/daily/latest/debian-13-generic-amd64-daily.qcow2
+  debian-13: https://cloud.debian.org/images/cloud/trixie/daily/latest/debian-13-generic-amd64-daily.qcow2
   debian-12: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
   ubuntu: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+  ubuntu-edge: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
   ubuntu-24: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
   ubuntu-22: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
   ubuntu-20: https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
   fedora: https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
+  fedora-edge: https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   fedora-42: https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   rocky: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
+  rocky-edge: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-9: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-8: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud.latest.x86_64.qcow2
 endoflife:
   debian: https://endoflife.date/api/debian/12.json
+  debian-edge: https://endoflife.date/api/debian/13.json
+  debian-13: https://endoflife.date/api/debian/13.json
   debian-12: https://endoflife.date/api/debian/12.json
   ubuntu: https://endoflife.date/api/ubuntu/24.04.json
+  ubuntu-edge: https://endoflife.date/api/ubuntu/24.04.json
   ubuntu-24: https://endoflife.date/api/ubuntu/24.04.json
   ubuntu-22: https://endoflife.date/api/ubuntu/22.04.json
   ubuntu-20: https://endoflife.date/api/ubuntu/20.04.json
   fedora: https://endoflife.date/api/fedora/42.json
+  fedora-edge: https://endoflife.date/api/fedora/42.json
   fedora-42: https://endoflife.date/api/fedora/42.json
   rocky: https://endoflife.date/api/rocky-linux/9.json
+  rocky-edge: https://endoflife.date/api/rocky-linux/9.json
   rocky-9: https://endoflife.date/api/rocky-linux/9.json
   rocky-8: https://endoflife.date/api/rocky-linux/8.json
 images:
   archiso: archlinux-x86_64.iso
   archlinux: Arch-Linux-x86_64-cloudimg.qcow2
   debian: debian-12-generic-amd64.qcow2
+  debian-edge: debian-13-generic-amd64-daily.qcow2
+  debian-13: debian-13-generic-amd64-daily.qcow2
   debian-12: debian-12-generic-amd64.qcow2
   ubuntu: noble-server-cloudimg-amd64.img
+  ubuntu-edge: noble-server-cloudimg-amd64.img
   ubuntu-24: noble-server-cloudimg-amd64.img
   ubuntu-22: jammy-server-cloudimg-amd64.img
   ubuntu-20: focal-server-cloudimg-amd64.img
   fedora: Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
+  fedora-edge: Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   fedora-42: Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   rocky: Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
+  rocky-edge: Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-9: Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-8: Rocky-8-GenericCloud-Base.latest.x86_64.qcow2
 files:

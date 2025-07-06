@@ -8,9 +8,6 @@ merge_how:
       - no_replace
       - recurse_list
 
-timezone: CET
-locale: de_DE
-
 write_files:
   # enable german keyboard
   - path: /etc/vconsole.conf

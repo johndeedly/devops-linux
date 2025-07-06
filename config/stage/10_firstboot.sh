@@ -127,14 +127,27 @@ fi
 # Configure timezone
 if [ -e /bin/apt ]; then
   rm /etc/localtime || true
+  if [ -e /usr/share/zoneinfo/CET ]; then
+    ln -s /usr/share/zoneinfo/CET /etc/localtime
+  else
+    ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
+  fi
   ln -s /usr/share/zoneinfo/CET /etc/localtime
   dpkg-reconfigure --frontend=noninteractive tzdata
 elif [ -e /bin/pacman ]; then
   rm /etc/localtime || true
-  ln -s /usr/share/zoneinfo/CET /etc/localtime
+  if [ -e /usr/share/zoneinfo/CET ]; then
+    ln -s /usr/share/zoneinfo/CET /etc/localtime
+  else
+    ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
+  fi
 elif [ -e /bin/yum ]; then
   rm /etc/localtime || true
-  ln -s /usr/share/zoneinfo/CET /etc/localtime
+  if [ -e /usr/share/zoneinfo/CET ]; then
+    ln -s /usr/share/zoneinfo/CET /etc/localtime
+  else
+    ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
+  fi
 fi
 
 # Configure keyboard and console
