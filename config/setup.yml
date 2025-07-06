@@ -7,6 +7,13 @@ setup:
     enabled: no
     password: packer-build-passwd
     image: devops-linux-archlinux.tar.gz
+  ldapauth:
+    enabled: no
+    authserver: ldap://0.0.0.0/
+    base: dc=internal
+    group: ou=Groups,dc=internal
+    passwd: ou=People,dc=internal
+    shadow: ou=People,dc=internal
   archiso_mirror: false
   pkg_mirror: false
   chaotic_mirror: false
@@ -67,9 +74,6 @@ files:
   apt:
     base:
       - path: stage/15_base_system.sh
-        stage: 1
-    ldap:
-      - path: stage/18_ldap.sh
         stage: 1
     mirror:
       - path: apt/20_localmirror_apt.sh
@@ -159,9 +163,6 @@ files:
   pacman:
     base:
       - path: stage/15_base_system.sh
-        stage: 1
-    ldap:
-      - path: stage/18_ldap.sh
         stage: 1
     mirror:
       - path: pacman/20_localmirror_pacman.sh
@@ -280,9 +281,6 @@ files:
   yum:
     base:
       - path: stage/15_base_system.sh
-        stage: 1
-    ldap:
-      - path: stage/18_ldap.sh
         stage: 1
     mirror:
       - path: yum/20_localmirror_yum.sh
