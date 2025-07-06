@@ -210,7 +210,10 @@ WantedBy=timers.target
 EOF
 systemctl enable "container-${PROJECTNAME}_main_1.timer"
 
-firewall-offline-cmd --zone=public --add-port=6080/tcp
+ufw disable
+ufw allow log 6080/tcp comment 'allow cicd'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

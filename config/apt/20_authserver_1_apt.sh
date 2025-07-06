@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install slapd ldap-utils xkcdpass firewalld
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install slapd ldap-utils xkcdpass
 
 tee /etc/ldap/schema/rfc2307bis.ldif >/dev/null <<EOF
 $(</var/lib/cloud/instance/provision/apt/20_authserver_apt/rfc2307bis.ldif)

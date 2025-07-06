@@ -67,14 +67,17 @@ pushd /etc/systemd/system
 popd
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=32400/tcp
-firewall-offline-cmd --zone=public --add-port=8324/tcp
-firewall-offline-cmd --zone=public --add-port=32469/tcp
-firewall-offline-cmd --zone=public --add-port=1900/udp
-firewall-offline-cmd --zone=public --add-port=32410/udp
-firewall-offline-cmd --zone=public --add-port=32412/udp
-firewall-offline-cmd --zone=public --add-port=32413/udp
-firewall-offline-cmd --zone=public --add-port=32414/udp
+ufw disable
+ufw allow log 32400/tcp comment 'allow plex'
+ufw allow log 8324/tcp comment 'allow plex'
+ufw allow log 32469/tcp comment 'allow plex'
+ufw allow log 1900/udp comment 'allow plex'
+ufw allow log 32410/udp comment 'allow plex'
+ufw allow log 32412/udp comment 'allow plex'
+ufw allow log 32413/udp comment 'allow plex'
+ufw allow log 32414/udp comment 'allow plex'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

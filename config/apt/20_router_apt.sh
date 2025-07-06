@@ -3,7 +3,7 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install net-tools syslinux syslinux-efi pxelinux dnsmasq iptraf-ng \
-  ntp nginx nfs-kernel-server portmap nfs-common samba nbd-server tgt firewalld rsync
+  ntp nginx nfs-kernel-server portmap nfs-common samba nbd-server tgt rsync
 
 DHCP_ADDITIONAL_SETUP=(
   "dhcp-option=option:dns-server,172.26.0.1\n"
@@ -280,7 +280,7 @@ WantedBy=multi-user.target
 EOF
 
 # configure nfs
-# https://www.baeldung.com/linux/firewalld-nfs-connections-settings
+# https://www.baeldung.com/linux/ufw-nfs-connections-settings
 mkdir -p /srv/pxe/arch/x86_64
 sed -i '0,/^\[mountd\].*/s//[mountd]\nport=20048/' /etc/nfs.conf
 sed -i '0,/^\[lockd\].*/s//[lockd]\nport=32767\nudp-port=32767/' /etc/nfs.conf
@@ -330,24 +330,64 @@ systemctl enable dnsmasq ntpd.timer hosts-calc.service nfs-kernel-server rpc-sta
   tgt smb nbd
 
 # configure the firewall
-firewall-offline-cmd --zone=public --add-service=dhcp
-firewall-offline-cmd --zone=public --add-service=proxy-dhcp
-firewall-offline-cmd --zone=public --add-service=dhcpv6
-firewall-offline-cmd --zone=public --add-service=dns
-firewall-offline-cmd --zone=public --add-service=ntp
-firewall-offline-cmd --zone=public --add-service=tftp
-firewall-offline-cmd --zone=public --add-service=http
-firewall-offline-cmd --zone=public --add-port=8443/tcp
-firewall-offline-cmd --zone=public --add-service=nfs
-firewall-offline-cmd --zone=public --add-service=rpc-bind
-firewall-offline-cmd --zone=public --add-service=mountd
-firewall-offline-cmd --zone=public --add-port=32767/tcp
-firewall-offline-cmd --zone=public --add-port=32767/udp
-firewall-offline-cmd --zone=public --add-port=32765/tcp
-firewall-offline-cmd --zone=public --add-port=32765/udp
-firewall-offline-cmd --zone=public --add-service=iscsi-target
-firewall-offline-cmd --zone=public --add-service=samba
-firewall-offline-cmd --zone=public --add-port=10809/tcp
+ufw disable
+
+# remove existing ssh rule
+ufw delete limit log ssh
+
+# ==========
+# eth0 - extern
+# ==========
+ufw allow in on eth0 proto tcp to any port 51820 comment 'allow wireguard tcp on extern'
+ufw allow in on eth0 proto udp to any port 51820 comment 'allow wireguard udp on extern'
+
+# ==========
+# eth1 - intern
+# ==========
+ufw allow in on eth1 to any port bootps comment 'allow bootps on intern'
+ufw allow in on eth1 to any port ssh comment 'allow ssh on intern'
+ufw allow in on eth1 to any port 53 comment 'allow dns on intern'
+ufw allow in on eth1 to any port tftp comment 'allow tftp on intern'
+ufw allow in on eth1 to any port 80 comment 'allow http on intern'
+ufw allow in on eth1 to any port ntp comment 'allow ntp on intern'
+ufw allow in on eth1 to any port 111 comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 2049 comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 20048 comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32767/tcp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32767/udp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32765/tcp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32765/udp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port nbd comment 'allow nbd on intern'
+ufw allow in on eth1 to any port 445 comment 'allow cifs on intern'
+ufw allow in on eth1 to any port 139 comment 'allow cifs on intern'
+ufw allow in on eth1 to any port 3260/tcp comment 'allow iscsi on intern'
+ufw allow in on eth1 to any port 51820 comment 'allow wireguard on intern'
+
+ufw route deny in on eth1 out on eth0 to any port 53 comment 'block dns from intern to extern'
+ufw route deny in on eth1 out on eth0 to any port 853 comment 'block dns from intern to extern'
+ufw route deny in on eth1 out on eth0 to any port 5353 comment 'block dns from intern to extern'
+ufw route deny in on wg0 out on eth0 to any port 53 comment 'block dns from wireguard to extern'
+ufw route deny in on wg0 out on eth0 to any port 853 comment 'block dns from wireguard to extern'
+ufw route deny in on wg0 out on eth0 to any port 5353 comment 'block dns from wireguard to extern'
+ufw route allow in on eth1 out on eth0 comment 'allow forward from intern to extern'
+ufw route allow in on eth1 out on wg0 comment 'allow forward from intern to wireguard'
+ufw route allow in on eth1 out on eth1 comment 'allow local intern forwarding'
+
+# ==========
+# wg0 - wireguard
+# ==========
+ufw route allow in on wg0 out on eth0 comment 'allow forward from wireguard to extern'
+ufw route allow in on wg0 out on eth1 comment 'allow forward from wireguard to intern'
+ufw route allow in on wg0 out on wg0 comment 'allow local wireguard forwarding'
+
+# ==========
+# lo - loopback
+# ==========
+ufw allow in on lo comment 'allow loopback in'
+ufw route allow in on lo out on lo comment 'allow loopback forward'
+
+ufw enable
+ufw status verbose
 
 #
 # debian/ubuntu only:

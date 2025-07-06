@@ -36,7 +36,10 @@ pushd /etc/systemd/system
 popd
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=8123/tcp
+ufw disable
+ufw allow log 8123/tcp comment 'allow homeassistant'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

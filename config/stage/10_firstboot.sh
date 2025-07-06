@@ -260,40 +260,54 @@ download_yq() {
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
-    jq yq openssh-server openssh-client systemd-container unattended-upgrades firewalld xkcdpass cryptsetup
-  systemctl enable ssh firewalld
+    jq yq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup
+  systemctl enable ssh ufw
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
 elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh firewalld xkcdpass cryptsetup
-  systemctl enable sshd firewalld
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh ufw xkcdpass cryptsetup
+  systemctl enable sshd ufw
 elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C yum install -y systemd-container polkit curl wget nano jq openssh firewalld cryptsetup
-  systemctl enable sshd firewalld
+  LC_ALL=C yes | LC_ALL=C yum install -y systemd-container polkit curl wget nano jq openssh ufw cryptsetup
+  systemctl enable sshd ufw
   download_yq
 fi
 
+# enabling ufw filters
+modprobe iptable_filter
+modprobe ip6table_filter
+# configure ufw
+ufw disable
+# clear default ruleset
+ufw reset
+for i in $(seq -- 10 -1 1)
+do
+  LC_ALL=C yes | LC_ALL=C ufw delete "$i" 2>/dev/null
+done
+# logs all blocked packets and packets matching logged rules
+ufw logging low
+# outgoing is always allowed, incoming and routed should be denied
+ufw default deny incoming
+ufw default deny routed
+ufw default allow outgoing
+# limited ssh access on all devices
+ufw limit log ssh comment 'allow rate limited ssh'
+ufw enable
+
 # enable cockpit
 if [ -e /bin/apt ]; then
-  if grep -q Debian /proc/version; then
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install cockpit cockpit-storaged cockpit-packagekit \
-      libblockdev-btrfs2 libblockdev-crypto2 libblockdev-dm2 libblockdev-fs2 libblockdev-loop2 libblockdev-lvm2 libblockdev-mdraid2 \
-      libblockdev-mpath2 libblockdev-nvdimm2 libblockdev-part2 libblockdev-swap2
-  elif grep -q Ubuntu /proc/version; then
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install cockpit cockpit-storaged cockpit-packagekit
-  fi
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install cockpit sscg cockpit-storaged cockpit-packagekit
   systemctl enable cockpit.socket
-  firewall-offline-cmd --zone=public --add-port=9090/tcp
 elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm cockpit cockpit-storaged cockpit-packagekit \
-    libblockdev-btrfs libblockdev-crypto libblockdev-dm libblockdev-fs libblockdev-loop libblockdev-lvm libblockdev-mdraid \
-    libblockdev-mpath libblockdev-nvdimm libblockdev-nvme libblockdev-part libblockdev-smart libblockdev-swap
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm cockpit sscg cockpit-storaged cockpit-packagekit
   systemctl enable cockpit.socket
-  firewall-offline-cmd --zone=public --add-port=9090/tcp
 elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C yum install -y cockpit cockpit-storaged cockpit-packagekit
+  LC_ALL=C yes | LC_ALL=C yum install -y cockpit sscg cockpit-storaged cockpit-packagekit
   systemctl enable cockpit.socket
-  firewall-offline-cmd --zone=public --add-port=9090/tcp
 fi
+ufw disable
+ufw allow log 9090/tcp comment 'allow cockpit'
+ufw enable
+ufw status verbose
 ln -sfn /dev/null /etc/motd.d/cockpit
 ln -sfn /dev/null /etc/issue.d/cockpit.issue
 sed -i '/^root$/d' /etc/cockpit/disallowed-users

@@ -19,13 +19,13 @@ fi
 # install basic packages
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-    libnss-ldap libpam-ldap ldap-utils nslcd xkcdpass firewalld
+    libnss-ldap libpam-ldap ldap-utils nslcd xkcdpass
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
-    openldap nss-pam-ldapd xkcdpass firewalld
+    openldap nss-pam-ldapd xkcdpass
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y \
-    openldap openldap-clients nss-pam-ldapd xkcdpass firewalld
+    openldap openldap-clients nss-pam-ldapd xkcdpass
 fi
 
 echo ':: enable optional ldap pam and nss authentication'

@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed openldap xkcdpass firewalld
+LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed openldap xkcdpass
 
 tee /etc/openldap/schema/rfc2307bis.ldif >/dev/null <<EOF
 $(</var/lib/cloud/instance/provision/pacman/20_authserver_pacman/rfc2307bis.ldif)

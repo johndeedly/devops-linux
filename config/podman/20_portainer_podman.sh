@@ -39,9 +39,12 @@ pushd /etc/systemd/system
 popd
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=8000/tcp
-firewall-offline-cmd --zone=public --add-port=9000/tcp
-firewall-offline-cmd --zone=public --add-port=9443/tcp
+ufw disable
+ufw allow log 8000/tcp comment 'allow portainer'
+ufw allow log 9000/tcp comment 'allow portainer'
+ufw allow log 9443/tcp comment 'allow portainer'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

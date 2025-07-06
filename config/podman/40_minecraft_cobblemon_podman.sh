@@ -55,8 +55,11 @@ pushd /etc/systemd/system
 popd
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=25565/tcp
-firewall-offline-cmd --zone=public --add-port=19132/udp
+ufw disable
+ufw allow log 25565/tcp comment 'allow minecraft'
+ufw allow log 19132/udp comment 'allow minecraft'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

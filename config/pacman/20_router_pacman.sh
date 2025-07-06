@@ -3,7 +3,7 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools syslinux dnsmasq iptraf-ng ntp step-ca step-cli darkhttpd nfs-utils \
-  samba nbd tgt nvmetcli firewalld rsync
+  samba nbd tgt nvmetcli rsync
 
 DHCP_ADDITIONAL_SETUP=(
   "dhcp-option=option:dns-server,172.26.0.1\n"
@@ -400,25 +400,65 @@ systemctl enable dnsmasq ntpd.timer step-ca hosts-calc nfsv4-server rpc-statd \
   tgtd smb nbd nvmet
 
 # configure the firewall
-firewall-offline-cmd --zone=public --add-service=dhcp
-firewall-offline-cmd --zone=public --add-service=proxy-dhcp
-firewall-offline-cmd --zone=public --add-service=dhcpv6
-firewall-offline-cmd --zone=public --add-service=dns
-firewall-offline-cmd --zone=public --add-service=ntp
-firewall-offline-cmd --zone=public --add-service=tftp
-firewall-offline-cmd --zone=public --add-service=http
-firewall-offline-cmd --zone=public --add-port=8443/tcp
-firewall-offline-cmd --zone=public --add-service=nfs
-firewall-offline-cmd --zone=public --add-service=rpc-bind
-firewall-offline-cmd --zone=public --add-service=mountd
-firewall-offline-cmd --zone=public --add-port=32767/tcp
-firewall-offline-cmd --zone=public --add-port=32767/udp
-firewall-offline-cmd --zone=public --add-port=32765/tcp
-firewall-offline-cmd --zone=public --add-port=32765/udp
-firewall-offline-cmd --zone=public --add-service=iscsi-target
-firewall-offline-cmd --zone=public --add-service=samba
-firewall-offline-cmd --zone=public --add-port=10809/tcp
-firewall-offline-cmd --zone=public --add-port=8009/tcp
+ufw disable
+
+# remove existing ssh rule
+ufw delete limit log ssh
+
+# ==========
+# eth0 - extern
+# ==========
+ufw allow in on eth0 proto tcp to any port 51820 comment 'allow wireguard tcp on extern'
+ufw allow in on eth0 proto udp to any port 51820 comment 'allow wireguard udp on extern'
+
+# ==========
+# eth1 - intern
+# ==========
+ufw allow in on eth1 to any port bootps comment 'allow bootps on intern'
+ufw allow in on eth1 to any port ssh comment 'allow ssh on intern'
+ufw allow in on eth1 to any port 53 comment 'allow dns on intern'
+ufw allow in on eth1 to any port tftp comment 'allow tftp on intern'
+ufw allow in on eth1 to any port 80 comment 'allow http on intern'
+ufw allow in on eth1 to any port ntp comment 'allow ntp on intern'
+ufw allow in on eth1 to any port 111 comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 2049 comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 20048 comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32767/tcp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32767/udp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32765/tcp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32765/udp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port nbd comment 'allow nbd on intern'
+ufw allow in on eth1 to any port 445 comment 'allow cifs on intern'
+ufw allow in on eth1 to any port 139 comment 'allow cifs on intern'
+ufw allow in on eth1 to any port 3260/tcp comment 'allow iscsi on intern'
+ufw allow in on eth1 to any port 8009/tcp comment 'allow nvmet on intern'
+ufw allow in on eth1 to any port 51820 comment 'allow wireguard on intern'
+
+ufw route deny in on eth1 out on eth0 to any port 53 comment 'block dns from intern to extern'
+ufw route deny in on eth1 out on eth0 to any port 853 comment 'block dns from intern to extern'
+ufw route deny in on eth1 out on eth0 to any port 5353 comment 'block dns from intern to extern'
+ufw route deny in on wg0 out on eth0 to any port 53 comment 'block dns from wireguard to extern'
+ufw route deny in on wg0 out on eth0 to any port 853 comment 'block dns from wireguard to extern'
+ufw route deny in on wg0 out on eth0 to any port 5353 comment 'block dns from wireguard to extern'
+ufw route allow in on eth1 out on eth0 comment 'allow forward from intern to extern'
+ufw route allow in on eth1 out on wg0 comment 'allow forward from intern to wireguard'
+ufw route allow in on eth1 out on eth1 comment 'allow local intern forwarding'
+
+# ==========
+# wg0 - wireguard
+# ==========
+ufw route allow in on wg0 out on eth0 comment 'allow forward from wireguard to extern'
+ufw route allow in on wg0 out on eth1 comment 'allow forward from wireguard to intern'
+ufw route allow in on wg0 out on wg0 comment 'allow local wireguard forwarding'
+
+# ==========
+# lo - loopback
+# ==========
+ufw allow in on lo comment 'allow loopback in'
+ufw route allow in on lo out on lo comment 'allow loopback forward'
+
+ufw enable
+ufw status verbose
 
 # disable network config in cloud init
 tee /etc/cloud/cloud.cfg.d/99-custom-networking.cfg <<EOF

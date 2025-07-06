@@ -42,7 +42,10 @@ pushd /etc/systemd/system
 popd
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=8929/tcp
+ufw disable
+ufw allow log 8929/tcp comment 'allow gitlab'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

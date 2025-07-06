@@ -66,7 +66,10 @@ pushd /etc/systemd/system
 popd
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=18080/tcp
+ufw disable
+ufw allow log 18080/tcp comment 'allow dagu'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

@@ -35,7 +35,7 @@ EOF
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt upgrade --with-new-pkgs
 
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install ifupdown2 firewalld
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install ifupdown2
 systemctl stop networking || true
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install --reinstall ifupdown2
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata dpkg --configure -a
@@ -120,7 +120,10 @@ systemctl mask systemd-networkd-wait-online
 systemctl mask NetworkManager-wait-online
 
 # open up the port for the proxmox webinterface
-firewall-offline-cmd --zone=public --add-port=8006/tcp
+ufw disable
+ufw allow log 8006/tcp comment 'allow proxmox'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

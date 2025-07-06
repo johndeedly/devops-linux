@@ -331,7 +331,10 @@ getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
 done
 
 # open firewall for rdp access
-firewall-offline-cmd --zone=public --add-port=3389/tcp
+ufw disable
+ufw allow log 3389/tcp comment 'allow rdp'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

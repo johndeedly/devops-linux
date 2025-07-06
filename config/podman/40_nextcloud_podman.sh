@@ -63,7 +63,10 @@ popd
 systemctl enable "container-${PROJECTNAME}_db_1"
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=8080/tcp
+ufw disable
+ufw allow log 8080/tcp comment 'allow nextcloud'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

@@ -73,7 +73,10 @@ pushd /etc/systemd/system
 popd
 systemctl enable "container-${PROJECTNAME}_main_1"
 
-firewall-offline-cmd --zone=public --add-port=13012/tcp
+ufw disable
+ufw allow log 13012/tcp comment 'allow cronicle'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

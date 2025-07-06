@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install nginx firewalld
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install nginx
 
 mkdir -p /var/cache/apt/mirror /var/empty
 
@@ -176,7 +176,10 @@ EOF
 
 systemctl enable nginx.service aptsync.timer
 
-firewall-offline-cmd --zone=public --add-port=8080/tcp
+ufw disable
+ufw allow log 8080/tcp comment 'allow localmirror'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync

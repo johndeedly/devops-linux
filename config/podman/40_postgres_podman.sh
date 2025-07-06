@@ -79,8 +79,11 @@ popd
 systemctl enable "container-${PROJECTNAME}_postgres_1"
 systemctl enable "container-${PROJECTNAME}_pgadmin_1"
 
-firewall-offline-cmd --zone=public --add-port=5432/tcp
-firewall-offline-cmd --zone=public --add-port=15432/tcp
+ufw disable
+ufw allow log 5432/tcp comment 'allow postgres'
+ufw allow log 15432/tcp comment 'allow postgres'
+ufw enable
+ufw status verbose
 
 # sync everything to disk
 sync
