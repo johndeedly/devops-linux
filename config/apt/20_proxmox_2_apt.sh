@@ -4,6 +4,13 @@ if grep -q Ubuntu /proc/version; then
     ( ( sleep 1 && rm -- "${0}" ) & )
     exit 0
 fi
+(
+  source /etc/os-release
+  if [ -n "${VERSION_CODENAME}" ] && [ "${VERSION_CODENAME}" != "bookworm" ]; then
+    ( ( sleep 1 && rm -- "${0}" ) & )
+    exit 0
+  fi
+)
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 

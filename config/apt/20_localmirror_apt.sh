@@ -85,9 +85,12 @@ EOX
 wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-arm64.*|.*-armel.*|.*-armhf.*|.*-i386.*|.*-mips64el.*|.*-mipsel.*|.*-ppc64el.*|.*-s390x.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=dot:mega 
 rm /tmp/mirror_url_list.txt
 EOF
-tee /etc/apt/sources.list.d/pve-install-repo.list <<EOF
-deb [arch=amd64] http://download.proxmox.com/debian/pve bookworm pve-no-subscription
+(
+  source /etc/os-release
+  tee /etc/apt/sources.list.d/pve-install-repo.list <<EOF
+deb [arch=amd64] http://download.proxmox.com/debian/pve ${VERSION_CODENAME} pve-no-subscription
 EOF
+)
 fi
 chmod +x /usr/local/bin/aptsync.sh
 
