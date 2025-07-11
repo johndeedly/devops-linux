@@ -132,7 +132,6 @@ if [ -e /bin/apt ]; then
   else
     ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
   fi
-  ln -s /usr/share/zoneinfo/CET /etc/localtime
   dpkg-reconfigure --frontend=noninteractive tzdata
 elif [ -e /bin/pacman ]; then
   rm /etc/localtime || true
