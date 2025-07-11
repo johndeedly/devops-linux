@@ -38,8 +38,8 @@ while read -r repo; do
       echo "$line".sig
     done > /tmp/mirror_url_list.txt
     # continue unfinished downloads and skip already downloaded ones, use timestamps,
-    # download to target path, load download list from file, show progress in larger size steps per dot
-    wget -c -N -P "/var/cache/pacman/mirror/$repo/os/x86_64" -i /tmp/mirror_url_list.txt --progress=dot:mega
+    # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+    wget -c -N -P "/var/cache/pacman/mirror/$repo/os/x86_64" -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
     rm /tmp/mirror_url_list.txt
 done <<EOX
 core
@@ -67,8 +67,8 @@ https://archive.archlinux.org/repos/${ARCHIVE_BASE}/multilib/os/x86_64/
 EOS
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # cut parts from remote path, recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages,
-# ignore robots.txt, download to target path, load download list from file, show progress in larger size steps per dot
-wget -x -nH -c -N --cut-dirs=4 -r -np -R "index.html*" -e robots=off -P /var/cache/pacman/mirror/iso -i /tmp/mirror_url_list.txt --progress=dot:mega
+# ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -x -nH -c -N --cut-dirs=4 -r -np -R "index.html*" -e robots=off -P /var/cache/pacman/mirror/iso -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 tee /tmp/mirror_url_list.txt <<EOS
 https://archive.archlinux.org/iso/${ISO_BASE}/archlinux-x86_64.iso
@@ -82,8 +82,8 @@ https://archive.archlinux.org/iso/${ISO_BASE}/arch/x86_64/airootfs.sfs.cms.sig
 https://archive.archlinux.org/iso/${ISO_BASE}/arch/x86_64/airootfs.sha512
 EOS
 # continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
-# download to target path, load download list from file, show progress in larger size steps per dot
-wget -c -N -P /var/cache/pacman/mirror/iso -i /tmp/mirror_url_list.txt --progress=dot:mega
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -c -N -P /var/cache/pacman/mirror/iso -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 mkdir -p /var/cache/pacman/mirror/images
 tee /tmp/mirror_url_list.txt <<EOS
@@ -95,8 +95,8 @@ https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.S
 https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.sig
 EOS
 # continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
-# download to target path, load download list from file, show progress in larger size steps per dot
-wget -c -N -P /var/cache/pacman/mirror/images -i /tmp/mirror_url_list.txt --progress=dot:mega
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -c -N -P /var/cache/pacman/mirror/images -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
