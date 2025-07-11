@@ -68,6 +68,11 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 fi
 
+# backup modules of running kernel
+ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
+echo -n "Kernel modules backup ($(uname -r)): "
+stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
+
 # full system upgrade
 if [ -e /bin/apt ]; then
   if grep -q Ubuntu /proc/version; then
@@ -89,6 +94,10 @@ elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum check-update
   LC_ALL=C yes | LC_ALL=C yum update -y
 fi
+
+# restore (still running) kernel modules
+tar -I zstd -xkf /kernel-modules-backup.tar.zst &>/dev/null
+rm /kernel-modules-backup.tar.zst
 
 # Configure keyboard and console
 if [ -e /bin/apt ]; then
