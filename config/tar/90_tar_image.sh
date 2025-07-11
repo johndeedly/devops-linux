@@ -22,7 +22,7 @@ pushd /srv/data
   rm -r proc || true
   rm -r sys || true
   rm -r run || true
-  find . \( -type f -o -type l \) -printf '%P\0' | tar -czf "/srv/tar/devops-linux-${DISTRO_NAME}.tar.gz" --null --files-from=-
+  find . \( -type f -o -type l \) -printf '%P\0' | ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf "/srv/tar/devops-linux-${DISTRO_NAME}.tar.zst" --null --files-from=-
 popd
 
 # sync everything to disk
