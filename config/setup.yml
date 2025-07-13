@@ -180,6 +180,9 @@ files:
     tar-image:
       - path: tar/90_tar_image.sh
         stage: 2
+    hardening:
+      - path: audit/70_hardening.sh
+        stage: 2
     audit:
       - path: audit/80_lynis.sh
         stage: 2
@@ -301,6 +304,9 @@ files:
     archiso-disc:
       - path: pacman/90_archiso_disc.sh
         stage: 2
+    hardening:
+      - path: audit/70_hardening.sh
+        stage: 2
     audit:
       - path: audit/80_lynis.sh
         stage: 2
@@ -311,6 +317,9 @@ files:
     mirror:
       - path: yum/20_localmirror_yum.sh
         stage: 1
+    hardening:
+      - path: audit/70_hardening.sh
+        stage: 2
     audit:
       - path: audit/80_lynis.sh
         stage: 2
