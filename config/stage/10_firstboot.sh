@@ -68,26 +68,43 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 fi
 
-# backup modules of running kernel
-ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
-echo -n "Kernel modules backup ($(uname -r)): "
-stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
-
 # full system upgrade
 if [ -e /bin/apt ]; then
   if grep -q Ubuntu /proc/version; then
     # switch from linux-virtual to linux-generic
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install linux-generic
+    # install current kernel modules before full system upgrade
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install linux-modules-$(uname -r) linux-modules-extra-$(uname -r)
     ls -1 /lib/modules | while read -r line; do
       depmod -a "$line"
     done
     LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
     update-grub
   fi
+  # backup modules of running kernel
+  ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
+  echo -n "Kernel modules backup ($(uname -r)): "
+  stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
+  # upgrade now
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
 elif [ -e /bin/pacman ]; then
+  # backup modules of running kernel
+  ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
+  echo -n "Kernel modules backup ($(uname -r)): "
+  stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
+  # upgrade now
   LC_ALL=C yes | LC_ALL=C pacman -Syu --needed --noconfirm
 elif [ -e /bin/yum ]; then
+  # install current kernel modules before full system upgrade
+  LC_ALL=C yes | LC_ALL=C dnf install -y kernel-modules-$(uname -r) kernel-modules-core-$(uname -r) kernel-modules-extra-$(uname -r)
+  ls -1 /lib/modules | while read -r line; do
+    depmod -a "$line"
+  done
+  # backup modules of running kernel
+  ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
+  echo -n "Kernel modules backup ($(uname -r)): "
+  stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
+  # upgrade now
   LC_ALL=C yes | LC_ALL=C dnf install -y epel-release
   LC_ALL=C yes | LC_ALL=C dnf config-manager --enable crb
   LC_ALL=C yes | LC_ALL=C dnf upgrade -y
@@ -96,7 +113,7 @@ elif [ -e /bin/yum ]; then
 fi
 
 # restore (still running) kernel modules
-tar -I zstd -xkf /kernel-modules-backup.tar.zst &>/dev/null
+ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xkf /kernel-modules-backup.tar.zst &>/dev/null
 rm /kernel-modules-backup.tar.zst
 
 # Configure keyboard and console
