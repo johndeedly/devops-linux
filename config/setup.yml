@@ -6,7 +6,7 @@ setup:
   encrypt:
     enabled: no
     password: packer-build-passwd
-    image: devops-linux-archlinux.tar.gz
+    image: devops-linux-archlinux.tar.zst
   ldapauth:
     enabled: no
     authserver: ldap://0.0.0.0/

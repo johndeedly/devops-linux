@@ -296,7 +296,7 @@ if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
   mount /dev/mapper/nextroot /mnt
   if [ -d /iso/tar ] && [ -f "/iso/tar/${ENCRYPT_IMAGE}" ]; then
     echo ":: Extract tarball /iso/tar/${ENCRYPT_IMAGE}"
-    tar -xf "/iso/tar/${ENCRYPT_IMAGE}" -C /mnt
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xf "/iso/tar/${ENCRYPT_IMAGE}" -C /mnt
   fi
 
   # finalize /mnt again
