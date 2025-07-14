@@ -4,7 +4,7 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed archiso
 
-mkdir -p /var/tmp/archlive/{work,output} /srv/archiso
+mkdir -p /var/tmp/archlive/{work,output} /srv/liveiso
 cp -r /usr/share/archiso/configs/baseline/ /var/tmp/archlive/
 
 # baseline extended with build tools needed on archiso
@@ -39,7 +39,6 @@ partclone
 parted
 partimage
 qemu-base
-refind
 rsync
 systemd-resolvconf
 terminus-font
@@ -65,12 +64,12 @@ EOF
 pushd /var/tmp/archlive
   mkarchiso -m iso -w work -o output baseline
   find output/ -type f -name "archlinux-*.iso" -print | while read -r line; do
-    mv "$line" /srv/archiso/archlinux-x86_64.iso
+    mv "$line" /srv/liveiso/archlinux-x86_64.iso
     break
   done
   mkarchiso -m netboot -w work -o output baseline
   find output/ -type d -name "arch" -print | while read -r line; do
-    mv "$line" /srv/archiso/arch
+    mv "$line" /srv/liveiso/arch
     break
   done
 popd

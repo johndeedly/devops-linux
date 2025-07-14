@@ -184,6 +184,9 @@ files:
     tar-image:
       - path: tar/90_tar_image.sh
         stage: 2
+    debiso:
+      - path: apt/90_debiso_build.sh
+        stage: 2
     hardening:
       - path: audit/70_hardening.sh
         stage: 2
