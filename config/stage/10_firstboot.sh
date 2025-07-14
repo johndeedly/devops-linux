@@ -316,7 +316,7 @@ modprobe ip6table_filter
 # configure ufw
 ufw disable
 # clear default ruleset
-ufw reset
+LC_ALL=C yes | LC_ALL=C ufw reset
 for i in $(seq -- 10 -1 1)
 do
   LC_ALL=C yes | LC_ALL=C ufw delete "$i" 2>/dev/null
