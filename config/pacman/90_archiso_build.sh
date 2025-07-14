@@ -63,9 +63,14 @@ EOF
 
 # build archiso
 pushd /var/tmp/archlive
-  mkarchiso -w work -o output baseline
+  mkarchiso -m iso -w work -o output baseline
   find output/ -type f -name "archlinux-*.iso" -print | while read -r line; do
     mv "$line" /srv/archiso/archlinux-x86_64.iso
+    break
+  done
+  mkarchiso -m netboot -w work -o output baseline
+  find output/ -type d -name "arch" -print | while read -r line; do
+    mv "$line" /srv/archiso/arch
     break
   done
 popd

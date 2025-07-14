@@ -305,8 +305,8 @@ files:
     tar-image:
       - path: tar/90_tar_image.sh
         stage: 2
-    archiso-disc:
-      - path: pacman/90_archiso_disc.sh
+    archiso:
+      - path: pacman/90_archiso_build.sh
         stage: 2
     hardening:
       - path: audit/70_hardening.sh
