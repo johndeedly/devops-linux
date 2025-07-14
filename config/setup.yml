@@ -33,6 +33,7 @@ distros:
   fedora-42: yum
   rocky: yum
   rocky-edge: yum
+  rocky-10: yum
   rocky-9: yum
   rocky-8: yum
 download:
@@ -51,7 +52,8 @@ download:
   fedora-edge: https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   fedora-42: https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   rocky: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
-  rocky-edge: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
+  rocky-edge: https://dl.rockylinux.org/pub/rocky/10/images/x86_64/Rocky-10-GenericCloud-Base.latest.x86_64.qcow2
+  rocky-10: https://dl.rockylinux.org/pub/rocky/10/images/x86_64/Rocky-10-GenericCloud-Base.latest.x86_64.qcow2
   rocky-9: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-8: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud.latest.x86_64.qcow2
 endoflife:
@@ -68,7 +70,8 @@ endoflife:
   fedora-edge: https://endoflife.date/api/fedora/42.json
   fedora-42: https://endoflife.date/api/fedora/42.json
   rocky: https://endoflife.date/api/rocky-linux/9.json
-  rocky-edge: https://endoflife.date/api/rocky-linux/9.json
+  rocky-edge: https://endoflife.date/api/rocky-linux/10.json
+  rocky-10: https://endoflife.date/api/rocky-linux/10.json
   rocky-9: https://endoflife.date/api/rocky-linux/9.json
   rocky-8: https://endoflife.date/api/rocky-linux/8.json
 images:
@@ -87,7 +90,8 @@ images:
   fedora-edge: Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   fedora-42: Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
   rocky: Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
-  rocky-edge: Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
+  rocky-edge: Rocky-10-GenericCloud-Base.latest.x86_64.qcow2
+  rocky-10: Rocky-10-GenericCloud-Base.latest.x86_64.qcow2
   rocky-9: Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-8: Rocky-8-GenericCloud-Base.latest.x86_64.qcow2
 files:
