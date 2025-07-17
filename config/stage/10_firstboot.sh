@@ -386,14 +386,32 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
     jq yq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup
   systemctl enable ssh ufw
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed \
+    bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
+    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
+  systemctl enable systemd-networkd systemd-resolved systemd-homed
+  systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
+  systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh ufw xkcdpass cryptsetup
   systemctl enable sshd ufw
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
+    bash-completion ncdu viu pv mc ranger fzf moreutils htop btop git lazygit \
+    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils
+  systemctl enable systemd-networkd systemd-resolved systemd-homed
+  systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
+  systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y systemd-container polkit curl wget nano jq openssh ufw cryptsetup
   systemctl enable sshd ufw
   download_yq
+  LC_ALL=C yes | LC_ALL=C yum install -y systemd-networkd \
+    bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
+    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils
+  systemctl enable systemd-networkd systemd-resolved
+  systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
+  systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 fi
 
 # enabling ufw filters

@@ -41,53 +41,41 @@ download_neovim() {
   fi
 }
 
-# install basic packages
+# install additional base packages
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-    systemd-homed build-essential yq \
-    zstd rsyslog npm htop btop git \
-    bash-completion ncdu pv mc ranger fzf moreutils \
-    lshw libxml2 jq man manpages-de trash-cli \
+    build-essential rsyslog npm \
+    libxml2 man manpages-de trash-cli \
     wireguard-tools nfs-kernel-server \
-    gvfs gvfs-backends cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
+    gvfs gvfs-backends cifs-utils \
     python3-pip python3-venv
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     luajit libluajit-5.1-dev lua-mpack lua-lpeg libunibilium-dev libmsgpack-dev libtermkey-dev
   download_neovim
-  systemctl enable systemd-networkd systemd-resolved systemd-homed
-  systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
-  systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
-    pacman-contrib starship ttf-terminus-nerd ttf-nerd-fonts-symbols powershell-bin base-devel neovim yq \
-    zstd rsyslog npm htop btop git lazygit \
-    bash-completion ncdu viu pv mc ranger fzf moreutils dotnet-runtime \
-    lshw libxml2 jq core/man man-pages-de trash-cli \
+    pacman-contrib base-devel rsyslog npm \
+    libxml2 core/man man-pages-de trash-cli \
     wireguard-tools nfs-utils \
-    gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
+    gvfs gvfs-smb cifs-utils \
     python-pip
-  systemctl enable systemd-networkd systemd-resolved systemd-homed
-  systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
-  systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
+    starship ttf-terminus-nerd ttf-nerd-fonts-symbols neovim
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y \
-    systemd-networkd cmake make automake gcc gcc-c++ kernel-devel \
-    zstd rsyslog npm htop btop git \
-    bash-completion ncdu pv mc ranger fzf moreutils \
-    lshw libxml2 jq man-db trash-cli \
+    cmake make automake gcc gcc-c++ kernel-devel \
+    rsyslog npm \
+    libxml2 man-db trash-cli \
     wireguard-tools nfs-utils \
-    gvfs gvfs-smb cifs-utils unzip p7zip rsync xdg-user-dirs xdg-utils \
+    gvfs gvfs-smb cifs-utils  \
     python3-pip
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C yum install -y \
     compat-lua-libs libtermkey libtree-sitter libvterm luajit luajit2.1-luv msgpack unibilium xsel
   download_neovim
-  systemctl enable systemd-networkd systemd-resolved
-  systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
-  systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 fi
 
 # prepare NvChad environment
