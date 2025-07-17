@@ -90,98 +90,11 @@ elif [ -e /bin/yum ]; then
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 fi
 
-# disable hibernation and hybrid-sleep modes
-cp /etc/systemd/logind.conf /etc/systemd/logind.conf.bak
-sed -i 's/^#\?HandlePowerKey=.*/HandlePowerKey=poweroff/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandlePowerKeyLongPress=.*/HandlePowerKeyLongPress=poweroff/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleRebootKey=.*/HandleRebootKey=reboot/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleRebootKeyLongPress=.*/HandleRebootKeyLongPress=poweroff/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleSuspendKeyLongPress=.*/HandleSuspendKeyLongPress=poweroff/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleHibernateKey=.*/HandleHibernateKey=suspend/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleHibernateKeyLongPress=.*/HandleHibernateKeyLongPress=poweroff/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleLidSwitch=.*/HandleLidSwitch=suspend/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=suspend/' /etc/systemd/logind.conf
-sed -i 's/^#\?HandleLidSwitchDocked=.*/HandleLidSwitchDocked=ignore/' /etc/systemd/logind.conf
-cp /etc/systemd/sleep.conf /etc/systemd/sleep.conf.bak
-sed -i 's/^#\?AllowSuspend=.*/AllowSuspend=yes/' /etc/systemd/sleep.conf
-sed -i 's/^#\?AllowHibernation=.*/AllowHibernation=no/' /etc/systemd/sleep.conf
-sed -i 's/^#\?AllowSuspendThenHibernate=.*/AllowSuspendThenHibernate=no/' /etc/systemd/sleep.conf
-sed -i 's/^#\?AllowHybridSleep=.*/AllowHybridSleep=no/' /etc/systemd/sleep.conf
-systemctl mask hibernate.target suspend-then-hibernate.target hybrid-sleep.target
-echo ":: prepare NvChad environment"
+# prepare NvChad environment
 mkdir -p /etc/skel/.local/share
-echo ":: setup NvChad environment"
 ( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh lua-language-server stylua" -c ":qall!" || true' ) &
 pid=$!
-echo ":: wait for NvChad to finish"
 wait $pid
-
-echo ":: create user homes on login"
-# see https://wiki.archlinux.org/title/LDAP_authentication for more details
-# TODO: on ubuntu system-login is missing - investigate!
-if [ -f /etc/pam.d/system-login ]; then
-    sed -i 's/^\(session.*pam_env.so\)/\1\nsession    required   pam_mkhomedir.so     skel=\/etc\/skel umask=0077/' /etc/pam.d/system-login
-fi
-
-echo ":: enable ntfs3 kernel support for read/write/repair of partitions"
-echo "ntfs3" | tee /etc/modules-load.d/ntfs3.conf
-tee /etc/udev/rules.d/50-ntfs.rules <<EOF
-SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="ntfs", ENV{ID_FS_TYPE}="ntfs3"
-EOF
-echo ":: enable cifs kernel support for windows shares"
-echo "cifs" | tee /etc/modules-load.d/cifs.conf
-echo ":: enable sg kernel support for dvd/bluray drives"
-echo "sg" | tee /etc/modules-load.d/sg.conf
-
-echo ":: user first time login script"
-tee /usr/local/bin/userlogin.sh <<'EOS'
-#!/usr/bin/env bash
-
-# prepare user directory
-if [[ ! -f $HOME/.ssh/id_ed25519.pub ]]; then
-  echo "Generating ssh keys for user '$USER'."
-  mkdir -p $HOME/.ssh
-  chmod 0700 $HOME/.ssh
-  ssh-keygen -t ed25519 -N "" -C "" -f $HOME/.ssh/id_ed25519
-  ssh-keygen -t rsa -N "" -C "" -f $HOME/.ssh/id_rsa
-  chmod 0600 $HOME/.ssh/id_ed25519 $HOME/.ssh/id_rsa
-  chmod 0644 $HOME/.ssh/id_ed25519.pub $HOME/.ssh/id_rsa.pub
-  eval "$(ssh-agent -s)"
-  ssh-add $HOME/.ssh/id_ed25519
-  ssh-add $HOME/.ssh/id_rsa
-  eval "$(ssh-agent -k)"
-fi
-if [[ ! -f $HOME/.wg/$USER.key ]]; then
-  echo "Generating wireguard keys for user '$USER'."
-  mkdir -p $HOME/.wg
-  chmod 0700 $HOME/.wg
-  wg genkey | tee $HOME/.wg/$USER.key | wg pubkey > $HOME/.wg/$USER.pub
-  chmod 0600 $HOME/.wg/$USER.key
-  chmod 0644 $HOME/.wg/$USER.pub
-fi
-# prevent error https://github.com/kovidgoyal/kitty/issues/320
-# open terminal failed: missing or unsuitable terminal: xterm-kitty
-tee $HOME/.ssh/config <<EOX
-SetEnv TERM=screen
-EOX
-# force update font cache on first login
-fc-cache -fv
-EOS
-chmod +x /usr/local/bin/userlogin.sh
-tee /etc/systemd/user/userlogin.service <<'EOF'
-[Unit]
-Description=Execute on first user login after boot
-[Service]
-Type=simple
-StandardInput=null
-StandardOutput=journal
-StandardError=journal
-ExecStart=-/usr/local/bin/userlogin.sh
-[Install]
-WantedBy=default.target
-EOF
-systemctl --global enable userlogin.service
 
 # graphics driver for amd, intel, nvidia, vmware and virtio-gpu
 if [ -e /bin/apt ]; then
