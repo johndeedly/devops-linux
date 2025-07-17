@@ -8,6 +8,9 @@ merge_how:
       - no_replace
       - recurse_list
 
+# configured inside scripts
+locale: false
+
 write_files:
   # enable german keyboard
   - path: /etc/vconsole.conf
