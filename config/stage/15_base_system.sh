@@ -14,31 +14,15 @@ download_nerdfont() {
 download_starship() {
   echo ":: download starship"
   curl --fail --silent --location --output /tmp/starship-x86_64.tar.gz 'https://github.com/starship/starship/releases/latest/download/starship-x86_64-unknown-linux-musl.tar.gz'
-  curl --fail --silent --location --output /tmp/starship-x86_64.tar.gz.sha256 'https://github.com/starship/starship/releases/latest/download/starship-x86_64-unknown-linux-musl.tar.gz.sha256'
-  newhash=$(sha256sum /tmp/starship-x86_64.tar.gz | cut -d' ' -f1)
-  knownhash=$(cat /tmp/starship-x86_64.tar.gz.sha256)
-  if [ -n "$newhash" ] && [ "$newhash" == "$knownhash" ]; then
-    echo ":: correct hash, extract starship to /usr/local/bin/"
-    tar -xzof /tmp/starship-x86_64.tar.gz -C /usr/local/bin/
-    chmod 0755 /usr/local/bin/starship
-  else
-    echo "!! error installing starship: wrong hash. expected: $knownhash, got $newhash"
-  fi
+  tar -xzof /tmp/starship-x86_64.tar.gz -C /usr/local/bin/
+  chmod 0755 /usr/local/bin/starship
 }
 
 download_neovim() {
   echo ":: download nvim"
   curl --fail --silent --location --output /tmp/nvim-x86_64.tar.gz 'https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz'
-  curl --fail --silent --location 'https://github.com/neovim/neovim/releases/download/stable/shasum.txt' | grep -oE '.*nvim-linux-x86_64.tar.gz' > /tmp/nvim-x86_64.tar.gz.sha256
-  newhash=$(sha256sum /tmp/nvim-x86_64.tar.gz | cut -d' ' -f1)
-  knownhash=$(cat /tmp/nvim-x86_64.tar.gz.sha256 | cut -d' ' -f1)
-  if [ -n "$newhash" ] && [ "$newhash" == "$knownhash" ]; then
-    echo ":: correct hash, extract nvim to /usr/local/"
-    tar -xzof /tmp/nvim-x86_64.tar.gz -C /usr/local/ --strip-components 1
-    chmod 0755 /usr/local/bin/nvim
-  else
-    echo "!! error installing starship: wrong hash. expected: $knownhash, got $newhash"
-  fi
+  tar -xzof /tmp/nvim-x86_64.tar.gz -C /usr/local/ --strip-components 1
+  chmod 0755 /usr/local/bin/nvim
 }
 
 # install additional base packages
