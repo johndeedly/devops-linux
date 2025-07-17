@@ -189,7 +189,7 @@ if [ -e /bin/apt ]; then
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
       firmware-linux-nonfree \
       xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
-      xserver-xorg-video-nvidia \
+      xserver-xorg-video-nouveau \
       xserver-xorg-video-intel \
       xserver-xorg-video-vmware \
       xserver-xorg-video-qxl
@@ -197,19 +197,16 @@ if [ -e /bin/apt ]; then
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
       linux-firmware \
       xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
+      xserver-xorg-video-nouveau \
       xserver-xorg-video-intel \
       xserver-xorg-video-vmware \
       xserver-xorg-video-qxl
-    NVIDIA_XORG_VERSION=$(LC_ALL=C apt list 'xserver-xorg-video-nvidia-*' | sed -e '/Listing/d' -e '/-server/d' -e '/-open/d' -e 's|/.*||g' | sort -r | head -n 1)
-    if [ -n "${NVIDIA_XORG_VERSION}" ]; then
-      LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install "${NVIDIA_XORG_VERSION}"
-    fi
   fi
   tee /etc/modules-load.d/kms.conf <<EOF
-$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "$x"; done )
+$( for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do echo "$x"; done )
 EOF
   tee /etc/modprobe.d/kms.conf <<EOF
-$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
+$( for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
 EOF
   tee /etc/initramfs-tools/hooks/zz_omit <<'EOF'
 #!/bin/sh
@@ -221,23 +218,13 @@ prereqs)
   ;;
 esac
 . /usr/share/initramfs-tools/hook-functions
-for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm nouveau i915 virtio-gpu vmwgfx ; do
+for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do
   find "${DESTDIR}" -type f -wholename "*${x}*" -print | while read -r line; do
     echo Remove mod/fw ${line#"$DESTDIR"} && rm "${line}"
   done
 done
 EOF
   chmod 755 /etc/initramfs-tools/hooks/zz_omit
-  # ignore failed service when no nvidia card is present - the system is
-  # not in a degraded state when this happens, nvidia...
-  mkdir -p /etc/systemd/system/nvidia-persistenced.service.d
-  tee /etc/systemd/system/nvidia-persistenced.service.d/override.conf <<EOF
-[Service]
-ExecStart=
-ExecStopPost=
-ExecStart=-/usr/bin/nvidia-persistenced --user nvpd
-ExecStopPost=-/bin/rm -rf /var/run/nvidia-persistenced
-EOF
   ls -1 /lib/modules | while read -r line; do
     depmod -a "$line"
   done
@@ -246,21 +233,21 @@ EOF
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     xf86-video-ati xf86-video-amdgpu mesa vulkan-radeon libva-mesa-driver mesa-vdpau libva-utils nvtop \
-    nvidia nvidia-utils nvidia-prime libva-nvidia-driver \
+    xf86-video-nouveau vulkan-nouveau \
     xf86-video-intel vulkan-intel libva-intel-driver \
     xf86-video-vmware \
     xf86-video-qxl
   tee /etc/modules-load.d/kms.conf <<EOF
-$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "$x"; done )
+$( for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do echo "$x"; done )
 EOF
   tee /etc/modprobe.d/kms.conf <<EOF
-$( for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
+$( for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do echo "options $x modeset=1"; done )
 EOF
   tee /etc/initcpio/install/zz_omit <<'EOF'
 #!/usr/bin/env bash
 
 build() {
-  for x in amdgpu radeon nvidia nvidia-modeset nvidia-uvm nvidia-drm nouveau i915 virtio-gpu vmwgfx ; do
+  for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do
     find "${BUILDROOT}" -type f -wholename "*${x}*" -print | while read -r line; do
       echo Remove mod/fw ${line#"$BUILDROOT"} && rm "${line}"
     done
