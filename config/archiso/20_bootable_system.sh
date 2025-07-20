@@ -319,5 +319,10 @@ sleep 5
 # sync everything to disk
 sync
 
+# eject disc
+for disc in $(find /dev -name "sr*"); do
+  eject --no-unmount "$disc"
+done
+
 # cleanup
 rm -- "${0}"

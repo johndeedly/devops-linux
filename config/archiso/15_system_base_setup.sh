@@ -3,7 +3,7 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 # check if build chain is installed
-if [ -f /devops-linux ]; then
+if [ -e /bin/apt ] || [ -f /devops-linux ]; then
     # sync everything to disk
     sync
     # cleanup

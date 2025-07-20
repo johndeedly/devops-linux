@@ -15,12 +15,13 @@ pushd /var/tmp/deblive
   (
     source /etc/os-release
     eatmydata lb config -d "${VERSION_CODENAME}" --debian-installer live --debian-installer-distribution "${VERSION_CODENAME}" \
-      --archive-areas "main non-free-firmware" --debootstrap-options "--include=eatmydata --variant=minbase"
+      --archive-areas "main non-free-firmware" --debootstrap-options "--include=eatmydata --variant=minbase" \
+      --binary-images iso-hybrid --bootloaders "grub-efi,syslinux"
   )
 popd
 
 # bootloader timeout
-cp -r /usr/share/live/build/bootloaders/isolinux/ /var/tmp/deblive/config/bootloaders/
+cp -r /usr/share/live/build/bootloaders/{isolinux,grub-pc}/ /var/tmp/deblive/config/bootloaders/
 tee /var/tmp/deblive/config/bootloaders/isolinux/isolinux.cfg <<EOF
 include menu.cfg
 default vesamenu.c32
@@ -37,6 +38,42 @@ include live.cfg
 
 menu clear
 EOF
+tee /var/tmp/deblive/config/bootloaders/grub-pc/grub.cfg <<'EOF'
+set default=0
+
+loadfont $prefix/dejavu-bold-16.pf2
+loadfont $prefix/dejavu-bold-14.pf2
+loadfont $prefix/unicode.pf2
+set gfxmode=auto
+insmod all_video
+insmod gfxterm
+insmod png
+
+set color_normal=light-gray/black
+set color_highlight=white/black
+
+if [ -e /isolinux/splash.png ]; then
+    # binary_syslinux modifies the theme file to point to the correct
+    # background picture
+    set theme=/boot/grub/live-theme/theme.txt
+elif [ -e /boot/grub/splash.png ]; then
+    set theme=/boot/grub/live-theme/theme.txt
+else
+    set menu_color_normal=cyan/blue
+    set menu_color_highlight=white/blue
+fi
+
+terminal_output gfxterm
+
+insmod play
+play 960 440 1 0 4 440 1
+
+# Live boot
+LINUX_LIVE
+
+set timeout_style=menu
+set timeout=15
+EOF
 
 # eat my data in chroot
 tee -a /var/tmp/deblive/config/environment.chroot <<EOF
@@ -45,6 +82,7 @@ EOF
 
 # same packages as archiso setup
 tee /var/tmp/deblive/config/package-lists/pkgs.list.chroot <<EOF
+locales-all
 systemd-resolved
 cloud-init
 eatmydata
