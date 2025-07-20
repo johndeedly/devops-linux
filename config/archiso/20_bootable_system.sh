@@ -72,7 +72,8 @@ partx -u "${TARGET_DEVICE}"
 sleep 1
 
 # resize main ext4/btrfs partition
-ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/root\|linux filesystem/I!d' | head -n1) )
+ROOT_PART=( $(lsblk -no PATH,MAJ:MIN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/root\|linux filesystem/I!d' | head -n1) )
+ROOT_PART[1]=$( cut -d':' -f2 <<<"${ROOT_PART[1]}" )
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
 ENCRYPT_ENABLED="$(yq -r '.setup.encrypt.enabled' /var/lib/cloud/instance/config/setup.yml)"
 ENCRYPT_PASSWD="$(yq -r '.setup.encrypt.password' /var/lib/cloud/instance/config/setup.yml)"
@@ -94,7 +95,8 @@ sleep 1
 
 # encrypt and open the provided system root
 if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
-  NEWROOT_PART=( $(lsblk -no PATH,PARTN,PARTLABEL "${TARGET_DEVICE}" | sed -e '/nextroot/I!d' | head -n1) )
+  NEWROOT_PART=( $(lsblk -no PATH,MAJ:MIN,PARTLABEL "${TARGET_DEVICE}" | sed -e '/nextroot/I!d' | head -n1) )
+  NEWROOT_PART[1]=$( cut -d':' -f2 <<<"${NEWROOT_PART[1]}" )
   echo "NEWROOT: ${TARGET_DEVICE}, partition ${NEWROOT_PART[1]}"
   echo "Encrypt device ${NEWROOT_PART[0]}"
   printf "%s" "${ENCRYPT_PASSWD}" | (cryptsetup luksFormat --verbose -d - "${NEWROOT_PART[0]}")
@@ -131,8 +133,10 @@ fi
 
 # bootable system
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
-BIOS_PART=( $(lsblk -no PARTN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/BIOS/I!d' | head -n1) )
-EFI_PART=( $(lsblk -no PARTN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
+BIOS_PART=( $(lsblk -no MAJ:MIN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/BIOS/I!d' | head -n1) )
+BIOS_PART[0]=$( cut -d':' -f2 <<<"${BIOS_PART[0]}" )
+EFI_PART=( $(lsblk -no MAJ:MIN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
+EFI_PART[0]=$( cut -d':' -f2 <<<"${EFI_PART[0]}" )
 echo "BIOS: ${TARGET_DEVICE}, partition ${BIOS_PART[0]}"
 echo "EFI: ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
 if [ -n "${BIOS_PART[0]}" ] && [ -n "${EFI_PART[0]}" ]; then
