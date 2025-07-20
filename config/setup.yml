@@ -77,6 +77,7 @@ endoflife:
 images:
   archiso: archlinux-x86_64.iso
   archlinux: Arch-Linux-x86_64-cloudimg.qcow2
+  debiso: debian-x86_64.iso
   debian: debian-12-generic-amd64.qcow2
   debian-edge: debian-13-generic-amd64-daily.qcow2
   debian-13: debian-13-generic-amd64-daily.qcow2

@@ -71,7 +71,7 @@ source "qemu" "default" {
   qemuargs             = [["-rtc", "base=utc,clock=host"], ["-device", "virtio-mouse"], ["-device", "virtio-keyboard"]]
   headless             = var.headless
   iso_checksum         = "none"
-  iso_url              = "archlinux-x86_64-cidata.iso"
+  iso_url              = "devops-x86_64-cidata.iso"
   output_directory     = "output/devops-linux"
   ssh_username         = "root"
   ssh_password         = "packer-build-passwd"
@@ -103,7 +103,7 @@ source "virtualbox-iso" "default" {
   headless                 = var.headless
   iso_checksum             = "none"
   iso_interface            = "virtio"
-  iso_url                  = "archlinux-x86_64-cidata.iso"
+  iso_url                  = "devops-x86_64-cidata.iso"
   output_directory         = "output/devops-linux"
   output_filename          = "devops-linux-x86_64"
   ssh_username             = "root"

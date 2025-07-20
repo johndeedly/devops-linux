@@ -226,26 +226,33 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
     fi
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 
-    echo "Download archiso when needed"
     ARCHISO=$(yq -r '.images.archiso' config/setup.yml)
     ARCHISOURL=$(yq -r '.download.archiso' config/setup.yml)
-    if ! [ -e "${ARCHISO}" ]; then
-        if ! wget -c -N --progress=dot:giga "${ARCHISOURL}"; then
-            echo 1>&2 "Download error"
-            exit 1
+    DEBISO=$(yq -r '.images.debiso' config/setup.yml)
+    
+    if ! [ -e "${DEBISO}" ]; then
+        if ! [ -e "${ARCHISO}" ]; then
+            echo "Download archiso"
+            if ! wget -c -N --progress=dot:giga "${ARCHISOURL}"; then
+                echo 1>&2 "Download error"
+                exit 1
+            fi
         fi
+        DEVOPSISO="${ARCHISO}"
+    else
+        DEVOPSISO="${DEBISO}"
     fi
 
-    echo "Append cidata to archiso"
-    ARCHISOMODDED="archlinux-x86_64-cidata.iso"
-    [ -L "${ARCHISOMODDED}" ] && rm "$(readlink -f "${ARCHISOMODDED}")" && rm "${ARCHISOMODDED}"
-    [ -f "${ARCHISOMODDED}" ] && rm "${ARCHISOMODDED}"
+    echo "Append cidata to devops-iso"
+    DEVOPSISOMODDED="devops-x86_64-cidata.iso"
+    [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
+    [ -f "${DEVOPSISOMODDED}" ] && rm "${DEVOPSISOMODDED}"
     if [ $_ram -eq 1 ]; then
-        ARCHISOMODDED="$(mktemp -d)/archlinux-x86_64-cidata.iso"
-        ln -s "${ARCHISOMODDED}" archlinux-x86_64-cidata.iso
+        DEVOPSISOMODDED="$(mktemp -d)/devops-x86_64-cidata.iso"
+        ln -s "${DEVOPSISOMODDED}" devops-x86_64-cidata.iso
     fi
-    xorriso -indev "${ARCHISO}" \
-            -outdev "${ARCHISOMODDED}" \
+    xorriso -indev "${DEVOPSISO}" \
+            -outdev "${DEVOPSISOMODDED}" \
             -volid CIDATA \
             -map build/archiso/ / \
             -map database/ / \
@@ -264,25 +271,25 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
         read -e -p "Enter proxmox vm bridge [vmbr0]: " -i "vmbr0" _proxmox_bridge
         read -e -p "Enter proxmox vm storage [local]: " -i "local" _proxmox_storage
         read -e -p "Enter proxmox vm size in GiB [512]: " -i "512" _proxmox_size
-        mv archlinux-x86_64-cidata.iso "/var/lib/vz/template/iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
+        mv "${DEVOPSISOMODDED}" "/var/lib/vz/template/iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
         if pvs --rows | grep -E "VG ${_proxmox_storage}\$"
         then
             if ! qm create "${_proxmox_vm}" --net0 "virtio,bridge=${_proxmox_bridge}" --name "${_proxmox_name}" \
             --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35 --bios ovmf \
             --boot "order=virtio0;ide0" --virtio0 "${_proxmox_storage}:${_proxmox_size},discard=on,iothread=1,size=${_proxmox_size}" --agent enabled=1 \
             --efidisk0 "${_proxmox_storage}:0,efitype=4m,format=raw,pre-enrolled-keys=0" --tpmstate0 "${_proxmox_storage}:0,version=v2.0" \
-            --ide0 "local:iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio
+            --ide0 "local:iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio
             then
-                rm "/var/lib/vz/template/iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
+                rm "/var/lib/vz/template/iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
             fi
         else
             if ! qm create "${_proxmox_vm}" --net0 "virtio,bridge=${_proxmox_bridge}" --name "${_proxmox_name}" \
             --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35 --bios ovmf \
             --boot "order=virtio0;ide0" --virtio0 "${_proxmox_storage}:0,format=qcow2,discard=on,iothread=1" --agent enabled=1 \
             --efidisk0 "${_proxmox_storage}:0,efitype=4m,format=raw,pre-enrolled-keys=0" --tpmstate0 "${_proxmox_storage}:0,version=v2.0" \
-            --ide0 "local:iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio
+            --ide0 "local:iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio
             then
-                rm "/var/lib/vz/template/iso/archlinux-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
+                rm "/var/lib/vz/template/iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
             else
               qm disk resize "${_proxmox_vm}" virtio0 "${_proxmox_size}G"
             fi

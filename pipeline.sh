@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-ARCHISOMODDED="archlinux-x86_64-cidata.iso"
+DEVOPSISOMODDED="devops-x86_64-cidata.iso"
 
 # error handling
 set -E -o functrace
 err_report() {
     echo "errexit command '${1}' returned ${2} on line $(caller)" 1>&2
-    [ -L "${ARCHISOMODDED}" ] && rm "$(readlink -f "${ARCHISOMODDED}")" && rm "${ARCHISOMODDED}"
+    [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
     exit "${2}"
 }
 trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
@@ -245,4 +245,4 @@ case $VIRTENV in
         ;;
 esac
 
-[ -L "${ARCHISOMODDED}" ] && rm "$(readlink -f "${ARCHISOMODDED}")" && rm "${ARCHISOMODDED}"
+[ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
