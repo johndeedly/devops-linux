@@ -23,19 +23,19 @@ if [ -e /bin/apt ]; then
     mkdir -p /srv/pxe/debian/x86_64
     sync
     mksquashfs / /srv/pxe/debian/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-      -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*"
+      -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*" "usr/lib/systemd/system/snapper-*" "/etc/systemd/system/timers.target.wants/snapper-*"
   elif grep -q Ubuntu /proc/version; then
     mkdir -p /srv/pxe/ubuntu/x86_64
     sync
     mksquashfs / /srv/pxe/ubuntu/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-      -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*"
+      -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*" "usr/lib/systemd/system/snapper-*" "/etc/systemd/system/timers.target.wants/snapper-*"
   fi
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
   mkdir -p /srv/pxe/arch/x86_64
   sync
   mksquashfs / /srv/pxe/arch/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-    -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/lib/cloud/*"
+    -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*" "usr/lib/systemd/system/snapper-*" "/etc/systemd/system/timers.target.wants/snapper-*"
 fi
 
 # reenable sleep

@@ -388,7 +388,7 @@ if [ -e /bin/apt ]; then
   systemctl enable ssh ufw
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
-    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils
+    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
   systemctl enable systemd-networkd systemd-resolved systemd-homed
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
@@ -398,7 +398,7 @@ elif [ -e /bin/pacman ]; then
   systemctl enable sshd ufw
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     bash-completion ncdu viu pv mc ranger fzf moreutils htop btop git lazygit \
-    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils
+    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper
   systemctl enable systemd-networkd systemd-resolved systemd-homed
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -408,10 +408,32 @@ elif [ -e /bin/yum ]; then
   download_yq
   LC_ALL=C yes | LC_ALL=C yum install -y systemd-networkd \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
-    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils
+    lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper
   systemctl enable systemd-networkd systemd-resolved
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
+fi
+
+# enabling btrfs root snapshots when not inside a container
+if findmnt -t btrfs -n /; then
+  echo "[ OK ] Detected btrfs root, enable daily/weekly/monthly snapshots"
+  snapper -c root create-config /
+  sed -i 's/TIMELINE_MIN_AGE=.*/TIMELINE_MIN_AGE="1800"/' /etc/snapper/configs/root
+  sed -i 's/TIMELINE_LIMIT_HOURLY=.*/TIMELINE_LIMIT_HOURLY="0"/' /etc/snapper/configs/root
+  sed -i 's/TIMELINE_LIMIT_DAILY=.*/TIMELINE_LIMIT_DAILY="2"/' /etc/snapper/configs/root
+  sed -i 's/TIMELINE_LIMIT_WEEKLY=.*/TIMELINE_LIMIT_WEEKLY="2"/' /etc/snapper/configs/root
+  sed -i 's/TIMELINE_LIMIT_MONTHLY=.*/TIMELINE_LIMIT_MONTHLY="1"/' /etc/snapper/configs/root
+  sed -i 's/TIMELINE_LIMIT_YEARLY=.*/TIMELINE_LIMIT_YEARLY="0"/' /etc/snapper/configs/root
+  mkdir -p /etc/systemd/system/snapper-{backup,boot,timeline,cleanup}{.timer.d,.service.d}
+  tee /etc/systemd/system/snapper-{backup,boot,timeline,cleanup}{.timer.d,.service.d}/override.conf <<EOF
+[Unit]
+ConditionVirtualization=
+ConditionVirtualization=!container
+EOF
+  systemctl enable snapper-timeline.timer snapper-cleanup.timer
+else
+  echo "[FAIL] No btrfs root detected, no snapshots will be available"
+  systemctl disable snapper-timeline.timer snapper-cleanup.timer
 fi
 
 # enabling ufw filters
