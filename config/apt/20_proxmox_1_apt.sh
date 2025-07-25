@@ -28,7 +28,7 @@ EOF
 
 # removes the nagging "subscription missing" popup on login (permanent solution)
 tee /etc/apt/apt.conf.d/90-no-more-nagging <<EOF
-DPkg::Post-Invoke { "/usr/bin/sed -Ezi 's/function\(orig_cmd\) \{/function\(original_cmd\) \{ original_cmd\(\); return;/g' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"; };
+DPkg::Post-Invoke { "/usr/bin/test -f /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js && /usr/bin/sed -Ezi 's/function\(orig_cmd\) \{/function\(original_cmd\) \{ original_cmd\(\); return;/g' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"; };
 EOF
 
 # update and upgrade
