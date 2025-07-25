@@ -25,6 +25,7 @@ distros:
   debian-12: apt
   ubuntu: apt
   ubuntu-edge: apt
+  ubuntu-25: apt
   ubuntu-24: apt
   ubuntu-22: apt
   fedora: yum
@@ -43,7 +44,8 @@ download:
   debian-13: https://cloud.debian.org/images/cloud/trixie/daily/latest/debian-13-generic-amd64-daily.qcow2
   debian-12: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
   ubuntu: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
-  ubuntu-edge: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
+  ubuntu-edge: https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img
+  ubuntu-25: https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img
   ubuntu-24: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
   ubuntu-22: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
   fedora: https://download.fedoraproject.org/pub/fedora/linux/releases/42/Cloud/x86_64/images/Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
@@ -60,7 +62,8 @@ endoflife:
   debian-13: https://endoflife.date/api/debian/13.json
   debian-12: https://endoflife.date/api/debian/12.json
   ubuntu: https://endoflife.date/api/ubuntu/24.04.json
-  ubuntu-edge: https://endoflife.date/api/ubuntu/24.04.json
+  ubuntu-edge: https://endoflife.date/api/ubuntu/25.10.json
+  ubuntu-25: https://endoflife.date/api/ubuntu/25.10.json
   ubuntu-24: https://endoflife.date/api/ubuntu/24.04.json
   ubuntu-22: https://endoflife.date/api/ubuntu/22.04.json
   fedora: https://endoflife.date/api/fedora/42.json
@@ -80,7 +83,8 @@ images:
   debian-13: debian-13-generic-amd64-daily.qcow2
   debian-12: debian-12-generic-amd64.qcow2
   ubuntu: noble-server-cloudimg-amd64.img
-  ubuntu-edge: noble-server-cloudimg-amd64.img
+  ubuntu-edge: questing-server-cloudimg-amd64.img
+  ubuntu-25: questing-server-cloudimg-amd64.img
   ubuntu-24: noble-server-cloudimg-amd64.img
   ubuntu-22: jammy-server-cloudimg-amd64.img
   fedora: Fedora-Cloud-Base-UEFI-UKI-42-1.1.x86_64.qcow2
