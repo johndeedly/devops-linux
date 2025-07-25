@@ -149,6 +149,15 @@ build {
   }
 
   provisioner "shell" {
+    inline            = [
+      "for disc in $(find /dev -name \"sr*\" | sort); do",
+      "  echo \"[ ## ] Eject tray: $disc\"",
+      "  eject --no-unmount \"$disc\" || true",
+      "done"
+    ]
+  }
+
+  provisioner "shell" {
     expect_disconnect = true
     inline            = [
       "reboot now",
