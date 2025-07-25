@@ -121,9 +121,7 @@ if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then
         /usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any --timeout=20
         echo "[ ## ] Wait for dns resolver (20s)"
         for i in $(seq 1 10); do
-            if ! getent hosts 1.1.1.1 >/dev/null 2>&1; then
-                break
-            fi
+            getent hosts 1.1.1.1 >/dev/null 2>&1 && break
             sleep 2
         done
     fi
