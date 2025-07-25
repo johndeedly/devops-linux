@@ -24,24 +24,31 @@ ssh_pwauth: true
 chpasswd:
   expire: false
   users:
-    - name: root
-      password: packer-build-passwd
-      type: text
     - name: user
       password: $6$abcxyz$SbH927uoC4lzRtFfY0VVySMbwPylQWrA64dOsKciS4vD.N.QhnwtdzQz9SxzR0/yvnd2dvATA3gh5bNDHaNCB.
+    - name: root
+      type: RANDOM
+    - name: provisioning
+      password: provisioning-build-passwd
+      type: text
 
 growpart:
   mode: 'off'
 resize_rootfs: false
 
 write_files:
+  # create a duplicate "root" user for provisioning, removed afterwards
+  - path: /etc/passwd
+    content: provisioning:x:0:0::/root:/bin/bash
+    append: true
   # sshd config -> allow root, password auth, use pam
   - path: /etc/ssh/sshd_config
     content: |
-      # added via cloud-init
+      # cloud-init build
       PermitRootLogin yes
       PasswordAuthentication yes
       UsePAM yes
+      #~cloud-init build
     owner: 'root:root'
     permissions: '0644'
     append: true

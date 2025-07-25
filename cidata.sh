@@ -151,6 +151,19 @@ echo "[ ## ] Wait for cloud-init to finish"
 # cleanup
 rm -- "${0}"
 EOF
+tee build/98_lockdown.sh >/dev/null <<'EOF'
+#!/usr/bin/env bash
+exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+# double fork trick to prevent the subprocess from exiting
+echo "[ ## ] Remove provisioning account and lock down ssh"
+( (
+  /bin/sed -i '/^# cloud-init build/{x;:a;n;/#~cloud-init build/ba};d' /etc/ssh/sshd_config
+  /bin/sed -i '/^provisioning/d' /etc/passwd
+  /bin/sed -i '/^provisioning/d' /etc/shadow
+) & )
+# cleanup
+rm -- "${0}"
+EOF
 
 # prepare user-data for stage
 write_mime_params=(
@@ -194,7 +207,7 @@ while read -r line; do
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' config/setup.yml)"
 # deployment scripts stage 2
 if [ $_autoreboot -eq 1 ]; then
-    write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot.sh:application/x-per-boot" )
+    write_mime_params=( "${write_mime_params[@]}" "build/98_lockdown.sh:application/x-per-boot" "build/99_autoreboot.sh:application/x-per-boot" )
 fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then

@@ -73,8 +73,8 @@ source "qemu" "default" {
   iso_checksum         = "none"
   iso_url              = "devops-x86_64-cidata.iso"
   output_directory     = "output/devops-linux"
-  ssh_username         = "root"
-  ssh_password         = "packer-build-passwd"
+  ssh_username         = "provisioning"
+  ssh_password         = "provisioning-build-passwd"
   ssh_timeout          = "10m"
   vm_name              = local.build_name_qemu
 }
@@ -106,8 +106,8 @@ source "virtualbox-iso" "default" {
   iso_url                  = "devops-x86_64-cidata.iso"
   output_directory         = "output/devops-linux"
   output_filename          = "devops-linux-x86_64"
-  ssh_username             = "root"
-  ssh_password             = "packer-build-passwd"
+  ssh_username             = "provisioning"
+  ssh_password             = "provisioning-build-passwd"
   ssh_timeout              = "10m"
   vboxmanage               = [["modifyvm", "{{ .Name }}", "--tpm-type", "2.0", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"]]
   vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"]]
@@ -328,5 +328,13 @@ chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
 EOS
     ]
     only_on = ["linux"]
+  }
+  
+  provisioner "shell" {
+    inline = [
+      "/bin/sed -i '/^# cloud-init build/{x;:a;n;/#~cloud-init build/ba};d' /etc/ssh/sshd_config",
+      "/bin/sed -i '/^provisioning/d' /etc/passwd",
+      "/bin/sed -i '/^provisioning/d' /etc/shadow",
+    ]
   }
 }
