@@ -11,6 +11,13 @@ elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C dnf install -y lynis colorized-logs
 fi
 
+# create a profile to include custom options
+tee /etc/lynis/custom.prf <<EOF
+# provision user (uid 0) is removed at the end
+skip-test=AUTH-9204
+skip-test=AUTH-9208
+EOF
+
 # perform a security audit
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
 AUDIT_DATE=$(date +%F)
