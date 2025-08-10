@@ -230,6 +230,10 @@ if [ -n "$ismsys2env" ]; then
 else
     VIRTENV=$(systemd-detect-virt || true)
 fi
+if ! [ -d ~/.config/packer/plugins/github.com/hashicorp/qemu ] ||
+   ! [ -d ~/.config/packer/plugins/github.com/hashicorp/virtualbox ]; then
+    env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log /bin/packer init devops-linux.pkr.hcl
+fi
 case $VIRTENV in
     wsl|msys2)
         # windows
