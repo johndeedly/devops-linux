@@ -14,8 +14,8 @@ write_files:
       [[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc
 
       [[ -f ~/.bashrc ]] && source ~/.bashrc
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.bashrc
     content: |
       # general global definitions
@@ -134,7 +134,7 @@ write_files:
           command xkcdpass -w ger-anlx -R -D '1234567890' -v '[A-Xa-x]' --min=4 --max=8 -n 4 "$@"
       }
       export -f du
-      
+
       if command -v starship >/dev/null; then
         eval "$(starship init bash)"
       else
@@ -144,13 +144,13 @@ write_files:
           PS1='\[\e[;32m\][\u@\h \W]\$\[\e[m\]${?#0} '
         fi
       fi
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.inputrc
     content: |
       set enable-keypad on
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/htop/htoprc
     content: |
       # Beware! This file is rewritten by htop when settings are changed in the interface.
@@ -192,8 +192,8 @@ write_files:
       right_meters=Tasks LoadAverage Uptime
       right_meter_modes=2 2 2
       hide_function_bar=0
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/starship.toml
     content: |
       add_newline = false
@@ -219,13 +219,13 @@ write_files:
       [username]
       format = "[$user]($style)"
       show_always = true
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/powershell/Microsoft.PowerShell_profile.ps1
     content: |
       Invoke-Expression (&starship init powershell)
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/lazygit/config.yml
     content: |
       git:
@@ -243,8 +243,8 @@ write_files:
             - type: 'confirm'
               title: 'Ignore commit and author dates'
               body: 'Reset all dates while rebasing {{.CheckedOutBranch.Name | quote}} on branch {{.SelectedLocalBranch.Name | quote}}?'
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/init.lua
     content: |
       vim.g.base46_cache = vim.fn.stdpath "data" .. "/base46/"
@@ -284,8 +284,8 @@ write_files:
       vim.schedule(function()
         require "mappings"
       end)
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/lua/chadrc.lua
     content: |
       -- This file needs to have same structure as nvconfig.lua 
@@ -305,8 +305,8 @@ write_files:
       }
 
       return M
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/lua/mappings.lua
     content: |
       require "nvchad.mappings"
@@ -323,8 +323,8 @@ write_files:
       map ("n", "<S-Right>", "<C-w>l", { desc = "Window right" })
       map ("n", "<S-Down>", "<C-w>j", { desc = "Window down" })
       map ("n", "<S-Up>", "<C-w>k", { desc = "Window up" })
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/lua/options.lua
     content: |
       require "nvchad.options"
@@ -333,8 +333,8 @@ write_files:
 
       -- local o = vim.o
       -- o.cursorlineopt ='both' -- to enable cursorline!
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/lua/configs/conform.lua
     content: |
       local options = {
@@ -352,8 +352,8 @@ write_files:
       }
 
       return options
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/lua/configs/lazy.lua
     content: |
       return {
@@ -403,8 +403,8 @@ write_files:
           },
         },
       }
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/lua/configs/lspconfig.lua
     content: |
       -- load defaults i.e lua_lsp
@@ -431,8 +431,8 @@ write_files:
         on_init = nvlsp.on_init,
         capabilities = nvlsp.capabilities,
       }
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/skel/.config/nvim/lua/plugins/init.lua
     content: |
       return {
@@ -473,5 +473,5 @@ write_files:
           },
         },
       }
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"

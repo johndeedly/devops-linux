@@ -36,20 +36,20 @@ write_files:
 
       [IPv6Prefix]
       RouteMetric=10
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   # only one interface needs to be configured to be "online"
   - path: /etc/systemd/system/systemd-networkd-wait-online.service.d/wait-online-any.conf
     content: |
       [Service]
       ExecStart=
       ExecStart=-/usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any --timeout=10
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
   - path: /etc/systemd/system/NetworkManager-wait-online.service.d/wait-online-any.conf
     content: |
       [Service]
       ExecStart=
       ExecStart=-/usr/bin/nm-online -x -q -t 10
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"

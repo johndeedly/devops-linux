@@ -44,6 +44,6 @@ write_files:
       PasswordAuthentication yes
       UsePAM yes
       #~cloud-init build
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
     append: true

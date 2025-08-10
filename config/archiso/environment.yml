@@ -32,7 +32,7 @@ chpasswd:
       type: text
 
 growpart:
-  mode: 'off'
+  mode: "off"
 resize_rootfs: false
 
 write_files:
@@ -48,6 +48,6 @@ write_files:
       PasswordAuthentication yes
       UsePAM yes
       #~cloud-init build
-    owner: 'root:root'
-    permissions: '0644'
+    owner: "root:root"
+    permissions: "0644"
     append: true
