@@ -129,30 +129,6 @@ fi
 # cleanup
 rm -- "${0}"
 EOF
-tee build/99_autoreboot_archiso.sh >/dev/null <<'EOF'
-#!/usr/bin/env bash
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
-# double fork trick to prevent the subprocess from exiting
-echo "[ ## ] Wait for cloud-init to finish"
-( (
-  # valid exit codes are 0 or 2
-  cloud-init status --wait >/dev/null 2>&1
-  ret=$?
-  if [ $ret -eq 0 ] || [ $ret -eq 2 ]; then
-    for disc in $(find /dev -name "sr*" | sort); do
-      echo "[ ## ] Eject tray: $disc"
-      eject --no-unmount "$disc" || true
-    done
-    echo "[ OK ] Rebooting the system"
-    reboot now
-  else
-    echo "[ FAILED ] Unrecoverable error in provision steps"
-    cloud-init status --long --format yaml | sed -e 's/^/>>> /g'
-  fi
-) & )
-# cleanup
-rm -- "${0}"
-EOF
 tee build/99_autoreboot.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
@@ -257,7 +233,7 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
         "build/stage/meta-data:application/x-provision-config"
     )
     if [ $_autoreboot -eq 1 ]; then
-        write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot_archiso.sh:text/x-shellscript" )
+        write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot.sh:text/x-shellscript" )
     fi
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 
