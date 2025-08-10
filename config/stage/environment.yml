@@ -32,10 +32,6 @@ chpasswd:
       password: provisioning-build-passwd
       type: text
 
-growpart:
-  mode: 'off'
-resize_rootfs: false
-
 write_files:
   # create a duplicate "root" user for provisioning, removed afterwards
   - path: /etc/passwd
