@@ -20,7 +20,6 @@ users:
     groups: root
     shell: /bin/bash
 
-ssh_pwauth: true
 chpasswd:
   expire: false
   users:
