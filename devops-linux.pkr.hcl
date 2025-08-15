@@ -330,7 +330,6 @@ EOS
   
   provisioner "shell" {
     inline = [
-      "/bin/sed -i '/^# cloud-init build/{x;:a;n;/#~cloud-init build/ba};d' /etc/ssh/sshd_config",
       "/bin/sed -i '/^provisioning/d' /etc/passwd",
       "/bin/sed -i '/^provisioning/d' /etc/shadow",
     ]

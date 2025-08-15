@@ -155,7 +155,6 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 # double fork trick to prevent the subprocess from exiting
 echo "[ ## ] Remove provisioning account and lock down ssh"
 ( (
-  /bin/sed -i '/^# cloud-init build/{x;:a;n;/#~cloud-init build/ba};d' /etc/ssh/sshd_config
   /bin/sed -i '/^provisioning/d' /etc/passwd
   /bin/sed -i '/^provisioning/d' /etc/shadow
 ) & )

@@ -40,14 +40,3 @@ write_files:
   - path: /etc/passwd
     content: provisioning:x:0:0::/root:/bin/bash
     append: true
-  # sshd config -> allow root, password auth, use pam
-  - path: /etc/ssh/sshd_config
-    content: |
-      # cloud-init build
-      PermitRootLogin yes
-      PasswordAuthentication yes
-      UsePAM yes
-      #~cloud-init build
-    owner: "root:root"
-    permissions: "0644"
-    append: true
