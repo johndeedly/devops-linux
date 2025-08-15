@@ -4,11 +4,11 @@ setup:
     - base
   target: auto
   encrypt:
-    enabled: no
+    enabled: false
     password: packer-build-passwd
     image: devops-linux-archlinux.tar.zst
   ldapauth:
-    enabled: no
+    enabled: false
     authserver: ldap://0.0.0.0/
     base: dc=internal
     group: ou=Groups,dc=internal
