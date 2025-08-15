@@ -28,7 +28,7 @@ download_neovim() {
 # install additional base packages
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-    build-essential rsyslog npm \
+    build-essential rsyslog npm rsync \
     libxml2 man manpages-de trash-cli \
     wireguard-tools nfs-kernel-server \
     gvfs gvfs-backends cifs-utils \
@@ -40,7 +40,7 @@ if [ -e /bin/apt ]; then
   download_neovim
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
-    pacman-contrib base-devel rsyslog npm \
+    pacman-contrib base-devel rsyslog npm rsync \
     libxml2 core/man man-pages-de trash-cli \
     wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils \
@@ -50,7 +50,7 @@ elif [ -e /bin/pacman ]; then
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y \
     cmake make automake gcc gcc-c++ kernel-devel \
-    rsyslog npm \
+    rsyslog npm rsync \
     libxml2 man-db trash-cli \
     wireguard-tools nfs-utils \
     gvfs gvfs-smb cifs-utils  \
