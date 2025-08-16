@@ -28,8 +28,17 @@ EOF
 
 # removes the nagging "subscription missing" popup on login (permanent solution)
 tee /etc/apt/apt.conf.d/90-no-more-nagging <<EOF
-DPkg::Post-Invoke { "/usr/bin/test -f /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js && /usr/bin/sed -Ezi 's/function\(orig_cmd\) \{/function\(original_cmd\) \{ original_cmd\(\); return;/g' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js"; };
+DPkg::Post-Invoke { "/usr/local/sbin/no_more_nagging"; };
 EOF
+tee /usr/local/sbin/no_more_nagging <<EOF
+#!/usr/bin/env bash
+if [ -f /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js ]; then
+  sed -i 's|\(checked_command: function\)|//replace-me-nag\n\1|' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+  sed -i '/checked_command: function/,/^$/d' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+  sed -i 's|//replace-me-nag|checked_command: function (orig_cmd) { orig_cmd(); },\n|' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+fi
+EOF
+chmod +x /usr/local/sbin/no_more_nagging
 
 # update and upgrade
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
@@ -47,10 +56,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install pro
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt remove linux-image-amd64 'linux-image-6.1*'
 
 # Set hostname in etc/hosts
-tee /etc/hostname <<EOF
-proxmox.internal
-EOF
-FQDNAME=$(cat /etc/hostname)
+FQDNAME=$(</etc/hostname)
 HOSTNAME=${FQDNAME%%.*}
 tee /tmp/hosts_columns <<EOF
 # IPv4/v6|FQDN|HOSTNAME
