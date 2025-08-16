@@ -333,7 +333,7 @@ systemctl enable dnsmasq ntpd.timer hosts-calc.service nfs-kernel-server rpc-sta
 ufw disable
 
 # remove existing ssh rule
-ufw delete limit log ssh
+ufw delete allow log ssh
 
 # ==========
 # eth0 - extern

@@ -121,7 +121,12 @@ systemctl mask NetworkManager-wait-online
 
 # open up the port for the proxmox webinterface
 ufw disable
-ufw allow log 8006/tcp comment 'allow proxmox'
+ufw allow log 8006/tcp comment 'allow proxmox web interface'
+ufw allow log 5900:5999/tcp comment 'allow proxmox vnc web console'
+ufw allow log 3128/tcp comment 'allow proxmox spice proxy'
+ufw allow log 111/udp comment 'allow proxmox rpcbind'
+ufw allow log 5405:5412/udp comment 'allow proxmox corosync cluster traffic'
+ufw allow log 60000:60050/tcp comment 'allow proxmox live migration'
 ufw enable
 ufw status verbose
 

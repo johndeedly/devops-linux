@@ -453,8 +453,8 @@ ufw logging low
 ufw default deny incoming
 ufw default deny routed
 ufw default allow outgoing
-# limited ssh access on all devices
-ufw limit log ssh comment 'allow rate limited ssh'
+# ssh access on all devices
+ufw allow log ssh comment 'allow ssh'
 ufw enable
 
 # enable cockpit
