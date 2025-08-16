@@ -17,6 +17,23 @@ setup:
   archiso_mirror: false
   pkg_mirror: false
   chaotic_mirror: false
+  proxmox_cluster:
+    # ssh-keygen -q -N "" -C "root" -t ed25519 -f ssh_host_cluster_key
+    cluster_key: |
+      -----BEGIN OPENSSH PRIVATE KEY-----
+      b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+      QyNTUxOQAAACAsWzTQxmJIHfXhVUvqoSBM3RmntrWsnyyc4LVFCUdtMQAAAIieiwvQnosL
+      0AAAAAtzc2gtZWQyNTUxOQAAACAsWzTQxmJIHfXhVUvqoSBM3RmntrWsnyyc4LVFCUdtMQ
+      AAAEA0+ciWEpWATyKBLcBOUKkp4r1wnmxF76IUMvgsEDAKCCxbNNDGYkgd9eFVS+qhIEzd
+      Gae2tayfLJzgtUUJR20xAAAABHJvb3QB
+      -----END OPENSSH PRIVATE KEY-----
+    cluster_pub: |
+      ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICxbNNDGYkgd9eFVS+qhIEzdGae2tayfLJzgtUUJR20x root
+    # leave empty for broadcast logic
+    master_ip: ""
+    broadcast_port_master: 17789
+    broadcast_port_worker: 17790
+    broadcast_range: 0.0.0.0/0
 distros:
   archlinux: pacman
   debian: apt
@@ -156,8 +173,14 @@ files:
         stage: 1
       - path: apt/20_proxmox_2_apt.sh
         stage: 2
+    proxmox-cluster-master:
+      - path: apt/30_proxmox_master_apt.sh
+        stage: 2
+    proxmox-cluster-worker:
+      - path: apt/30_proxmox_worker_apt.sh
+        stage: 2
     proxmox-devops:
-      - path: apt/30_proxmox_3_apt.sh
+      - path: apt/40_proxmox_devops_apt.sh
         stage: 2
     router:
       - path: apt/20_router_apt.sh
