@@ -19,6 +19,7 @@ def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
     if ctype == "__begin__":
         configdir.mkdir(parents=True, exist_ok=True)
         provisiondir.mkdir(parents=True, exist_ok=True)
+        perbootdir.mkdir(parents=True, exist_ok=True)
         return
 
     if ctype == "__end__":
