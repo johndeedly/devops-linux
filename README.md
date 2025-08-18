@@ -29,6 +29,8 @@ The project has the following folder structure:
 - **📁output/📁artifacts/📁pxe** - the produced files for pxe booting are placed here
 - **📁output/📁devops-linux** - the produced virtual machine is placed here
 - **📁output/📁devops-linux/📄devops-linux-x86_64.run.sh** - the main executable script for the produced virtual machine
+- **📁output/📁devops-linux/📄devops-linux-x86_64.gl.sh** - the same as the ".run.sh" version, including support for graphic acceleration (**only** gpu accel, so expect a black screen on bootup)
+- **📁output/📁devops-linux/📄devops-linux-x86_64.pxe.sh** - test pxe booting the router build provided image (after adding an additional socket netdev to ".run.sh")
 - **📄cidata.sh** - preparation script to package the files needed for CIDATA execution of cloud-init
 - **📄pipeline.sh** - this script will start the whole setup pipeline
 
@@ -65,12 +67,55 @@ setup:
     - [...]
   ## the path to the target device to write the cloud image onto. "auto" tries to find a hard drive on it's own, but errors out when nothing is found.
   target: auto
+  ## utilize a tar image placed inside the database folder as encrypted root filesystem
+  encrypt:
+    ## enable the encrypt build
+    enabled: false
+    ## password for luks encrypted drive
+    password: packer-build-passwd
+    ## the image inside the database folder to use
+    image: devops-linux-archlinux.tar.zst
+  ## connect the provisioned system to a local ldap server for authentication (uses defaults of authserver build)
+  ldapauth:
+    ## enable the ldap setup
+    enabled: false
+    ## ldap endpoint
+    authserver: ldap://0.0.0.0/
+    ## base group
+    base: dc=internal
+    ## selector for auth groups
+    group: ou=Groups,dc=internal
+    ## selector for auth users
+    passwd: ou=People,dc=internal
+    ## selector for auth password (typically the same as the user selector, as the password is stored on the user entry)
+    shadow: ou=People,dc=internal
   ## (local) mirror link to the base of archive.archlinux.org
   archiso_mirror: false
   ## (local) package mirror link
   pkg_mirror: false
   ## (local) Chaotic Arch user repository mirror link
   chaotic_mirror: false
+  ## proxmox cluster setup (one master and many workers)
+  proxmox_cluster:
+    ## the keys are generated through the command
+    ##   $) ssh-keygen -q -N "" -C "root" -t ed25519 -f ssh_host_cluster_key
+    ## the private key will be placed on all worker instances
+    cluster_key: |
+      -----BEGIN OPENSSH PRIVATE KEY-----
+      [...]
+      -----END OPENSSH PRIVATE KEY-----
+    ## the public key is placed on both the master and the worker instances
+    cluster_pub: |
+      ssh-ed25519 [...] root
+    ## either put an ip to the master node here or leave it empty to
+    ## activate the broadcast logic
+    master_ip: ""
+    ## port opened on the master to receive the broadcast messages
+    broadcast_port_master: 17789
+    ## port opened on the worker instances to send the echo request
+    broadcast_port_worker: 17790
+    ## only broadcast in this ip range
+    broadcast_range: 0.0.0.0/0
 ```
 
 At this point the following options can be selected for installation:
@@ -94,6 +139,7 @@ At this point the following options can be selected for installation:
 - **proxmox** (_Debian_): Install [proxmox](https://www.proxmox.com/en/) to configure and spawn virtual machines and LXC container via gui.
 - **podman-image** (_Arch, Debian_): As the final step, take everything that was configured before and generate a fully functional OCI container, that can be uploaded to any docker or podman instance.
 - **pxe-image** (_Arch, Debian, Ubuntu_): As the final step, take everything that was configured before and generate a fully functional pxe boot image, that can e.g. be used in conjunction with the router option above to netboot any device on the LAN. The Arch PXE image is able to be booted via CIFS, HTTP, ISCSI, NBD, NFS, NVMEOF and SCP, the Debian and Ubuntu images only via CIFS, HTTP and NFS (more to come).
+- **tar-image** (_Arch, Debian, Ubuntu_): As the final step, take everything that was configured before and generate a fully functional LXC container image, that can be uploaded to any proxmox instance.
 
 ## Common Setups (by me)
 
