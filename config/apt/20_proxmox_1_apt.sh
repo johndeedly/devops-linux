@@ -121,6 +121,30 @@ tee /etc/sysctl.d/90-overcommit-memory.conf <<EOF
 vm.overcommit_memory=1
 EOF
 
+# == enable iommu for gpu sharing ==
+# in proxmox, after assigning the "raw gpu device" you need to select the
+# "All Functions", "ROM-Bar" and "PCI-Express" options in the "Advance" tab
+GRUB_CFGS=( /etc/default/grub /etc/default/grub.d/* )
+for cfg in "${GRUB_CFGS[@]}"; do
+  sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"/\1 intel_iommu=on amd_iommu=on"/' "$cfg" || true
+done
+grub-mkconfig -o /boot/grub/grub.cfg
+grub-mkconfig -o /boot/efi/EFI/debian/grub.cfg
+# prevent the host from capturing the gpu
+tee /etc/modprobe.d/no-host-gpu.conf <<EOF
+blacklist amdgpu
+blacklist radeon
+blacklist nouveau
+blacklist nvidia
+blacklist i915
+EOF
+# enable iommu modules
+tee /etc/modules-load.d/vfio.conf <<EOF
+vfio
+vfio_iommu_type1
+vfio_pci
+EOF
+
 # do not wait for online interfaces
 systemctl mask systemd-networkd-wait-online
 systemctl mask NetworkManager-wait-online
