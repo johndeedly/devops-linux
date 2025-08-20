@@ -32,6 +32,22 @@ mkdir -p output
 env "HOME=$BUILDDIR/home" PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
     /bin/packer init devops-linux.pkr.hcl
 
+# first build a debiso image
+yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
+yq -y '(.setup.options) = ["debiso"]' config/setup.yml | sponge config/setup.yml
+yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
+./cidata.sh --archiso --no-autoreboot
+_package_manager=$(yq -r '.setup as $setup | .distros[$setup.distro]' config/setup.yml)
+env "HOME=$BUILDDIR/home" PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
+    PKR_VAR_package_manager="${_package_manager}" PKR_VAR_package_cache="false" \
+    PKR_VAR_headless="true" PKR_VAR_cpu_cores="2" PKR_VAR_memory="2048" \
+    /bin/packer build -force -only=qemu.default devops-linux.pkr.hcl
+# switch to debiso
+[ -f output/artifacts/liveiso/debian-x86_64.iso ] || exit 1
+mv output/artifacts/liveiso/debian-x86_64.iso ./debian-x86_64.iso
+rm ./archlinux-x86_64.iso
+rm -r output/
+
 # # debian router
 # yq -y '(.setup.distro) = "debian"' config/setup.yml | sponge config/setup.yml
 # yq -y '(.setup.options) = ["router"]' config/setup.yml | sponge config/setup.yml
@@ -58,6 +74,7 @@ mv output/artifacts/tar/devops-linux-archlinux.tar.zst /var/lib/vz/template/cach
 pct create 300 /var/lib/vz/template/cache/archlinux-x86_64-mirror.tar.zst --memory 1536 \
     --hostname arch-mirror --net0 name=eth0,bridge=vmbr0,firewall=0,ip=dhcp,ip6=dhcp --storage local --swap 512 --rootfs local:512 \
     --unprivileged 1 --pool pool0 --ostype archlinux --onboot 1 --features nesting=1
+rm -r output/
 
 # debian 12 mirror server
 yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
@@ -74,6 +91,7 @@ mv output/artifacts/tar/devops-linux-debian-12.tar.zst /var/lib/vz/template/cach
 pct create 301 /var/lib/vz/template/cache/debian-12-x86_64-mirror.tar.zst --memory 1536 \
     --hostname debian-12-mirror --net0 name=eth0,bridge=vmbr0,firewall=0,ip=dhcp,ip6=dhcp --storage local --swap 512 --rootfs local:512 \
     --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1
+rm -r output/
 
 # exit build environment
 popd
