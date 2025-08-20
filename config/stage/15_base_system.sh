@@ -25,14 +25,10 @@ download_neovim() {
   chmod 0755 /usr/local/bin/nvim
 }
 
-# install additional base packages
+# install starship and neovim
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-    build-essential rsyslog npm rsync \
-    libxml2 man manpages-de trash-cli \
-    wireguard-tools nfs-kernel-server \
-    gvfs gvfs-backends cifs-utils \
-    python3-pip python3-venv
+    build-essential npm
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
@@ -40,21 +36,12 @@ if [ -e /bin/apt ]; then
   download_neovim
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
-    pacman-contrib base-devel rsyslog npm rsync \
-    libxml2 core/man man-pages-de trash-cli \
-    wireguard-tools nfs-utils \
-    gvfs gvfs-smb cifs-utils \
-    python-pip
+    base-devel npm
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     starship ttf-terminus-nerd ttf-nerd-fonts-symbols neovim
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y \
-    cmake make automake gcc gcc-c++ kernel-devel \
-    rsyslog npm rsync \
-    libxml2 man-db trash-cli \
-    wireguard-tools nfs-utils \
-    gvfs gvfs-smb cifs-utils  \
-    python3-pip
+    cmake make automake gcc gcc-c++ kernel-devel npm
   download_nerdfont
   download_starship
   LC_ALL=C yes | LC_ALL=C yum install -y \
