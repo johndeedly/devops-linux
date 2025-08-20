@@ -1,7 +1,6 @@
 setup:
   distro: archlinux
-  options:
-    - base
+  options: []
   target: auto
   encrypt:
     enabled: false
@@ -114,8 +113,8 @@ images:
   rocky-8: Rocky-8-GenericCloud-Base.latest.x86_64.qcow2
 files:
   apt:
-    base:
-      - path: stage/15_base_system.sh
+    graphical-base:
+      - path: stage/15_graphical_base.sh
         stage: 1
     mirror:
       - path: apt/20_localmirror_apt.sh
@@ -218,8 +217,8 @@ files:
       - path: audit/80_lynis.sh
         stage: 2
   pacman:
-    base:
-      - path: stage/15_base_system.sh
+    graphical-base:
+      - path: stage/15_graphical_base.sh
         stage: 1
     mirror:
       - path: pacman/20_localmirror_pacman.sh
@@ -342,8 +341,8 @@ files:
       - path: audit/80_lynis.sh
         stage: 2
   yum:
-    base:
-      - path: stage/15_base_system.sh
+    graphical-base:
+      - path: stage/15_graphical_base.sh
         stage: 1
     mirror:
       - path: yum/20_localmirror_yum.sh
