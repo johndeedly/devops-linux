@@ -107,7 +107,7 @@ StandardOutput=journal
 StandardError=journal
 Restart=on-failure
 RestartSec=2s
-WorkingDirectory=/var/cache/apt/archives
+WorkingDirectory=/var/cache/apt
 ExecStart=/usr/local/bin/aptsync.sh
 EOF
 

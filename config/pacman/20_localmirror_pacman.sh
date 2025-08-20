@@ -132,7 +132,7 @@ StandardOutput=journal
 StandardError=journal
 Restart=on-failure
 RestartSec=2s
-WorkingDirectory=/var/cache/pacman/pkg
+WorkingDirectory=/var/cache/pacman
 ExecStart=/usr/local/bin/pacsync.sh
 EOF
 
