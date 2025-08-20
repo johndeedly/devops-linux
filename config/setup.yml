@@ -55,9 +55,9 @@ distros:
 download:
   archiso: https://geo.mirror.pkgbuild.com/iso/latest/archlinux-x86_64.iso
   archlinux: https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
-  debian: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
-  debian-edge: https://cloud.debian.org/images/cloud/trixie/daily/latest/debian-13-generic-amd64-daily.qcow2
-  debian-13: https://cloud.debian.org/images/cloud/trixie/daily/latest/debian-13-generic-amd64-daily.qcow2
+  debian: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
+  debian-edge: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
+  debian-13: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
   debian-12: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
   ubuntu: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
   ubuntu-edge: https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img
@@ -73,7 +73,7 @@ download:
   rocky-9: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-8: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud.latest.x86_64.qcow2
 endoflife:
-  debian: https://endoflife.date/api/debian/12.json
+  debian: https://endoflife.date/api/debian/13.json
   debian-edge: https://endoflife.date/api/debian/13.json
   debian-13: https://endoflife.date/api/debian/13.json
   debian-12: https://endoflife.date/api/debian/12.json
@@ -94,9 +94,9 @@ images:
   archiso: archlinux-x86_64.iso
   archlinux: Arch-Linux-x86_64-cloudimg.qcow2
   debiso: debian-x86_64.iso
-  debian: debian-12-generic-amd64.qcow2
-  debian-edge: debian-13-generic-amd64-daily.qcow2
-  debian-13: debian-13-generic-amd64-daily.qcow2
+  debian: debian-13-generic-amd64.qcow2
+  debian-edge: debian-13-generic-amd64.qcow2
+  debian-13: debian-13-generic-amd64.qcow2
   debian-12: debian-12-generic-amd64.qcow2
   ubuntu: noble-server-cloudimg-amd64.img
   ubuntu-edge: questing-server-cloudimg-amd64.img
