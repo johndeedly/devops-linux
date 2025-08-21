@@ -55,9 +55,9 @@ env "HOME=$BUILDDIR/home" PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
     /bin/packer build -force -only=qemu.default devops-linux.pkr.hcl
 if [ -f output/artifacts/tar/devops-linux-archlinux.tar.zst ]; then
   mv output/artifacts/tar/devops-linux-archlinux.tar.zst /var/lib/vz/template/cache/archlinux-x86_64-mirror.tar.zst
-  pct create 300 /var/lib/vz/template/cache/archlinux-x86_64-mirror.tar.zst --memory 1536 \
+  pct create 300 /var/lib/vz/template/cache/archlinux-x86_64-mirror.tar.zst --ignore-unpack-errors 1 --memory 1536 \
     --hostname arch-mirror --net0 name=eth0,bridge=vmbr0,firewall=0,ip=dhcp,ip6=dhcp --storage local --swap 512 --rootfs local:512 \
-    --unprivileged 1 --pool pool0 --ostype archlinux --onboot 1 --features nesting=1
+    --unprivileged 1 --pool pool0 --ostype archlinux --onboot 1 --features nesting=1 --protection 1
 fi
 
 # debian 12 mirror server
@@ -72,9 +72,9 @@ env "HOME=$BUILDDIR/home" PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
     /bin/packer build -force -only=qemu.default devops-linux.pkr.hcl
 if [ -f output/artifacts/tar/devops-linux-debian-12.tar.zst ]; then
   mv output/artifacts/tar/devops-linux-debian-12.tar.zst /var/lib/vz/template/cache/debian-12-x86_64-mirror.tar.zst
-  pct create 301 /var/lib/vz/template/cache/debian-12-x86_64-mirror.tar.zst --memory 1536 \
+  pct create 301 /var/lib/vz/template/cache/debian-12-x86_64-mirror.tar.zst --ignore-unpack-errors 1 --memory 1536 \
     --hostname debian-12-mirror --net0 name=eth0,bridge=vmbr0,firewall=0,ip=dhcp,ip6=dhcp --storage local --swap 512 --rootfs local:512 \
-    --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1
+    --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1 --protection 1
 fi
 
 # exit build environment
