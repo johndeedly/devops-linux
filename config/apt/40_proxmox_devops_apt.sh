@@ -31,6 +31,7 @@ sed -i 's|efi_firmware_vars.*|efi_firmware_vars = "/usr/share/OVMF/OVMF_VARS_4M.
 mkdir -p output
 env "HOME=$BUILDDIR/home" PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
     /bin/packer init devops-linux.pkr.hcl
+_cpu_cores=$(grep '^core id' /proc/cpuinfo | sort -u | wc -l)
 
 # # debian router
 # yq -y '(.setup.distro) = "debian"' config/setup.yml | sponge config/setup.yml
@@ -51,7 +52,7 @@ yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 _package_manager=$(yq -r '.setup as $setup | .distros[$setup.distro]' config/setup.yml)
 env "HOME=$BUILDDIR/home" PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
     PKR_VAR_package_manager="${_package_manager}" PKR_VAR_package_cache="false" \
-    PKR_VAR_headless="true" PKR_VAR_cpu_cores="2" PKR_VAR_memory="2048" \
+    PKR_VAR_headless="true" PKR_VAR_cpu_cores="${_cpu_cores}" PKR_VAR_memory="2048" \
     /bin/packer build -force -only=qemu.default devops-linux.pkr.hcl
 if [ -f output/artifacts/tar/devops-linux-archlinux.tar.zst ]; then
   mv output/artifacts/tar/devops-linux-archlinux.tar.zst /var/lib/vz/template/cache/archlinux-x86_64-mirror.tar.zst
@@ -68,7 +69,7 @@ yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 _package_manager=$(yq -r '.setup as $setup | .distros[$setup.distro]' config/setup.yml)
 env "HOME=$BUILDDIR/home" PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
     PKR_VAR_package_manager="${_package_manager}" PKR_VAR_package_cache="false" \
-    PKR_VAR_headless="true" PKR_VAR_cpu_cores="2" PKR_VAR_memory="2048" \
+    PKR_VAR_headless="true" PKR_VAR_cpu_cores="${_cpu_cores}" PKR_VAR_memory="2048" \
     /bin/packer build -force -only=qemu.default devops-linux.pkr.hcl
 if [ -f output/artifacts/tar/devops-linux-debian-12.tar.zst ]; then
   mv output/artifacts/tar/devops-linux-debian-12.tar.zst /var/lib/vz/template/cache/debian-12-x86_64-mirror.tar.zst
