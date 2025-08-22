@@ -386,7 +386,7 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
     jq yq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup \
     rsyslog libxml2 man manpages-de wireguard-tools python3-pip python3-venv \
-    gvfs gvfs-backends cifs-utils
+    gvfs gvfs-backends cifs-utils tmux
   systemctl enable ssh ufw
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
@@ -402,7 +402,7 @@ elif [ -e /bin/pacman ]; then
     bash-completion ncdu viu pv mc ranger fzf moreutils htop btop git lazygit \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
     pacman-contrib rsyslog libxml2 core/man man-pages-de wireguard-tools python-pip \
-    gvfs gvfs-smb cifs-utils
+    gvfs gvfs-smb cifs-utils tmux
   systemctl enable systemd-networkd systemd-resolved systemd-homed
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -414,7 +414,7 @@ elif [ -e /bin/yum ]; then
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
     rsyslog libxml2 man-db wireguard-toolsgvfs python3-pip \
-    gvfs-smb cifs-utils
+    gvfs-smb cifs-utils tmux
   systemctl enable systemd-networkd systemd-resolved
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
