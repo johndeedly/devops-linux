@@ -2,59 +2,6 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-download_nerdfont() {
-  echo ":: download nerdfont terminus"
-  curl --fail --silent --location --output /tmp/terminus.tar.xz 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Terminus.tar.xz'
-  curl --fail --silent --location --output /tmp/symbols.tar.xz 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.tar.xz'
-  mkdir -p /etc/skel/.local/share/fonts
-  tar -xof /tmp/terminus.tar.xz -C /etc/skel/.local/share/fonts/
-  tar -xof /tmp/symbols.tar.xz -C /etc/skel/.local/share/fonts/
-}
-
-download_starship() {
-  echo ":: download starship"
-  curl --fail --silent --location --output /tmp/starship-x86_64.tar.gz 'https://github.com/starship/starship/releases/latest/download/starship-x86_64-unknown-linux-musl.tar.gz'
-  tar -xzof /tmp/starship-x86_64.tar.gz -C /usr/local/bin/
-  chmod 0755 /usr/local/bin/starship
-}
-
-download_neovim() {
-  echo ":: download nvim"
-  curl --fail --silent --location --output /tmp/nvim-x86_64.tar.gz 'https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz'
-  tar -xzof /tmp/nvim-x86_64.tar.gz -C /usr/local/ --strip-components 1
-  chmod 0755 /usr/local/bin/nvim
-}
-
-# install starship and neovim
-if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-    build-essential npm
-  download_nerdfont
-  download_starship
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
-    luajit libluajit-5.1-dev lua-mpack lua-lpeg libunibilium-dev libmsgpack-dev libtermkey-dev
-  download_neovim
-elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
-    base-devel npm
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
-    starship ttf-terminus-nerd ttf-nerd-fonts-symbols neovim
-elif [ -e /bin/yum ]; then
-  LC_ALL=C yes | LC_ALL=C yum install -y \
-    cmake make automake gcc gcc-c++ kernel-devel npm
-  download_nerdfont
-  download_starship
-  LC_ALL=C yes | LC_ALL=C yum install -y \
-    compat-lua-libs libtermkey libtree-sitter libvterm luajit luajit2.1-luv msgpack unibilium xsel
-  download_neovim
-fi
-
-# prepare NvChad environment
-mkdir -p /etc/skel/.local/share
-( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh lua-language-server stylua" -c ":qall!" || true' ) &
-pid=$!
-wait $pid
-
 # graphics driver for amd, intel, nvidia, vmware and virtio-gpu
 if [ -e /bin/apt ]; then
   if grep -q Debian /proc/version; then
