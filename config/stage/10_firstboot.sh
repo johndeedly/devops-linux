@@ -387,7 +387,7 @@ if [ -e /bin/apt ]; then
     jq yq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup \
     rsyslog libxml2 man manpages-de wireguard-tools python3-pip python3-venv \
     gvfs gvfs-backends cifs-utils tmux \
-    build-essential npm fd neovim
+    build-essential npm fd-find neovim
   systemctl enable ssh ufw
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
@@ -417,7 +417,7 @@ elif [ -e /bin/yum ]; then
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
     rsyslog libxml2 man-db wireguard-toolsgvfs python3-pip \
     gvfs-smb cifs-utils tmux \
-    cmake make automake gcc gcc-c++ kernel-devel npm fd neovim
+    cmake make automake gcc gcc-c++ kernel-devel npm fd-find neovim
   systemctl enable systemd-networkd systemd-resolved
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
