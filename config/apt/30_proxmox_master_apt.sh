@@ -42,6 +42,10 @@ ufw status verbose
 # enable cluster key
 # https://forum.proxmox.com/threads/etc-pve-priv-authorized_keys.18561/
 mkdir -p /root/.ssh
+tee -a /root/.ssh/config <<EOF
+IdentityFile /root/.ssh/id_proxmox_cluster_ed25519
+EOF
+tee -a /root/.ssh/id_proxmox_cluster_ed25519 <<<"${PROXMOX_CLUSTER_KEY}"
 tee -a /root/.ssh/id_proxmox_cluster_ed25519.pub <<<"${PROXMOX_CLUSTER_PUB}"
 tee -a /root/.ssh/authorized_keys <<<"${PROXMOX_CLUSTER_PUB}"
 
@@ -61,6 +65,30 @@ StandardOutput=journal
 WantedBy=multi-user.target
 EOF
 systemctl enable master-worker-cluster-broadcast
+
+# update hosts file once more
+FQDNAME=$(</etc/hostname)
+HOSTNAME=${FQDNAME%%.*}
+tee /tmp/hosts_columns <<EOF
+# IPv4/v6|FQDN|HOSTNAME
+127.0.0.1|$FQDNAME|$HOSTNAME
+::1|$FQDNAME|$HOSTNAME
+127.0.0.1|localhost.internal|localhost
+::1|localhost.internal|localhost
+EOF
+ip -f inet addr | awk '/inet / {print $2}' | cut -d'/' -f1 | while read -r PUB_IP_ADDR; do
+tee -a /tmp/hosts_columns <<EOF
+$PUB_IP_ADDR|$FQDNAME|$HOSTNAME
+EOF
+done
+tee /etc/hosts <<EOF
+# Static table lookup for hostnames.
+# See hosts(5) for details.
+
+# https://www.icann.org/en/public-comment/proceeding/proposed-top-level-domain-string-for-private-use-24-01-2024
+$(column /tmp/hosts_columns -t -s '|')
+EOF
+rm /tmp/hosts_columns
 
 # initialize proxmox cluster
 pvecm create lab

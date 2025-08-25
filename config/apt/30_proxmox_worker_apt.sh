@@ -47,12 +47,41 @@ IdentityFile /root/.ssh/id_proxmox_cluster_ed25519
 EOF
 tee -a /root/.ssh/id_proxmox_cluster_ed25519 <<<"${PROXMOX_CLUSTER_KEY}"
 tee -a /root/.ssh/id_proxmox_cluster_ed25519.pub <<<"${PROXMOX_CLUSTER_PUB}"
+tee -a /root/.ssh/authorized_keys <<<"${PROXMOX_CLUSTER_PUB}"
 
 # broadcast for master
 until [ -n "${PROXMOX_MASTER_IP}" ]; do
   echo "[ ## ] Broadcasting to master node..."
-  PROXMOX_MASTER_IP=$(echo "ping" | socat -t 3 STDIO "UDP4-DATAGRAM:255.255.255.255:${PROXMOX_BROADCAST_PORT_MASTER},bind=:${PROXMOX_BROADCAST_PORT_WORKER},range=${PROXMOX_BROADCAST_RANGE},broadcast" | cut -d',' -f3)
+  IFS=',' read -r PROXMOX_CLIENT_IP PROXMOX_CLIENT_PORT PROXMOX_MASTER_IP < <(echo "ping" | socat -t 3 STDIO "UDP4-DATAGRAM:255.255.255.255:${PROXMOX_BROADCAST_PORT_MASTER},bind=:${PROXMOX_BROADCAST_PORT_WORKER},range=${PROXMOX_BROADCAST_RANGE},broadcast")
 done
+echo "[ ## ] Master node found: ${PROXMOX_MASTER_IP}, source: ${PROXMOX_CLIENT_IP}"
+ssh -o StrictHostKeyChecking=accept-new root@"${PROXMOX_MASTER_IP}" 'bash -s' <<EOS
+ssh -o StrictHostKeyChecking=accept-new root@"${PROXMOX_CLIENT_IP}" 'date'
+EOS
+
+# update hosts file once more
+FQDNAME=$(</etc/hostname)
+HOSTNAME=${FQDNAME%%.*}
+tee /tmp/hosts_columns <<EOF
+# IPv4/v6|FQDN|HOSTNAME
+127.0.0.1|$FQDNAME|$HOSTNAME
+::1|$FQDNAME|$HOSTNAME
+127.0.0.1|localhost.internal|localhost
+::1|localhost.internal|localhost
+EOF
+ip -f inet addr | awk '/inet / {print $2}' | cut -d'/' -f1 | while read -r PUB_IP_ADDR; do
+tee -a /tmp/hosts_columns <<EOF
+$PUB_IP_ADDR|$FQDNAME|$HOSTNAME
+EOF
+done
+tee /etc/hosts <<EOF
+# Static table lookup for hostnames.
+# See hosts(5) for details.
+
+# https://www.icann.org/en/public-comment/proceeding/proposed-top-level-domain-string-for-private-use-24-01-2024
+$(column /tmp/hosts_columns -t -s '|')
+EOF
+rm /tmp/hosts_columns
 
 # join the cluster
 pvecm add "${PROXMOX_MASTER_IP}" --force true --use_ssh true
