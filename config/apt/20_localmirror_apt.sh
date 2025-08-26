@@ -185,4 +185,4 @@ ufw status verbose
 sync
 
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

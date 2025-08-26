@@ -25,4 +25,4 @@ ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf "/srv/tar/devops-linux-${DISTRO_N
 sync
 
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

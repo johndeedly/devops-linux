@@ -28,4 +28,4 @@ mountpoint -q /iso || ( test -f /cidata/meta-data && mount --bind -o X-mount.mkd
 sync
 
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

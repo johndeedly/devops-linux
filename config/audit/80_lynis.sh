@@ -33,4 +33,4 @@ cp /var/log/lynis-report.dat "${LOG_FILE_DAT}"
 sync
 
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

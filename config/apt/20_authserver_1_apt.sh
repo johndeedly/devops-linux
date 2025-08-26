@@ -131,4 +131,4 @@ sync
 
 # cleanup
 chown -R openldap:openldap /etc/ldap/*
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

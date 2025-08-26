@@ -7,7 +7,7 @@ if [ -e /bin/apt ] || [ -f /devops-linux ]; then
     # sync everything to disk
     sync
     # cleanup
-    rm -- "${0}"
+    [ -f "${0}" ] && rm -- "${0}"
     # finished
     exit 0
 fi
@@ -68,4 +68,4 @@ timedatectl set-ntp true
 sync
 
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

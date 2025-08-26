@@ -12,7 +12,7 @@ LDAP_SHADOW="$(yq -r '.setup.ldapauth.shadow' /var/lib/cloud/instance/config/set
 if [ -z "$LDAP_ENABLED" ] || [[ "$LDAP_ENABLED" =~ [Nn][Oo] ]] || [[ "$LDAP_ENABLED" =~ [Oo][Ff][Ff] ]] || [[ "$LDAP_ENABLED" =~ [Ff][Aa][Ll][Ss][Ee] ]]
 then
   sync
-  rm -- "${0}"
+  [ -f "${0}" ] && rm -- "${0}"
   exit 0
 fi
 
@@ -75,4 +75,4 @@ systemctl enable nslcd.service
 sync
 
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

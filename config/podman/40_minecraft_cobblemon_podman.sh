@@ -66,4 +66,4 @@ sync
 
 # cleanup
 rm -r "${TMPDIR}"
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"

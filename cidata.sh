@@ -127,7 +127,7 @@ if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then
     fi
 fi
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"
 EOF
 tee build/99_autoreboot.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
@@ -147,7 +147,7 @@ echo "[ ## ] Wait for cloud-init to finish"
   fi
 ) & )
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"
 EOF
 tee build/98_lockdown.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
@@ -159,7 +159,7 @@ echo "[ ## ] Remove provisioning account and lock down ssh"
   /bin/sed -i '/^provisioning/d' /etc/shadow
 ) & )
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"
 EOF
 
 # prepare user-data for stage

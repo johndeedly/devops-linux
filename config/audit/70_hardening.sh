@@ -135,4 +135,4 @@ chmod 0600 /etc/ssh/sshd_config
 sync
 
 # cleanup
-rm -- "${0}"
+[ -f "${0}" ] && rm -- "${0}"
