@@ -7,10 +7,6 @@ fi
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -
-apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install packer cloud-image-utils xorriso ovmf
-
 # setup build environment
 mkdir -p /var/lib/vz/template/{iso,cache}
 BUILDDIR=$(mktemp --tmpdir=/var/tmp -d)
@@ -31,10 +27,10 @@ _cpu_cores=$(grep '^core id' /proc/cpuinfo | sort -u | wc -l)
 # yq -y '(.setup.options) = ["router"]' config/setup.yml | sponge config/setup.yml
 # yq -y '(.setup.target) = "/dev/vda"' config/setup.yml | sponge config/setup.yml
 # ./cidata.sh --archiso
-# mv archlinux-x86_64-cidata.iso /var/lib/vz/template/iso/archlinux-x86_64-200-debian-router.iso
+# mv devops-x86_64-cidata.iso /var/lib/vz/template/iso/devops-x86_64-200-debian-router.iso
 # qm create 200 --net0 virtio,bridge=vmbr0 --net1 virtio,bridge=vmbrlan0 --name debian-router --ostype l26 --cores 2 --balloon 960 --memory 960 --machine q35 \
 #    --boot "order=virtio0;ide0" --virtio0 "local:128,format=qcow2,detect_zeroes=1,discard=on,iothread=1" --agent enabled=1 \
-#    --ide0 local:iso/archlinux-x86_64-200-debian-router.iso,media=cdrom --vga virtio \
+#    --ide0 local:iso/devops-x86_64-200-debian-router.iso,media=cdrom --vga virtio \
 #    --onboot 1 --reboot 1 --serial0 socket --kvm 1
 
 # archlinux mirror server
