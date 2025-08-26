@@ -119,17 +119,11 @@ build {
   sources = ["source.qemu.default", "source.virtualbox-iso.default"]
 
   provisioner "shell" {
-    execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
-    inline           = ["until [ -f /run/cloud-init/result.json ]; do sleep 3; done"]
-    valid_exit_codes = [0, 143]
-  }
-
-  provisioner "shell" {
-    inline           = [
-      "cloud-init status",
-      "rc=$?",
-      "[ $rc -eq 1 ] && cloud-init status --long --format yaml",
-      "exit $rc"
+    inline           = [<<EOS
+cloud-init status --long --format yaml --wait &
+pid=$!
+tail --pid=$pid -f /cidata_log
+EOS
     ]
     valid_exit_codes = [0, 2]
   }
@@ -148,25 +142,20 @@ build {
 
   provisioner "shell" {
     expect_disconnect = true
-    inline            = [
-      "reboot now",
+    inline            = [<<EOS
+reboot now
+EOS
     ]
-    pause_after       = "5s"
+    pause_after       = "15s"
   }
   
   provisioner "shell" {
-    pause_before     = "5s"
-    execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
-    inline           = ["until [ -f /run/cloud-init/result.json ]; do sleep 3; done"]
-    valid_exit_codes = [0, 143]
-  }
-
-  provisioner "shell" {
-    inline           = [
-      "cloud-init status",
-      "rc=$?",
-      "[ $rc -eq 1 ] && cloud-init status --long --format yaml",
-      "exit $rc"
+    pause_before     = "15s"
+    inline           = [<<EOS
+cloud-init status --long --format yaml --wait &
+pid=$!
+tail --pid=$pid -f /cidata_log
+EOS
     ]
     valid_exit_codes = [0, 2]
   }
@@ -179,25 +168,20 @@ build {
 
   provisioner "shell" {
     expect_disconnect = true
-    inline            = [
-      "reboot now",
+    inline            = [<<EOS
+reboot now
+EOS
     ]
-    pause_after       = "5s"
+    pause_after       = "15s"
   }
   
   provisioner "shell" {
-    pause_before     = "5s"
-    execute_command  = "tail -f /cidata_log & trap 'kill -- -$$' EXIT; chmod +x {{ .Path }}; {{ .Vars }} {{ .Path }}"
-    inline           = ["until [ -f /run/cloud-init/result.json ]; do sleep 3; done"]
-    valid_exit_codes = [0, 143]
-  }
-
-  provisioner "shell" {
-    inline           = [
-      "cloud-init status",
-      "rc=$?",
-      "[ $rc -eq 1 ] && cloud-init status --long --format yaml",
-      "exit $rc"
+    pause_before     = "15s"
+    inline           = [<<EOS
+cloud-init status --long --format yaml --wait &
+pid=$!
+tail --pid=$pid -f /cidata_log
+EOS
     ]
     valid_exit_codes = [0, 2]
   }
