@@ -82,11 +82,11 @@ EOF
         if [ "$_firstadmin" -eq 1 ]; then
           tee -a "/tmp/usr_$username.ldif" <<EOF
 # New Admin Group, ${BASEDC}
-dn: cn=adm,ou=Groups,${BASEDN}
+dn: cn=admins,ou=Groups,${BASEDN}
 objectClass: top
 objectClass: posixGroup
 objectClass: groupOfNames
-cn: adm
+cn: admins
 gidNumber: 9998
 memberUid: $username
 member: uid=$username,ou=People,${BASEDN}
@@ -96,7 +96,7 @@ EOF
         else
           tee -a "/tmp/usr_$username.ldif" <<EOF
 # Add to Admin Group, ${BASEDC}
-dn: cn=adm,ou=Groups,${BASEDN}
+dn: cn=admins,ou=Groups,${BASEDN}
 changetype: modify
 add: memberUid
 memberUid: $username
@@ -110,11 +110,11 @@ EOF
       if [ "$_firstuser" -eq 1 ]; then
         tee -a "/tmp/usr_$username.ldif" <<EOF
 # New User Group, ${BASEDC}
-dn: cn=usr,ou=Groups,${BASEDN}
+dn: cn=users,ou=Groups,${BASEDN}
 objectClass: top
 objectClass: posixGroup
 objectClass: groupOfNames
-cn: usr
+cn: users
 gidNumber: 9999
 memberUid: $username
 member: uid=$username,ou=People,${BASEDN}
@@ -124,7 +124,7 @@ EOF
       else
         tee -a "/tmp/usr_$username.ldif" <<EOF
 # Add to User Group, ${BASEDC}
-dn: cn=usr,ou=Groups,${BASEDN}
+dn: cn=users,ou=Groups,${BASEDN}
 changetype: modify
 add: memberUid
 memberUid: $username
