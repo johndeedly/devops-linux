@@ -4,15 +4,47 @@ if grep -q Ubuntu /proc/version; then
     ( ( sleep 1 && rm -- "${0}" ) & )
     exit 0
 fi
-(
-  source /etc/os-release
-  if [ -n "${VERSION_CODENAME}" ] && [ "${VERSION_CODENAME}" != "bookworm" ]; then
-    ( ( sleep 1 && rm -- "${0}" ) & )
-    exit 0
-  fi
-)
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+
+# remove all other debian kernels
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt remove 'linux-image-*'
+
+# remove os-prober if present
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt remove os-prober || true
+
+# apply the new settings to grub
+update-grub
+
+# one bridge per interface, dhcp setup on first device
+cnt=$((-1))
+ip -j link show | jq -r '.[] | select(.link_type != "loopback" and (.ifname | startswith("vmbr") | not)) | .ifname' | while read -r line; do
+cnt=$((cnt+1))
+tee -a /etc/network/interfaces <<EOF
+
+iface $line inet manual
+
+auto vmbr$cnt
+iface vmbr$cnt inet $(if [ $cnt -eq 0 ]; then echo "dhcp"; else echo "manual"; fi)
+    bridge-ports $line
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+EOF
+done
+
+# one internal bridge for private networks
+tee -a /etc/network/interfaces <<EOF
+
+auto vmbrlan0
+iface vmbrlan0 inet manual
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+EOF
 
 # create proxmox groups
 pveum group add admins
