@@ -454,6 +454,7 @@ fi
 # enabling ufw filters
 modprobe iptable_filter
 modprobe ip6table_filter
+modprobe xt_multiport
 # configure ufw
 ufw disable
 # clear default ruleset
