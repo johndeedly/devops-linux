@@ -17,6 +17,10 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt remove os-p
 update-grub
 
 # one bridge per interface, dhcp setup on first device
+tee /etc/network/interfaces <<EOF
+auto lo
+iface lo inet loopback
+EOF
 cnt=$((-1))
 ip -j link show | jq -r '.[] | select(.link_type != "loopback" and (.ifname | startswith("vmbr") | not)) | .ifname' | while read -r line; do
 cnt=$((cnt+1))
@@ -45,6 +49,35 @@ iface vmbrlan0 inet manual
     bridge-vlan-aware yes
     bridge-vids 2-4094
 EOF
+
+# switch from networkd to ifupdown2
+systemctl stop systemd-networkd{.service,.socket}
+systemctl mask systemd-networkd{.service,.socket}
+ifreload -a
+
+# Set hostname in etc/hosts
+FQDNAME=$(</etc/hostname)
+HOSTNAME=${FQDNAME%%.*}
+tee /tmp/hosts_columns <<EOF
+# IPv4/v6|FQDN|HOSTNAME
+127.0.0.1|$FQDNAME|$HOSTNAME
+::1|$FQDNAME|$HOSTNAME
+127.0.0.1|localhost.internal|localhost
+::1|localhost.internal|localhost
+EOF
+ip -f inet addr | awk '/inet / {print $2}' | cut -d'/' -f1 | while read -r PUB_IP_ADDR; do
+tee -a /tmp/hosts_columns <<EOF
+$PUB_IP_ADDR|$FQDNAME|$HOSTNAME
+EOF
+done
+tee /etc/hosts <<EOF
+# Static table lookup for hostnames.
+# See hosts(5) for details.
+
+# https://www.icann.org/en/public-comment/proceeding/proposed-top-level-domain-string-for-private-use-24-01-2024
+$(column /tmp/hosts_columns -t -s '|')
+EOF
+rm /tmp/hosts_columns
 
 # create proxmox groups
 pveum group add admins

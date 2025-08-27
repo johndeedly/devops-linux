@@ -58,32 +58,8 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt full-upgrad
 # install proxmox default kernel
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install proxmox-default-kernel
 
-# Set hostname in etc/hosts
-FQDNAME=$(</etc/hostname)
-HOSTNAME=${FQDNAME%%.*}
-tee /tmp/hosts_columns <<EOF
-# IPv4/v6|FQDN|HOSTNAME
-127.0.0.1|$FQDNAME|$HOSTNAME
-::1|$FQDNAME|$HOSTNAME
-127.0.0.1|localhost.internal|localhost
-::1|localhost.internal|localhost
-EOF
-ip -f inet addr | awk '/inet / {print $2}' | cut -d'/' -f1 | while read -r PUB_IP_ADDR; do
-tee -a /tmp/hosts_columns <<EOF
-$PUB_IP_ADDR|$FQDNAME|$HOSTNAME
-EOF
-done
-tee /etc/hosts <<EOF
-# Static table lookup for hostnames.
-# See hosts(5) for details.
-
-# https://www.icann.org/en/public-comment/proceeding/proposed-top-level-domain-string-for-private-use-24-01-2024
-$(column /tmp/hosts_columns -t -s '|')
-EOF
-rm /tmp/hosts_columns
-
 # install the main proxmox packages
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install proxmox-ve postfix open-iscsi chrony
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install proxmox-ve postfix open-iscsi chrony isc-dhcp-client
 
 # install automation packages
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install packer cloud-image-utils xorriso ovmf ansible
