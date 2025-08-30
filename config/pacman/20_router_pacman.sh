@@ -402,9 +402,6 @@ systemctl enable dnsmasq ntpd.timer step-ca hosts-calc nfsv4-server rpc-statd \
 # configure the firewall
 ufw disable
 
-# remove existing ssh rule
-ufw delete limit log ssh
-
 # ==========
 # eth0 - extern
 # ==========
@@ -415,7 +412,6 @@ ufw allow in on eth0 proto udp to any port 51820 comment 'allow wireguard udp on
 # eth1 - intern
 # ==========
 ufw allow in on eth1 to any port bootps comment 'allow bootps on intern'
-ufw allow in on eth1 to any port ssh comment 'allow ssh on intern'
 ufw allow in on eth1 to any port 53 comment 'allow dns on intern'
 ufw allow in on eth1 to any port tftp comment 'allow tftp on intern'
 ufw allow in on eth1 to any port 80 comment 'allow http on intern'
@@ -423,15 +419,13 @@ ufw allow in on eth1 to any port ntp comment 'allow ntp on intern'
 ufw allow in on eth1 to any port 111 comment 'allow nfs on intern'
 ufw allow in on eth1 to any port 2049 comment 'allow nfs on intern'
 ufw allow in on eth1 to any port 20048 comment 'allow nfs on intern'
-ufw allow in on eth1 to any port 32767/tcp comment 'allow nfs on intern'
-ufw allow in on eth1 to any port 32767/udp comment 'allow nfs on intern'
-ufw allow in on eth1 to any port 32765/tcp comment 'allow nfs on intern'
-ufw allow in on eth1 to any port 32765/udp comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32767 comment 'allow nfs on intern'
+ufw allow in on eth1 to any port 32765 comment 'allow nfs on intern'
 ufw allow in on eth1 to any port nbd comment 'allow nbd on intern'
 ufw allow in on eth1 to any port 445 comment 'allow cifs on intern'
 ufw allow in on eth1 to any port 139 comment 'allow cifs on intern'
-ufw allow in on eth1 to any port 3260/tcp comment 'allow iscsi on intern'
-ufw allow in on eth1 to any port 8009/tcp comment 'allow nvmet on intern'
+ufw allow in on eth1 to any port 3260 proto tcp comment 'allow iscsi on intern'
+ufw allow in on eth1 to any port 8009 proto tcp comment 'allow nvmet on intern'
 ufw allow in on eth1 to any port 51820 comment 'allow wireguard on intern'
 
 ufw route deny in on eth1 out on eth0 to any port 53 comment 'block dns from intern to extern'
