@@ -97,6 +97,14 @@ vfio_iommu_type1
 vfio_pci
 EOF
 
+# disable enterprise repository
+if [ -f /etc/apt/sources.list.d/pve-enterprise.list ]; then
+  sed -i 's/^/# /g' /etc/apt/sources.list.d/pve-enterprise.list
+fi
+if [ -f /etc/apt/sources.list.d/pve-enterprise.sources ]; then
+  sed -i 's/\(Components:.*pve-enterprise.*\)/\1\nEnabled: false/' /etc/apt/sources.list.d/pve-enterprise.sources
+fi
+
 # do not wait for online interfaces
 systemctl mask systemd-networkd-wait-online
 systemctl mask NetworkManager-wait-online
