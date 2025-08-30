@@ -144,6 +144,7 @@ EOS
     expect_disconnect = true
     inline            = [<<EOS
 reboot now
+fuser -k -n tcp 22
 EOS
     ]
     pause_after       = "15s"
@@ -170,6 +171,7 @@ EOS
     expect_disconnect = true
     inline            = [<<EOS
 reboot now
+fuser -k -n tcp 22
 EOS
     ]
     pause_after       = "15s"
