@@ -71,8 +71,9 @@ source "qemu" "default" {
   iso_checksum         = "none"
   iso_url              = "devops-x86_64-cidata.iso"
   output_directory     = "output/devops-linux"
-  ssh_username         = "provisioning"
-  ssh_password         = "provisioning-build-passwd"
+  ssh_username         = "root"
+  ssh_keypair_name     = "ssh_packer_key"
+  ssh_private_key_file = "./ssh_packer_key"
   ssh_timeout          = "10m"
   vm_name              = local.build_name_qemu
 }
@@ -104,8 +105,9 @@ source "virtualbox-iso" "default" {
   iso_url                  = "devops-x86_64-cidata.iso"
   output_directory         = "output/devops-linux"
   output_filename          = "devops-linux-x86_64"
-  ssh_username             = "provisioning"
-  ssh_password             = "provisioning-build-passwd"
+  ssh_username             = "root"
+  ssh_keypair_name         = "ssh_packer_key"
+  ssh_private_key_file     = "./ssh_packer_key"
   ssh_timeout              = "10m"
   vboxmanage               = [["modifyvm", "{{ .Name }}", "--tpm-type", "2.0", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"]]
   vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"]]
@@ -134,51 +136,13 @@ EOS
     direction   = "download"
   }
 
-  provisioner "file" {
-    source      = var.package_cache ? "/var/cache/pacman/pkg/" : ""
-    destination = "database/archiso"
-    direction   = "download"
-  }
-
   provisioner "shell" {
     expect_disconnect = true
-    inline            = [<<EOS
-reboot now
-fuser -k -n tcp 22
-EOS
-    ]
-    pause_after       = "15s"
+    inline            = ["reboot now"]
+    pause_after       = "20s"
   }
   
   provisioner "shell" {
-    pause_before     = "15s"
-    inline           = [<<EOS
-cloud-init status --long --format yaml --wait &
-pid=$!
-tail --pid=$pid -f /cidata_log
-EOS
-    ]
-    valid_exit_codes = [0, 2]
-  }
-
-  provisioner "file" {
-    source      = "/cidata_log"
-    destination = "output/devops-linux-cidata.log"
-    direction   = "download"
-  }
-
-  provisioner "shell" {
-    expect_disconnect = true
-    inline            = [<<EOS
-reboot now
-fuser -k -n tcp 22
-EOS
-    ]
-    pause_after       = "15s"
-  }
-  
-  provisioner "shell" {
-    pause_before     = "15s"
     inline           = [<<EOS
 cloud-init status --long --format yaml --wait &
 pid=$!
@@ -315,9 +279,10 @@ EOS
   }
   
   provisioner "shell" {
-    inline = [
-      "/bin/sed -i '/^provisioning/d' /etc/passwd",
-      "/bin/sed -i '/^provisioning/d' /etc/shadow",
+    inline = [<<EOS
+echo "[ ## ] Remove provisioning key to lock down ssh"
+/bin/sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
+EOS
     ]
   }
 }

@@ -151,12 +151,8 @@ EOF
 tee build/98_lockdown.sh >/dev/null <<'EOF'
 #!/usr/bin/env bash
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
-# double fork trick to prevent the subprocess from exiting
-echo "[ ## ] Remove provisioning account and lock down ssh"
-( (
-  /bin/sed -i '/^provisioning/d' /etc/passwd
-  /bin/sed -i '/^provisioning/d' /etc/shadow
-) & )
+echo "[ ## ] Remove provisioning key to lock down ssh"
+sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
 # cleanup
 [ -f "${0}" ] && rm -- "${0}"
 EOF
@@ -227,12 +223,10 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
         "config/archiso/20_bootable_system.sh:text/x-shellscript"
         "config/setup.yml:application/x-setup-config"
         "build/00_waitonline.sh:text/x-shellscript"
+        "build/99_autoreboot.sh:text/x-shellscript"
         "build/stage/user-data:application/x-provision-config"
         "build/stage/meta-data:application/x-provision-config"
     )
-    if [ $_autoreboot -eq 1 ]; then
-        write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot.sh:text/x-shellscript" )
-    fi
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 
     ARCHISO=$(yq -r '.images.archiso' config/setup.yml)
