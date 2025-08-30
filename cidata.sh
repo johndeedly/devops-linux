@@ -173,10 +173,10 @@ write_mime_params=(
     "config/stage/10_firstboot.sh:text/x-shellscript"
     "config/stage/18_ldap.sh:text/x-shellscript"
     "config/stage/90_second_stage.sh:text/x-shellscript"
-    "config/stage/90_final_stage.sh:application/x-per-boot"
+    "config/stage/90_final_stage.sh:application/x-second-stage"
     "config/setup.yml:application/x-setup-config"
     "build/00_waitonline.sh:text/x-shellscript"
-    "build/00_waitonline.sh:application/x-per-boot"
+    "build/00_waitonline.sh:application/x-second-stage"
 )
 # deployment scripts stage 'config'
 while read -r line; do
@@ -204,12 +204,12 @@ while read -r line; do
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' config/setup.yml)"
 # deployment scripts stage 2
 if [ $_autoreboot -eq 1 ]; then
-    write_mime_params=( "${write_mime_params[@]}" "build/98_lockdown.sh:application/x-per-boot" "build/99_autoreboot.sh:application/x-per-boot" )
+    write_mime_params=( "${write_mime_params[@]}" "build/98_lockdown.sh:application/x-second-stage" "build/99_autoreboot.sh:application/x-second-stage" )
 fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then
         if [ -f "config/$line" ]; then
-            write_mime_params=( "${write_mime_params[@]}" "config/$line:application/x-per-boot" )
+            write_mime_params=( "${write_mime_params[@]}" "config/$line:application/x-second-stage" )
         fi
     fi
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' config/setup.yml)"

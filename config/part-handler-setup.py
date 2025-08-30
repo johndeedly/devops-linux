@@ -9,17 +9,17 @@ from typing import Any
 from cloudinit.cloud import Cloud
 
 def list_types():
-    return(["application/x-setup-config", "application/x-provision-config", "application/x-per-boot", "application/x-provision-file"])
+    return(["application/x-setup-config", "application/x-provision-config", "application/x-second-stage", "application/x-provision-file"])
 
 def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
     configdir = pathlib.Path("/var/lib/cloud/instance/config")
     provisiondir = pathlib.Path("/var/lib/cloud/instance/provision")
-    perbootdir = pathlib.Path("/var/lib/cloud/scripts/per-boot")
+    secondstagedir = pathlib.Path("/var/lib/cloud/instance/second-stage")
 
     if ctype == "__begin__":
         configdir.mkdir(parents=True, exist_ok=True)
         provisiondir.mkdir(parents=True, exist_ok=True)
-        perbootdir.mkdir(parents=True, exist_ok=True)
+        secondstagedir.mkdir(parents=True, exist_ok=True)
         return
 
     if ctype == "__end__":
@@ -36,8 +36,8 @@ def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
         file = provisiondir.joinpath(filename.strip())
         content = payload
     
-    if ctype == "application/x-per-boot":
-        file = perbootdir.joinpath(filename.strip())
+    if ctype == "application/x-second-stage":
+        file = secondstagedir.joinpath(filename.strip())
         content = payload
     
     if ctype == "application/x-provision-file":
