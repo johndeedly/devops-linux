@@ -1,9 +1,6 @@
 # DevOps Linux
-<div style="text-align: center;">
     
-![Linux server in a container](devops.jpg)
-
-</div>
+![Linux server in a container](devops.png) Build once, deploy everywhere, as easy as cake!
 
 ## Repository
 
