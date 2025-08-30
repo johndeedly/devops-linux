@@ -17,17 +17,6 @@ linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
 EOF
 hostnamectl hostname "$(</etc/hostname)"
 
-# Make the journal log persistent when folder structure is present
-# and forward everything to rsyslog
-mkdir -p /var/log/journal /etc/systemd/journald.conf.d
-systemd-tmpfiles --create --prefix /var/log/journal
-tee /etc/systemd/journald.conf.d/provision.conf <<EOF
-[Journal]
-Storage=auto
-ForwardToSyslog=yes
-EOF
-systemctl restart systemd-journald
-
 # initialize pacman keyring
 if [ -e /bin/pacman ]; then
   sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf
@@ -366,10 +355,10 @@ download_yq() {
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
     jq yq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup \
-    rsyslog libxml2 man manpages-de wireguard-tools python3-pip python3-venv \
+    syslog-ng logrotate libxml2 man manpages-de wireguard-tools python3-pip python3-venv \
     gvfs gvfs-backends cifs-utils tmux \
     build-essential npm fd-find neovim
-  systemctl enable ssh ufw
+  systemctl enable ssh ufw syslog-ng logrotate.timer
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper
@@ -383,10 +372,10 @@ elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     bash-completion ncdu viu pv mc ranger fzf moreutils htop btop git lazygit \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
-    pacman-contrib syslog-ng libxml2 core/man man-pages-de wireguard-tools python-pip \
+    pacman-contrib syslog-ng logrotate libxml2 core/man man-pages-de wireguard-tools python-pip \
     gvfs gvfs-smb cifs-utils tmux \
     base-devel npm fd neovim
-  systemctl enable systemd-networkd systemd-resolved systemd-homed
+  systemctl enable systemd-networkd systemd-resolved systemd-homed syslog-ng@default logrotate.timer
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/yum ]; then
@@ -396,13 +385,112 @@ elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y systemd-networkd \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
-    rsyslog libxml2 man-db wireguard-toolsgvfs python3-pip \
+    syslog-ng logrotate libxml2 man-db wireguard-toolsgvfs python3-pip \
     gvfs-smb cifs-utils tmux \
     cmake make automake gcc gcc-c++ kernel-devel npm fd-find neovim
-  systemctl enable systemd-networkd systemd-resolved
+  systemctl enable systemd-networkd systemd-resolved syslog-ng logrotate.timer
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 fi
+
+# configure journald -> forward everything to syslog-ng
+mkdir -p /etc/systemd/journald.conf.d
+tee /etc/systemd/journald.conf.d/provision.conf <<EOF
+[Journal]
+# "Storage=none" means the systemd journal will drop all messages
+#  -> "ForwardToSyslog=yes" is a must have
+# With "Storage=volatile/auto" syslog-ng pulls in the messages from the systemd journal by default
+#  -> "ForwardToSyslog=yes" means wasted system resources, duplicate log entries or additional errors
+Storage=volatile
+ForwardToSyslog=no
+EOF
+
+# configure syslog-ng -> log system() and internal() to local files
+sed -e '/^log.*};/d' -e '/^log/,/};/d' -e '/^options.*};/d' -e '/^options/,/};/d' -i /etc/syslog-ng/syslog-ng.conf
+tee -a /etc/syslog-ng/syslog-ng.conf <<'EOF'
+
+options {
+  chain_hostnames(off);
+  keep_hostname(yes);
+  log_fifo_size(10000);
+  create_dirs(no);
+  flush_lines(0);
+  use_dns(no);
+  use_fqdn(no);
+  dns_cache(no);
+  owner(0);
+  group(0);
+  perm(0640);
+  stats(freq(0));
+  bad_hostname("^gconfd$");
+};
+
+source s_prov_system {
+  system();
+  internal();
+};
+
+destination d_prov_system {
+  file("/var/log/messages");
+  file("/var/log/messages-kv.log" template("$ISODATE $HOST $(format-welf --scope all-nv-pairs)\n") frac-digits(3));
+};
+
+destination d_prov_auth {
+  file("/var/log/auth.log");
+};
+
+destination d_prov_kern {
+  file("/var/log/kern.log");
+};
+
+destination d_prov_user {
+  file("/var/log/user.log");
+};
+
+filter f_prov_not_debug {
+  not level(debug);
+};
+
+filter f_prov_system {
+  filter(f_prov_not_debug);
+};
+
+filter f_prov_auth {
+  facility(auth, authpriv) and filter(f_prov_not_debug);
+};
+
+filter f_prov_kern {
+  facility(kern) and filter(f_prov_not_debug);
+};
+
+filter f_prov_user {
+  facility(user) and filter(f_prov_not_debug);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_system);
+  destination(d_prov_system);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_auth);
+  destination(d_prov_auth);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_kern);
+  destination(d_prov_kern);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_user);
+  destination(d_prov_user);
+};
+EOF
 
 # prepare LazyVim environment
 mkdir -p /etc/skel/.local/share
