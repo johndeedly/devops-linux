@@ -15,7 +15,6 @@ setup:
     shadow: ou=People,dc=internal
   archiso_mirror: false
   pkg_mirror: false
-  chaotic_mirror: false
   proxmox_cluster:
     # ssh-keygen -q -N "" -C "root" -t ed25519 -f ssh_host_cluster_key
     cluster_key: |

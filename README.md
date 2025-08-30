@@ -90,8 +90,6 @@ setup:
   archiso_mirror: false
   ## (local) package mirror link
   pkg_mirror: false
-  ## (local) Chaotic Arch user repository mirror link
-  chaotic_mirror: false
   ## proxmox cluster setup (one master and many workers)
   proxmox_cluster:
     ## the keys are generated through the command

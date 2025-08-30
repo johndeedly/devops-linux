@@ -7,11 +7,11 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   xorg-server xorg-xinit xorg-xrandr xclip xsel brightnessctl gammastep arandr dunst libnotify engrampa \
   flameshot libinput xf86-input-libinput xorg-xinput kitty wofi dex xrdp ibus ibus-typing-booster lightdm lightdm-slick-greeter \
   archlinux-wallpaper elementary-wallpapers elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
-  ttf-hannom ttf-baekmuk noto-fonts-emoji ttf-ms-fonts \
+  ttf-hannom ttf-baekmuk noto-fonts-emoji \
   cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita seahorse freerdp gitg keepassxc pdfpc \
   bluez blueman \
-  texlive-bin xdg-desktop-portal xdg-desktop-portal-gtk wine-wow64 winetricks mpv gpicview qalculate-gtk drawio-desktop code \
-  pamac flatpak firefox chromium gnome-keyring virt-manager \
+  texlive-bin xdg-desktop-portal xdg-desktop-portal-gtk wine winetricks mpv gpicview qalculate-gtk drawio-desktop code \
+  flatpak firefox chromium gnome-keyring virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
   cinnamon cinnamon-translations system-config-printer
 

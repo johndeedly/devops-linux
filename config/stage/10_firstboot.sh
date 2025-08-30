@@ -59,6 +59,11 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 fi
 
+# enable multilib
+if [ -e /bin/pacman ]; then
+  sed -i '/^#\[multilib\]/,/^$/ s/^#//g' /etc/pacman.conf
+fi
+
 # speedup apt on ubuntu and debian
 if [ -e /bin/apt ]; then
   APT_CFGS=( /etc/apt/apt.conf.d/* )
@@ -349,30 +354,6 @@ if [ -f /etc/mkinitcpio.conf ]; then
   sed -i 's/^MODULES=.*/MODULES=(usbhid xhci_hcd vfat)/g' /etc/mkinitcpio.conf
 fi
 
-# configure chaotic keyring
-if [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm jq yq
-  # main repo key from website
-  LC_ALL=C yes | LC_ALL=C pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keys.gnupg.net
-  LC_ALL=C yes | LC_ALL=C pacman-key --lsign-key 3056513887B78AEB
-  # garuda build key (remove when problems are fixed by the chaotic-aur team)
-  LC_ALL=C yes | LC_ALL=C pacman-key --recv-key 349BC7808577C592 --keyserver hkp://keys.gnupg.net
-  LC_ALL=C yes | LC_ALL=C pacman-key --lsign-key 349BC7808577C592
-  PKG_MIRROR=$(yq -r '.setup.chaotic_mirror' /var/lib/cloud/instance/config/setup.yml)
-  if [ -n "$PKG_MIRROR" ] && [ "false" != "$PKG_MIRROR" ]; then
-    tee -a /etc/pacman.conf <<EOF
-[chaotic-aur]
-${PKG_MIRROR}
-EOF
-  else
-    tee -a /etc/pacman.conf <<'EOF'
-[chaotic-aur]
-Server = https://cf-builds.garudalinux.org/repos/$repo/$arch
-EOF
-  fi
-  LC_ALL=C yes | LC_ALL=C pacman -Syu --noconfirm chaotic-keyring
-fi
-
 download_yq() {
   echo ":: download yq"
   curl --fail --silent --location --output /tmp/yq_linux_amd64.tar.gz 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64.tar.gz'
@@ -402,7 +383,7 @@ elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     bash-completion ncdu viu pv mc ranger fzf moreutils htop btop git lazygit \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
-    pacman-contrib rsyslog libxml2 core/man man-pages-de wireguard-tools python-pip \
+    pacman-contrib syslog-ng libxml2 core/man man-pages-de wireguard-tools python-pip \
     gvfs gvfs-smb cifs-utils tmux \
     base-devel npm fd neovim
   systemctl enable systemd-networkd systemd-resolved systemd-homed

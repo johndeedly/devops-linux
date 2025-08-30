@@ -54,7 +54,6 @@ elif [ -e /bin/pacman ]; then
     xf86-video-ati xf86-video-amdgpu mesa vulkan-radeon libva-mesa-driver mesa-vdpau libva-utils nvtop \
     xf86-video-nouveau vulkan-nouveau \
     xf86-video-intel vulkan-intel libva-intel-driver \
-    xf86-video-vmware \
     xf86-video-qxl
   tee /etc/modules-load.d/kms.conf <<EOF
 $( for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do echo "$x"; done )

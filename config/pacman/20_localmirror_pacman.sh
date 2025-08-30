@@ -7,18 +7,6 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed expac nginx pacman-contri
 # prepare mirror cache dir
 mkdir -p /var/cache/pacman/mirror
 
-# enable multilib
-if grep -q "\[multilib\]" /etc/pacman.conf; then
-    sed -i '/^#\?\[multilib\]$/{N;s/^#\?\[multilib\]\n#\?Include.*/[multilib]\nInclude = \/etc\/pacman.d\/mirrorlist/;}' /etc/pacman.conf
-else
-    tee -a /etc/pacman.conf <<EOS
-
-[multilib]
-Include = /etc/pacman.d/mirrorlist
-EOS
-fi
-LC_ALL=C yes | LC_ALL=C pacman -Sy --noconfirm
-
 tee /usr/local/bin/pacsync.sh <<'EOF'
 #!/usr/bin/env bash
 
@@ -45,7 +33,6 @@ done <<EOX
 core
 extra
 multilib
-chaotic-aur
 EOX
 
 tmpdir=$(mktemp -d)
