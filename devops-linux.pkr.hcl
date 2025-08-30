@@ -44,7 +44,6 @@ locals {
 
 
 source "qemu" "default" {
-  shutdown_command     = "/sbin/poweroff"
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
   disk_size            = "524288M"
@@ -80,7 +79,7 @@ source "qemu" "default" {
 
 
 source "virtualbox-iso" "default" {
-  shutdown_command         = "/sbin/poweroff"
+  acpi_shutdown            = true
   boot_wait                = "3s"
   boot_command             = ["<enter>"]
   disk_size                = 524288
@@ -282,6 +281,8 @@ EOS
     inline = [<<EOS
 echo "[ ## ] Remove provisioning key to lock down ssh"
 /bin/sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
+echo "[ ## ] Sync disk contents"
+sync
 EOS
     ]
   }
