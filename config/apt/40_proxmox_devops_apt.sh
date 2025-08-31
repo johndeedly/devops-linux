@@ -40,6 +40,7 @@ if [ -f output/artifacts/tar/devops-linux-debian.tar.zst ]; then
     --net1 name=eth1,bridge=vmbrlan0,firewall=0,ip=manual,ip6=manual \
     --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1 --protection 1
 fi
+rm -r output/
 
 # archlinux mirror server
 yq -y '(.setup.distro) = "archlinux"' config/setup.yml | sponge config/setup.yml
@@ -58,6 +59,7 @@ if [ -f output/artifacts/tar/devops-linux-archlinux.tar.zst ]; then
     --net0 name=eth0,bridge=vmbrlan0,firewall=0,ip=dhcp,ip6=dhcp \
     --unprivileged 1 --pool pool0 --ostype archlinux --onboot 1 --features nesting=1 --protection 1
 fi
+rm -r output/
 
 # debian 13 mirror server
 yq -y '(.setup.distro) = "debian-13"' config/setup.yml | sponge config/setup.yml
@@ -75,10 +77,8 @@ if [ -f output/artifacts/tar/devops-linux-debian-13.tar.zst ]; then
     --hostname debian-13-mirror --storage local --swap 512 --rootfs local:512 \
     --net0 name=eth0,bridge=vmbrlan0,firewall=0,ip=dhcp,ip6=dhcp \
     --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1 --protection 1
-else
-  echo "Files in output/artifacts/tar/:"
-  ls -la output/artifacts/tar
 fi
+rm -r output/
 
 # exit build environment
 popd
@@ -88,5 +88,5 @@ popd
 sync
 
 # cleanup
-#rm -r "$BUILDDIR"
+rm -r "$BUILDDIR"
 [ -f "${0}" ] && rm -- "${0}"
