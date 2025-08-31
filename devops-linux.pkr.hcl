@@ -121,7 +121,7 @@ build {
 
   provisioner "shell" {
     inline           = [<<EOS
-cloud-init status --long --format yaml --wait &
+( until [ "SubState=active" = "$(systemctl show cloud-init.target -p SubState)" ]; do sleep 5; done ) &
 pid=$!
 tail --pid=$pid -f /cidata_log
 EOS
@@ -143,7 +143,7 @@ EOS
   
   provisioner "shell" {
     inline           = [<<EOS
-cloud-init status --long --format yaml --wait &
+( until [ "SubState=active" = "$(systemctl show cloud-init.target -p SubState)" ]; do sleep 5; done ) &
 pid=$!
 tail --pid=$pid -f /cidata_log
 EOS
