@@ -41,6 +41,7 @@ if [ -f output/artifacts/tar/devops-linux-debian.tar.zst ]; then
     --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1 --protection 1
 fi
 rm -r output/
+mkdir -p output/
 
 # archlinux mirror server
 yq -y '(.setup.distro) = "archlinux"' config/setup.yml | sponge config/setup.yml
@@ -60,6 +61,7 @@ if [ -f output/artifacts/tar/devops-linux-archlinux.tar.zst ]; then
     --unprivileged 1 --pool pool0 --ostype archlinux --onboot 1 --features nesting=1 --protection 1
 fi
 rm -r output/
+mkdir -p output/
 
 # debian 13 mirror server
 yq -y '(.setup.distro) = "debian-13"' config/setup.yml | sponge config/setup.yml
@@ -79,6 +81,7 @@ if [ -f output/artifacts/tar/devops-linux-debian-13.tar.zst ]; then
     --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1 --protection 1
 fi
 rm -r output/
+mkdir -p output/
 
 # exit build environment
 popd
