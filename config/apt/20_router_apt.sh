@@ -109,7 +109,7 @@ EOF
 
 # configure dnsmasq
 sed -i '0,/^#\?bind-interfaces.*/s//bind-interfaces/' /etc/dnsmasq.conf
-sed -i '0,/^#\?except-interface=.*/s//except-interface=eth0\nexcept-interface=eth0/' /etc/dnsmasq.conf
+sed -i '0,/^#\?interface=.*/s//interface=br0/' /etc/dnsmasq.conf
 sed -i '0,/^#\?domain-needed.*/s//domain-needed/' /etc/dnsmasq.conf
 sed -i '0,/^#\?bogus-priv.*/s//bogus-priv/' /etc/dnsmasq.conf
 sed -i '0,/^#\?local=.*/s//local=\/internal\//' /etc/dnsmasq.conf
