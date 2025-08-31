@@ -380,6 +380,28 @@ ufw route allow in on wg0 out on wg0 comment 'allow local wireguard forwarding'
 ufw allow in on lo comment 'allow loopback in'
 ufw route allow in on lo out on lo comment 'allow loopback forward'
 
+# before.rules
+tee -a /etc/ufw/before.rules <<EOF
+
+# NAT
+*nat
+-F
+:POSTROUTING ACCEPT [0:0]
+-A POSTROUTING -s 172.26.0.0/15 -o eth0 -j MASQUERADE
+
+COMMIT
+EOF
+tee -a /etc/ufw/before6.rules <<EOF
+
+# NAT
+*nat
+-F
+:POSTROUTING ACCEPT [0:0]
+-A POSTROUTING -s fdd5:a799:9326:171d::/64 -o eth0 -j MASQUERADE
+
+COMMIT
+EOF
+
 ufw enable
 ufw status verbose
 
