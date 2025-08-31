@@ -2,24 +2,12 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-# create a squashfs snapshot based on rootfs
-if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
-elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
-fi
-mkdir -p /srv/img /srv/data /srv/tar
-sync
-mksquashfs / /srv/img/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-  -e "boot/efi/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "media/*" "tmp/*" "swap/*" "usr/lib/firmware/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/lib/cloud/*"
-
+# https://wiki.archlinux.org/title/Full_system_backup_with_tar
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
-pushd /srv/data
-  unsquashfs -d . /srv/img/rootfs.img
-  rm -r boot/efi || true
-  rm -r efi || true
-popd
-ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf "/srv/tar/devops-linux-${DISTRO_NAME}.tar.zst" -C /srv/data .
+mkdir -p /srv/tar
+ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd \
+  --exclude="./boot/efi" --exclude="./cidata*" --exclude="./dev/*" --exclude="./efi" --exclude="./etc/fstab*" --exclude="./etc/crypttab*" --exclude="./etc/systemd/system/cloud-*" --exclude="./usr/lib/systemd/system/cloud-*" --exclude="./proc/*" --exclude="./sys/*" --exclude="./run/*" --exclude="./mnt/*" --exclude="./share/*" --exclude="./srv/pxe" --exclude="./srv/img" --exclude="./srv/tar" --exclude="./media/*" --exclude="./tmp/*" --exclude="./swap/*" --exclude="./usr/lib/firmware/*" --exclude="./var/tmp/*" --exclude="./var/log/*" --exclude="./var/cache/pacman/pkg/*" --exclude="./var/cache/apt/*" --exclude="./var/lib/cloud/*" \
+  --acls --xattrs -cpaf "/srv/tar/devops-linux-${DISTRO_NAME}.tar.zst" -C / .
 
 # sync everything to disk
 sync
