@@ -13,6 +13,12 @@ sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=power
 sed -i 's/^#\?AllowSuspend=.*/AllowSuspend=no/' /etc/systemd/sleep.conf
 systemctl mask suspend.target
 
+# keep packer authorized key at hand
+PROVISIONING_KEY="$(grep --color=none "packer-provisioning-key" /root/.ssh/authorized_keys)"
+if [ -n $PROVISIONING_KEY ]; then
+  sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
+fi
+
 # create a squashfs snapshot based on rootfs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
@@ -23,6 +29,13 @@ mkdir -p /srv/img
 sync
 mksquashfs / /srv/img/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
   -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "media/*" "tmp/*" "swap/*" "usr/lib/firmware/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/lib/cloud/*"
+
+# restore packer authorized key
+if [ -n "$PROVISIONING_KEY" ]; then
+  tee -a /root/.ssh/authorized_keys <<EOF
+$PROVISIONING_KEY
+EOF
+fi
 
 # reenable sleep
 sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf

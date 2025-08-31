@@ -2,6 +2,12 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
+# keep packer authorized key at hand
+PROVISIONING_KEY="$(grep --color=none "packer-provisioning-key" /root/.ssh/authorized_keys)"
+if [ -n $PROVISIONING_KEY ]; then
+  sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
+fi
+
 # https://wiki.archlinux.org/title/Full_system_backup_with_tar
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
 mkdir -p /srv/tar
@@ -22,6 +28,13 @@ while [ "$checked" -eq 0 ]; do
     checked=1
   fi
 done
+
+# restore packer authorized key
+if [ -n "$PROVISIONING_KEY" ]; then
+  tee -a /root/.ssh/authorized_keys <<EOF
+$PROVISIONING_KEY
+EOF
+fi
 
 # sync everything to disk
 sync
