@@ -186,28 +186,28 @@ files:
       - path: apt/20_router_apt/pxelinux.cfg.default
         config: true
     podman-image:
-      - path: podman/90_podman_image.sh
+      - path: podman/95_podman_image.sh
         stage: 2
     pxe-image:
-      - path: pxe/90_pxe_image.sh
+      - path: pxe/95_pxe_image.sh
         stage: 2
-      - path: pxe/90_pxe_image/apt/hook
+      - path: pxe/95_pxe_image/apt/hook
         config: true
-      - path: pxe/90_pxe_image/apt/modules
+      - path: pxe/95_pxe_image/apt/modules
         config: true
-      - path: pxe/90_pxe_image/apt/pxe
+      - path: pxe/95_pxe_image/apt/pxe
         config: true
-      - path: pxe/90_pxe_image/apt/pxe-http
+      - path: pxe/95_pxe_image/apt/pxe-http
         config: true
-      - path: pxe/90_pxe_image/apt/pxe-nfs
+      - path: pxe/95_pxe_image/apt/pxe-nfs
         config: true
-      - path: pxe/90_pxe_image/apt/pxe-cifs
+      - path: pxe/95_pxe_image/apt/pxe-cifs
         config: true
     tar-image:
-      - path: tar/90_tar_image.sh
+      - path: tar/95_tar_image.sh
         stage: 2
     debiso:
-      - path: apt/90_debiso_build.sh
+      - path: apt/95_debiso_build.sh
         stage: 2
     hardening:
       - path: audit/70_hardening.sh
@@ -282,56 +282,56 @@ files:
       - path: pacman/20_router_pacman/pxelinux.cfg.default
         config: true
     podman-image:
-      - path: podman/90_podman_image.sh
+      - path: podman/95_podman_image.sh
         stage: 2
     pxe-image:
-      - path: pxe/90_pxe_image.sh
+      - path: pxe/95_pxe_image.sh
         stage: 2
-      - path: pxe/90_pxe_image/hooks/pxe
+      - path: pxe/95_pxe_image/hooks/pxe
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_cifs
+      - path: pxe/95_pxe_image/hooks/pxe_cifs
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_http
+      - path: pxe/95_pxe_image/hooks/pxe_http
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_iscsi
+      - path: pxe/95_pxe_image/hooks/pxe_iscsi
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_nbd
+      - path: pxe/95_pxe_image/hooks/pxe_nbd
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_nfs
+      - path: pxe/95_pxe_image/hooks/pxe_nfs
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_nvmeof
+      - path: pxe/95_pxe_image/hooks/pxe_nvmeof
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_scp
+      - path: pxe/95_pxe_image/hooks/pxe_scp
         config: true
-      - path: pxe/90_pxe_image/hooks/pxe_wg
+      - path: pxe/95_pxe_image/hooks/pxe_wg
         config: true
-      - path: pxe/90_pxe_image/install/pxe
+      - path: pxe/95_pxe_image/install/pxe
         config: true
-      - path: pxe/90_pxe_image/install/pxe_cifs
+      - path: pxe/95_pxe_image/install/pxe_cifs
         config: true
-      - path: pxe/90_pxe_image/install/pxe_http
+      - path: pxe/95_pxe_image/install/pxe_http
         config: true
-      - path: pxe/90_pxe_image/install/pxe_iscsi
+      - path: pxe/95_pxe_image/install/pxe_iscsi
         config: true
-      - path: pxe/90_pxe_image/install/pxe_nbd
+      - path: pxe/95_pxe_image/install/pxe_nbd
         config: true
-      - path: pxe/90_pxe_image/install/pxe_nfs
+      - path: pxe/95_pxe_image/install/pxe_nfs
         config: true
-      - path: pxe/90_pxe_image/install/pxe_nvmeof
+      - path: pxe/95_pxe_image/install/pxe_nvmeof
         config: true
-      - path: pxe/90_pxe_image/install/pxe_scp
+      - path: pxe/95_pxe_image/install/pxe_scp
         config: true
-      - path: pxe/90_pxe_image/install/pxe_wg
+      - path: pxe/95_pxe_image/install/pxe_wg
         config: true
-      - path: pxe/90_pxe_image/pxe.conf
+      - path: pxe/95_pxe_image/pxe.conf
         config: true
-      - path: pxe/90_pxe_image/pxe.preset
+      - path: pxe/95_pxe_image/pxe.preset
         config: true
     tar-image:
-      - path: tar/90_tar_image.sh
+      - path: tar/95_tar_image.sh
         stage: 2
     archiso:
-      - path: pacman/90_archiso_build.sh
+      - path: pacman/95_archiso_build.sh
         stage: 2
     hardening:
       - path: audit/70_hardening.sh
