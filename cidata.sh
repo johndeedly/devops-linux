@@ -107,57 +107,6 @@ mkdir -p build/{archiso,stage}
 
 tee build/archiso/meta-data build/stage/meta-data >/dev/null <<EOF
 EOF
-tee build/00_waitonline.sh >/dev/null <<'EOF'
-#!/usr/bin/env bash
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
-# wait online (not on rocky, as rocky does not have wait-online preinstalled)
-if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then
-    SYSTEMD_VERSION=$(systemctl --version | head -n1 | cut -d' ' -f2)
-    if [[ $SYSTEMD_VERSION -ge 258 ]]; then
-        echo "[ ## ] Wait for any interface to be routable and dns resolver working (30s)"
-        /usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --dns --any --timeout=30
-    else
-        echo "[ ## ] Wait for any interface to be routable (20s)"
-        /usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any --timeout=20
-        echo "[ ## ] Wait for dns resolver (20s)"
-        for i in $(seq 1 10); do
-            getent hosts 1.1.1.1 >/dev/null 2>&1 && break
-            sleep 2
-        done
-    fi
-fi
-# cleanup
-[ -f "${0}" ] && rm -- "${0}"
-EOF
-tee build/99_autoreboot.sh >/dev/null <<'EOF'
-#!/usr/bin/env bash
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
-# double fork trick to prevent the subprocess from exiting
-echo "[ ## ] Wait for cloud-init to finish"
-( (
-  # valid exit codes are 0 or 2
-  cloud-init status --long --format yaml --wait | sed -e 's/^/>>> /g'
-  ret=$?
-  if [ $ret -eq 0 ] || [ $ret -eq 2 ]; then
-    echo "[ OK ] Rebooting the system"
-    reboot now
-  else
-    echo "[ FAILED ] Unrecoverable error in provision steps"
-  fi
-) & )
-# cleanup
-[ -f "${0}" ] && rm -- "${0}"
-EOF
-tee build/98_lockdown.sh >/dev/null <<'EOF'
-#!/usr/bin/env bash
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
-echo "[ ## ] Remove provisioning key to lock down ssh"
-sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
-echo "[ ## ] Sync disk contents"
-sync
-# cleanup
-[ -f "${0}" ] && rm -- "${0}"
-EOF
 
 # prepare user-data for stage
 write_mime_params=(
@@ -172,8 +121,8 @@ write_mime_params=(
     "config/stage/90_second_stage.sh:text/x-shellscript"
     "config/stage/90_final_stage.sh:application/x-second-stage"
     "config/setup.yml:application/x-setup-config"
-    "build/00_waitonline.sh:text/x-shellscript"
-    "build/00_waitonline.sh:application/x-second-stage"
+    "config/00_waitonline.sh:text/x-shellscript"
+    "config/00_waitonline.sh:application/x-second-stage"
 )
 # deployment scripts stage 'config'
 while read -r line; do
@@ -190,7 +139,7 @@ EOF
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.config) | .path' config/setup.yml)"
 # deployment scripts stage 1
 if [ $_autoreboot -eq 1 ]; then
-    write_mime_params=( "${write_mime_params[@]}" "build/99_autoreboot.sh:text/x-shellscript" )
+    write_mime_params=( "${write_mime_params[@]}" "config/99_autoreboot.sh:text/x-shellscript" )
 fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then
@@ -201,7 +150,7 @@ while read -r line; do
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' config/setup.yml)"
 # deployment scripts stage 2
 if [ $_autoreboot -eq 1 ]; then
-    write_mime_params=( "${write_mime_params[@]}" "build/98_lockdown.sh:application/x-second-stage" "build/99_autoreboot.sh:application/x-second-stage" )
+    write_mime_params=( "${write_mime_params[@]}" "config/98_lockdown.sh:application/x-second-stage" "config/99_autoreboot.sh:application/x-second-stage" )
 fi
 while read -r line; do
     if [ -n "$line" ] && [ -e "config/$line" ]; then
@@ -224,8 +173,8 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
         "config/archiso/15_system_base_setup.sh:text/x-shellscript"
         "config/archiso/20_bootable_system.sh:text/x-shellscript"
         "config/setup.yml:application/x-setup-config"
-        "build/00_waitonline.sh:text/x-shellscript"
-        "build/99_autoreboot.sh:text/x-shellscript"
+        "config/00_waitonline.sh:text/x-shellscript"
+        "config/99_autoreboot.sh:text/x-shellscript"
         "build/stage/user-data:application/x-provision-config"
         "build/stage/meta-data:application/x-provision-config"
     )
