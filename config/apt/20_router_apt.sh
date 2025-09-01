@@ -16,7 +16,7 @@ DHCP_ADDITIONAL_SETUP=(
 
 DHCP_RANGES=(
   "dhcp-range=172.27.0.1,172.27.255.254,255.254.0.0,12h\n"
-  "dhcp-range=::1,::ffff,constructor:br0,ra-names,64,12h\n"
+  "dhcp-range=::1,::ffff,constructor:eth1,ra-names,64,12h\n"
 )
 
 PXESETUP=(
@@ -43,7 +43,7 @@ DHCP_210_SETUP=(
 )
 
 # keep all interface names
-tee /etc/systemd/network/10-all-keep-names.link <<EOF
+tee /etc/systemd/network/05-all-keep-names.link <<EOF
 [Match]
 OriginalName=*
 
@@ -52,7 +52,7 @@ NamePolicy=keep
 EOF
 
 # configure eth0
-tee /etc/systemd/network/15-eth0.network <<EOF
+tee /etc/systemd/network/05-eth0.network <<EOF
 [Match]
 Name=eth0
 
@@ -78,26 +78,9 @@ RouteMetric=10
 EOF
 
 # configure eth1
-tee /etc/systemd/network/15-eth1.network <<EOF
+tee /etc/systemd/network/05-eth1.network <<EOF
 [Match]
 Name=eth1
-
-[Link]
-RequiredForOnline=no
-
-[Network]
-Bridge=br0
-EOF
-
-# configure br0
-tee /etc/systemd/network/15-br0.netdev <<EOF
-[NetDev]
-Name=br0
-Kind=bridge
-EOF
-tee /etc/systemd/network/25-br0.network <<EOF
-[Match]
-Name=br0
 
 [Link]
 RequiredForOnline=no
@@ -109,7 +92,7 @@ EOF
 
 # configure dnsmasq
 sed -i '0,/^#\?bind-interfaces.*/s//bind-interfaces/' /etc/dnsmasq.conf
-sed -i '0,/^#\?interface=.*/s//interface=br0/' /etc/dnsmasq.conf
+sed -i '0,/^#\?interface=.*/s//interface=eth1/' /etc/dnsmasq.conf
 sed -i '0,/^#\?domain-needed.*/s//domain-needed/' /etc/dnsmasq.conf
 sed -i '0,/^#\?bogus-priv.*/s//bogus-priv/' /etc/dnsmasq.conf
 sed -i '0,/^#\?local=.*/s//local=\/internal\//' /etc/dnsmasq.conf
@@ -280,7 +263,7 @@ WantedBy=multi-user.target
 EOF
 
 # configure nfs
-# https://www.baeldung.com/linux/ufw-nfs-connections-settings
+# https://www.baeldung.com/linux/firewalld-nfs-connections-settings
 mkdir -p /srv/pxe/arch/x86_64
 sed -i '0,/^\[mountd\].*/s//[mountd]\nport=20048/' /etc/nfs.conf
 sed -i '0,/^\[lockd\].*/s//[lockd]\nport=32767\nudp-port=32767/' /etc/nfs.conf
@@ -335,8 +318,7 @@ ufw disable
 # ==========
 # eth0 - extern
 # ==========
-ufw allow in on eth0 proto tcp to any port 51820 comment 'allow wireguard tcp on extern'
-ufw allow in on eth0 proto udp to any port 51820 comment 'allow wireguard udp on extern'
+ufw allow in on eth0 to any port 51820 comment 'allow wireguard on extern'
 
 # ==========
 # eth1 - intern
