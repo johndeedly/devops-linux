@@ -2,6 +2,7 @@ setup:
   distro: archlinux
   options: []
   target: auto
+  hostname: ""
   encrypt:
     enabled: false
     password: packer-build-passwd

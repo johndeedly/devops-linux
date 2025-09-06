@@ -11,12 +11,6 @@ fi
 tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
 sed -e '/DEBUG/d' /var/log/cloud-init.log | tee -a /cidata_log >/dev/null
 
-# generate random hostname once
-tee /etc/hostname >/dev/null <<EOF
-linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
-EOF
-hostnamectl hostname "$(</etc/hostname)"
-
 # initialize pacman keyring
 if [ -e /bin/pacman ]; then
   sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf
@@ -392,6 +386,19 @@ elif [ -e /bin/yum ]; then
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 fi
+
+# generate random hostname once when no specific hostname is set up
+SET_HOSTNAME="$(yq -r '.setup.hostname' /var/lib/cloud/instance/config/setup.yml)"
+if [ "x$SET_HOSTNAME" = "x" ]; then
+  tee /etc/hostname >/dev/null <<EOF
+linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8).internal
+EOF
+else
+  tee /etc/hostname >/dev/null <<EOF
+${SET_HOSTNAME}
+EOF
+fi
+hostnamectl hostname "$(</etc/hostname)"
 
 # configure journald -> forward everything to syslog-ng
 mkdir -p /etc/systemd/journald.conf.d
