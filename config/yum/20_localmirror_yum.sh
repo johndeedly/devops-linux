@@ -100,7 +100,7 @@ http {
         listen 8080;
         listen [::]:8080;
         server_name $(cat /etc/hostname);
-        root /srv/http;
+        root /var/cache/yum/mirror;
         location / {
             try_files \$uri \$uri/ =404;
             autoindex on;
@@ -119,11 +119,6 @@ http {
     include /etc/nginx/conf.d/*.conf;
     include /etc/nginx/sites-enabled/*;
 }
-EOF
-
-tee -a /etc/fstab <<EOF
-
-overlay /srv/http overlay noauto,x-systemd.automount,lowerdir=/var/cache/yum/mirror:/var/empty 0 0
 EOF
 
 systemctl enable nginx.service yumsync.timer

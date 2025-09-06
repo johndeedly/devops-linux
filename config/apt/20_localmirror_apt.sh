@@ -147,7 +147,7 @@ http {
         listen 8080;
         listen [::]:8080;
         server_name $(cat /etc/hostname);
-        root /srv/http;
+        root /var/cache/apt/mirror;
         location / {
             try_files \$uri \$uri/ =404;
             autoindex on;
@@ -168,11 +168,6 @@ http {
 }
 EOF
 rm /etc/nginx/sites-enabled/default
-
-tee -a /etc/fstab <<EOF
-
-overlay /srv/http overlay noauto,x-systemd.automount,lowerdir=/var/cache/apt/mirror:/var/empty 0 0
-EOF
 
 systemctl enable nginx.service aptsync.timer
 
