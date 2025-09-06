@@ -85,6 +85,13 @@ EOX
 wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-arm64.*|.*-armel.*|.*-armhf.*|.*-i386.*|.*-mips64el.*|.*-mipsel.*|.*-ppc64el.*|.*-s390x.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 rm /tmp/mirror_url_list.txt
 EOF
+# install the proxmox repository key
+echo ":: download proxmox repository certificate"
+(
+  source /etc/os-release
+  curl -fsSL "https://enterprise.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg" | gpg --dearmor -o "/etc/apt/trusted.gpg.d/proxmox-release-${VERSION_CODENAME}.gpg"
+)
+# add the proxmox repository to the package sources
 (
   source /etc/os-release
   tee /etc/apt/sources.list.d/pve-install-repo.list <<EOF
