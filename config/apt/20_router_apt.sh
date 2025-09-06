@@ -305,8 +305,8 @@ fdd5:a799:9326:171d::/64
 EOF
 
 # Enable all configured services
-systemctl enable dnsmasq ntpd.timer hosts-calc.service nfs-kernel-server rpc-statd \
-  tgt smb nbd
+systemctl enable dnsmasq ntpd.timer hosts-calc.service nfs-kernel-server rpcbind \
+  tgt smbd nbd-server
 
 # configure the firewall
 ufw disable
