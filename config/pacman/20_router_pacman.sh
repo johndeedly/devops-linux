@@ -19,6 +19,13 @@ DHCP_RANGES=(
   "dhcp-range=::1,::ffff,constructor:eth1,ra-names,64,12h\n"
 )
 
+DNS_SERVERS=(
+  "server=94.140.14.14@eth0\n"
+  "server=94.140.15.15@eth0\n"
+  "server=2a10:50c0::ad1:ff@eth0\n"
+  "server=2a10:50c0::ad2:ff@eth0"
+)
+
 PXESETUP=(
   "dhcp-match=set:efi-x86_64,option:client-arch,7\n"
   "dhcp-match=set:efi-x86_64,option:client-arch,9\n"
@@ -61,8 +68,6 @@ DHCP=yes
 MulticastDNS=yes
 DNSOverTLS=opportunistic
 DNSSEC=allow-downgrade
-IPv4Forwarding=yes
-IPv6Forwarding=yes
 IPMasquerade=both
 
 [DHCPv4]
@@ -108,6 +113,7 @@ sed -i '0,/^#\?log-queries.*/s//log-queries/' /etc/dnsmasq.conf
 sed -i '0,/^#\?dhcp-boot=.*/s//'"${PXESETUP[*]}"'/' /etc/dnsmasq.conf
 sed -i '0,/^#\?dhcp-option-force=209.*/s//'"${DHCP_209_SETUP[*]}"'/' /etc/dnsmasq.conf
 sed -i '0,/^#\?dhcp-option-force=210.*/s//'"${DHCP_210_SETUP[*]}"'/' /etc/dnsmasq.conf
+sed -i '0,/^#\?server=.*/s//'"${DNS_SERVERS[*]}"'/' /etc/dnsmasq.conf
 
 # configure pxe folders
 mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
@@ -395,6 +401,8 @@ ufw allow in on eth0 to any port 51820 comment 'allow wireguard on extern'
 # ==========
 ufw allow in on eth1 to any port bootps comment 'allow bootps on intern'
 ufw allow in on eth1 to any port 53 comment 'allow dns on intern'
+ufw allow in on eth1 to any port 67 proto udp comment 'allow dhcpv4 server'
+ufw allow in on eth1 to any port 547 proto udp comment 'allow dhcpv6 server'
 ufw allow in on eth1 to any port tftp comment 'allow tftp on intern'
 ufw allow in on eth1 to any port 80 comment 'allow http on intern'
 ufw allow in on eth1 to any port ntp comment 'allow ntp on intern'
@@ -436,9 +444,12 @@ ufw route allow in on lo out on lo comment 'allow loopback forward'
 # before.rules
 tee -a /etc/ufw/before.rules <<EOF
 
-# NAT
 *nat
--F
+:PREROUTING ACCEPT [0:0]
+-A PREROUTING -i eth1 -p udp --dport 53 -j DNAT --to-destination 172.26.0.1:53
+-A PREROUTING -i eth1 -p tcp --dport 53 -j DNAT --to-destination 172.26.0.1:53
+-A PREROUTING -i eth1 -p tcp --dport 853 -j DNAT --to-destination 172.26.0.1:853
+
 :POSTROUTING ACCEPT [0:0]
 -A POSTROUTING -s 172.26.0.0/15 -o eth0 -j MASQUERADE
 
@@ -446,9 +457,12 @@ COMMIT
 EOF
 tee -a /etc/ufw/before6.rules <<EOF
 
-# NAT
 *nat
--F
+:PREROUTING ACCEPT [0:0]
+-A PREROUTING -i eth1 -p udp --dport 53 -j DNAT --to-destination [fdd5:a799:9326:171d::1]:53
+-A PREROUTING -i eth1 -p tcp --dport 53 -j DNAT --to-destination [fdd5:a799:9326:171d::1]:53
+-A PREROUTING -i eth1 -p tcp --dport 853 -j DNAT --to-destination [fdd5:a799:9326:171d::1]:853
+
 :POSTROUTING ACCEPT [0:0]
 -A POSTROUTING -s fdd5:a799:9326:171d::/64 -o eth0 -j MASQUERADE
 
@@ -457,6 +471,13 @@ EOF
 
 ufw enable
 ufw status verbose
+
+# enable ip forwarding in kernel
+tee -a /etc/ufw/sysctl.conf <<EOF
+net/ipv4/ip_forward=1
+net/ipv6/conf/default/forwarding=1
+net/ipv6/conf/all/forwarding=1
+EOF
 
 # disable network config in cloud init
 tee /etc/cloud/cloud.cfg.d/99-custom-networking.cfg <<EOF
