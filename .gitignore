@@ -8,3 +8,4 @@ database/*
 !database/.gitkeep
 *.qcow2
 *.iso
+crash.log
