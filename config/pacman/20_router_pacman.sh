@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools syslinux dnsmasq iptraf-ng ntp step-ca step-cli darkhttpd nfs-utils \
+LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools syslinux dnsmasq iptraf-ng ntp step-ca step-cli nginx nfs-utils \
   samba nbd tgt nvmetcli rsync
 
 DHCP_ADDITIONAL_SETUP=(
@@ -131,13 +131,52 @@ ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi32/pxelinux.cfg/default
 ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi64/pxelinux.cfg/default
 
 # configure http
-mkdir -p /etc/systemd/system/darkhttpd.service.d
-tee /etc/systemd/system/darkhttpd.service.d/override.conf <<EOF
-[Service]
-ExecStart=
-ExecStart=/usr/bin/darkhttpd /srv/pxe --ipv6 --addr '::' --port 80 --mimetypes /etc/conf.d/mimetypes
+tee /etc/nginx/nginx.conf <<EOF
+user http;
+worker_processes auto;
+worker_cpu_affinity auto;
+
+events {
+    multi_accept on;
+    worker_connections 1024;
+}
+
+http {
+    charset utf-8;
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    server_tokens off;
+    log_not_found off;
+    types_hash_max_size 4096;
+    client_max_body_size 16M;
+
+    server {
+        listen 80;
+        listen [::]:80;
+        server_name $(cat /etc/hostname);
+        root /srv/pxe;
+        location / {
+            try_files \$uri \$uri/ =404;
+            autoindex on;
+        }
+    }
+
+    # MIME
+    include mime.types;
+    default_type application/octet-stream;
+
+    # logging
+    access_log /var/log/www-access.log;
+    error_log /var/log/www-error.log warn;
+
+    # load configs
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
 EOF
-systemctl enable darkhttpd.service
+rm /etc/nginx/sites-enabled/default
+systemctl enable nginx.service
 
 # configure ntp
 tee /etc/ntp.conf <<EOF

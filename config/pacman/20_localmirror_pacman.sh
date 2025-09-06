@@ -171,8 +171,8 @@ http {
     default_type application/octet-stream;
 
     # logging
-    access_log /var/log/nginx/access.log;
-    error_log /var/log/nginx/error.log warn;
+    access_log /var/log/www-access.log;
+    error_log /var/log/www-error.log warn;
 
     # load configs
     include /etc/nginx/conf.d/*.conf;
