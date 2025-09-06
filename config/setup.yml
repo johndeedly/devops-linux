@@ -133,6 +133,8 @@ files:
         stage: 1
       - path: podman/20_portainer_podman.sh
         stage: 2
+      - path: apt/20_podman_apt/shortnames.conf
+        config: true
     postgres:
       - path: podman/40_postgres_podman.sh
         stage: 2
@@ -243,6 +245,8 @@ files:
         stage: 1
       - path: podman/20_portainer_podman.sh
         stage: 2
+      - path: pacman/20_podman_pacman/shortnames.conf
+        config: true
     postgres:
       - path: podman/40_postgres_podman.sh
         stage: 2

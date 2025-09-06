@@ -10,7 +10,7 @@ tee /etc/containers/registries.conf.d/10-unqualified-search-registries.conf <<EO
 unqualified-search-registries = ["docker.io"]
 EOF
 tee /etc/containers/registries.conf.d/05-shortnames.conf <<EOF
-$(curl -sL 'https://raw.githubusercontent.com/containers/shortnames/refs/heads/main/shortnames.conf')
+$(</var/lib/cloud/instance/provision/apt/20_podman_apt/shortnames.conf)
 EOF
 
 # Enable all configured services
