@@ -226,25 +226,17 @@ tee /usr/local/bin/hosts-calc <<'EOS'
 #!/usr/bin/env bash
 
 # Set hostname in etc/hosts
-FQDNAME=$(cat /etc/hostname)
+FQDNAME=$(</etc/hostname)
 HOSTNAME=${FQDNAME%%.*}
 tee /tmp/hosts_columns <<EOF
 # IPv4/v6|FQDN|HOSTNAME
+127.0.0.1|$FQDNAME|$HOSTNAME
+::1|$FQDNAME|$HOSTNAME
+127.0.0.1|localhost.internal|localhost
+::1|localhost.internal|localhost
+172.26.0.1|$FQDNAME|$HOSTNAME
+fdd5:a799:9326:171d::1|$FQDNAME|$HOSTNAME
 EOF
-ip -f inet addr | awk '/inet / {print $2}' | cut -d'/' -f1 | while read -r PUB_IP_ADDR; do
-tee -a /tmp/hosts_columns <<EOF
-$PUB_IP_ADDR|$FQDNAME|$HOSTNAME
-$PUB_IP_ADDR|router.internal|router
-$PUB_IP_ADDR|gateway.internal|gateway
-EOF
-done
-ip -f inet6 addr | awk '/inet6 / {print $2}' | cut -d'/' -f1 | while read -r PUB_IP_ADDR; do
-tee -a /tmp/hosts_columns <<EOF
-$PUB_IP_ADDR|$FQDNAME|$HOSTNAME
-$PUB_IP_ADDR|router.internal|router
-$PUB_IP_ADDR|gateway.internal|gateway
-EOF
-done
 tee /etc/hosts <<EOF
 # Static table lookup for hostnames.
 # See hosts(5) for details.
@@ -258,15 +250,12 @@ chmod +x /usr/local/bin/hosts-calc
 tee /etc/systemd/system/hosts-calc.service <<EOF
 [Unit]
 Description=Generate hosts file on startup
-Wants=network.target
-After=network.target
 
 [Service]
-ExecStartPre=/usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any
 ExecStart=/usr/local/bin/hosts-calc
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=sysinit.target
 EOF
 
 # configure nfs
