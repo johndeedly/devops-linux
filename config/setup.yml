@@ -3,6 +3,7 @@ setup:
   options: []
   target: auto
   hostname: ""
+  local_http_database: ""
   encrypt:
     enabled: false
     password: packer-build-passwd

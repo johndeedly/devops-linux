@@ -65,7 +65,12 @@ source "qemu" "default" {
   sockets              = 1
   cores                = var.cpu_cores
   threads              = 1
-  qemuargs             = [["-rtc", "base=utc,clock=host"], ["-device", "virtio-mouse"], ["-device", "virtio-keyboard"]]
+  qemuargs             = [
+    ["-virtfs", "local,path=./database,mount_tag=database.0,security_model=mapped,id=database.0"],
+    ["-rtc", "base=utc,clock=host"],
+    ["-device", "virtio-mouse"],
+    ["-device", "virtio-keyboard"]
+  ]
   headless             = var.headless
   iso_checksum         = "none"
   iso_url              = "devops-x86_64-cidata.iso"
@@ -108,8 +113,8 @@ source "virtualbox-iso" "default" {
   ssh_keypair_name         = "ssh_packer_key"
   ssh_private_key_file     = "./ssh_packer_key"
   ssh_timeout              = "10m"
-  vboxmanage               = [["modifyvm", "{{ .Name }}", "--tpm-type", "2.0", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"]]
-  vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"]]
+  vboxmanage               = [["modifyvm", "{{ .Name }}", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"], ["sharedfolder", "add", "{{ .Name }}", "--name", "database.0", "--hostpath", "./database"]]
+  vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"], ["sharedfolder", "remove", "{{ .Name }}", "--name", "database.0"]]
   vm_name                  = local.build_name_virtualbox
   skip_export              = false
   keep_registered          = true
