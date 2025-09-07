@@ -13,29 +13,21 @@ sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=power
 sed -i 's/^#\?AllowSuspend=.*/AllowSuspend=no/' /etc/systemd/sleep.conf
 systemctl mask suspend.target
 
-# keep packer authorized key at hand
-PROVISIONING_KEY="$(grep --color=none "packer-provisioning-key" /root/.ssh/authorized_keys)"
-if [ -n $PROVISIONING_KEY ]; then
-  sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
-fi
-
 # create a squashfs snapshot based on rootfs
-if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
-elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
-fi
+EXCLUDE_PATHS=(
+  "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*"
+  "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "srv/tar/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*"
+  "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/cache/dnf/*" "var/cache/yum/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*"
+  "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
+  "usr/lib/firmware/*" "root/.ssh/authorized_keys"
+)
 mkdir -p /srv/img
 sync
-mksquashfs / /srv/img/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-  -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "media/*" "tmp/*" "swap/*" "usr/lib/firmware/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/lib/cloud/*"
-
-# restore packer authorized key
-if [ -n "$PROVISIONING_KEY" ]; then
-  tee -a /root/.ssh/authorized_keys <<EOF
-$PROVISIONING_KEY
-EOF
-fi
+echo "[ ## ] Create tar image"
+( ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd "${EXCLUDE_PATHS[@]/#/--exclude=}" \
+    -cf "/srv/img/rootfs.tar.zst" -C / . ) &
+pid=$!
+wait $pid
 
 # reenable sleep
 sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
@@ -66,16 +58,16 @@ buildah config --entrypoint '["/usr/lib/systemd/systemd", "--log-level=info", "-
   --stop-signal 'SIGRTMIN+3' --workingdir "/root" --port '22/tcp' --port '9090/tcp' \
   --user "root:root" --volume "/run" --volume "/tmp" --volume "/sys/fs/cgroup" worker
 scratchmnt=$(buildah mount worker)
-mount --bind "${scratchmnt}" /mnt
 
-pushd /mnt
-unsquashfs -d . /srv/img/rootfs.img
+pushd "${scratchmnt}"
+  ( ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xkf /srv/img/rootfs.tar.zst &>/dev/null ) &
+  pid=$!
+  wait $pid
 popd
 
 sync
-fuser -km /mnt || true
+fuser -km "${scratchmnt}" || true
 sync
-umount /mnt || true
 buildah umount worker
 
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
@@ -90,6 +82,7 @@ buildah rm worker
 # BUG in systemd with resolved: https://github.com/systemd/systemd/issues/34565
 # resolved fails instead of silently exiting
 # will be fixed in systemd version 258
+mkdir -p /srv/docker
 tee "/srv/docker/docker-compose-${DISTRO_NAME}.yml" <<EOF
 name: ${DISTRO_NAME}
 networks:

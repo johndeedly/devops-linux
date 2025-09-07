@@ -16,40 +16,29 @@ sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=power
 sed -i 's/^#\?AllowSuspend=.*/AllowSuspend=no/' /etc/systemd/sleep.conf
 systemctl mask suspend.target
 
-# keep packer authorized key at hand
-PROVISIONING_KEY="$(grep --color=none "packer-provisioning-key" /root/.ssh/authorized_keys)"
-if [ -n $PROVISIONING_KEY ]; then
-  sed -i '/packer-provisioning-key/d' /root/.ssh/authorized_keys
-fi
-
 # create a squashfs snapshot based on rootfs
+EXCLUDE_PATHS=(
+  "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*"
+  "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "srv/tar/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*"
+  "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/cache/dnf/*" "var/cache/yum/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*"
+  "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
+  "root/.ssh/authorized_keys"
+)
+DISTRO_PATH=""
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
   if grep -q Debian /proc/version; then
-    mkdir -p /srv/pxe/debian/x86_64
-    sync
-    mksquashfs / /srv/pxe/debian/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-      -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*" "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
+    DISTRO_PATH="debian"
   elif grep -q Ubuntu /proc/version; then
-    mkdir -p /srv/pxe/ubuntu/x86_64
-    sync
-    mksquashfs / /srv/pxe/ubuntu/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-      -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/apt/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*" "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
+    DISTRO_PATH="ubuntu"
   fi
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
-  mkdir -p /srv/pxe/arch/x86_64
-  sync
-  mksquashfs / /srv/pxe/arch/x86_64/pxeboot.img -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards \
-    -e "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*" "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*" "var/cache/pacman/pkg/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*" "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
+  DISTRO_PATH="arch"
 fi
-
-# restore packer authorized key
-if [ -n "$PROVISIONING_KEY" ]; then
-  tee -a /root/.ssh/authorized_keys <<EOF
-$PROVISIONING_KEY
-EOF
-fi
+mkdir -p "/srv/pxe/${DISTRO_PATH}/x86_64"
+sync
+mksquashfs / "/srv/pxe/${DISTRO_PATH}/x86_64/pxeboot.img" -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards -e "${EXCLUDE_PATHS[@]}"
 
 # reenable sleep
 sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
@@ -85,17 +74,17 @@ EOF
 if [ -e /bin/apt ]; then
   echo ":: create pxe boot vmlinuz and initrd.img"
   tee /etc/initramfs-tools/hooks/pxe <<EOF
-$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/hook)
+$(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/hook)
 EOF
   chmod +x /etc/initramfs-tools/hooks/pxe
   tee -a /etc/initramfs-tools/modules <<EOF
-$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/modules)
+$(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/modules)
 EOF
   tee -a /etc/initramfs-tools/scripts/pxe <<EOF
-$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe)
-$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-http)
-$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-nfs)
-$(</var/lib/cloud/instance/provision/pxe/90_pxe_image/apt/pxe-cifs)
+$(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe)
+$(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe-http)
+$(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe-nfs)
+$(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe-cifs)
 EOF
   chmod +x /etc/initramfs-tools/scripts/pxe
   update-initramfs -v -c -k $(uname -r)
@@ -119,13 +108,13 @@ EOF
 elif [ -e /bin/pacman ]; then
   echo ":: create skeleton for pxe boot mkinitcpio"
   mkdir -p /etc/initcpio/{install,hooks}
-  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/install/* /etc/initcpio/install/
+  cp /var/lib/cloud/instance/provision/pxe/80_pxe_image/install/* /etc/initcpio/install/
   chmod a+x /etc/initcpio/install/*
-  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/hooks/* /etc/initcpio/hooks/
+  cp /var/lib/cloud/instance/provision/pxe/80_pxe_image/hooks/* /etc/initcpio/hooks/
   chmod a+x /etc/initcpio/hooks/*
   mkdir -p /etc/mkinitcpio{,.conf}.d
-  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/pxe.conf /etc/
-  cp /var/lib/cloud/instance/provision/pxe/90_pxe_image/pxe.preset /etc/mkinitcpio.d/
+  cp /var/lib/cloud/instance/provision/pxe/80_pxe_image/pxe.conf /etc/
+  cp /var/lib/cloud/instance/provision/pxe/80_pxe_image/pxe.preset /etc/mkinitcpio.d/
 
   echo ":: create pxe boot initcpio"
   mkdir -p /var/tmp/mkinitcpio
