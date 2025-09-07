@@ -382,3 +382,29 @@ write_files:
       }
     owner: "root:root"
     permissions: "0644"
+  - path: /etc/skel/.config/tmux/tmux.conf
+    content: |
+      set -a terminal-features "screen-256color:RGB"
+      set -g mouse on
+
+      set -g base-index 1
+      set -g pane-base-index 1
+      set -g renumber-windows on
+
+      set -g prefix C-b
+      set -g prefix2 none
+
+      set -g mode-keys vi
+      set -g status-position top
+      set -g status-justify absolute-centre
+      set -g status-style "bg=default"
+      set -g window-status-current-style "fg=blue bold"
+      set -g status-left-length 80
+      set -g status-left "tmux"
+      set -g status-right-length 80
+      set -g status-right "#{?client_prefix,#[reverse]<Prefix>#[noreverse] ,}[#S]"
+      
+      unbind r
+      bind r source-file "~/.config/tmux/tmux.conf"
+    owner: "root:root"
+    permissions: "0644"
