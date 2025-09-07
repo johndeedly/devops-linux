@@ -499,24 +499,6 @@ log {
 };
 EOF
 
-# configure tmux
-mkdir -p /etc/skel/.config/tmux
-tee /etc/skel/.config/tmux/tmux.conf <<EOF
-set -a terminal-features "screen-256color:RGB"
-set -g prefix C-b
-set -g base-index 1
-set -g renumber-windows on
-set -g mode-keys vi
-set -g status-position top
-set -g status-justify absolute-centre
-set -g status-style "bg=default"
-set -g window-status-current-style "fg=blue bold"
-set -g status-left "tmux"
-set -g status-right "#{?client_prefix,#[reverse]<Prefix>#[noreverse] ,}[#S]"
-
-bind r source-file "~/.config/tmux/tmux.conf"
-EOF
-
 # prepare LazyVim environment
 mkdir -p /etc/skel/.local/share
 ( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh lua-language-server stylua" -c ":qall!" || true' ) &
