@@ -11,8 +11,11 @@ EOF
 install -m 0700 -o ldap -g ldap -d /var/lib/openldap/openldap-data
 install -m 0760 -o root -g ldap -d /etc/openldap/slapd.d
 
-BASEDC="internal"
-BASEDN="dc=${BASEDC}"
+LDAP_BASE_DC="$(yq -r '.setup.authserver.base_dc' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_BASE_DN="$(yq -r '.setup.authserver.base_dn' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_MGMT_CN="$(yq -r '.setup.authserver.mgmt_cn' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_MGMT_DN="$(yq -r '.setup.authserver.mgmt_dn' /var/lib/cloud/instance/config/setup.yml)"
+
 PASSWD=$(xkcdpass -w ger-anlx -R -D '1234567890' -v '[A-Xa-x]' --min=4 --max=8 -n 3)
 
 tee /etc/openldap/config.ldif <<EOF
@@ -27,7 +30,7 @@ olcPidFile: /run/openldap/slapd.pid
 dn: olcDatabase=config,cn=config
 objectClass: olcDatabaseConfig
 olcDatabase: config
-olcRootDN: cn=Manager,${BASEDN}
+olcRootDN: ${LDAP_MGMT_DN}
 
 # Module back_mdb
 dn: cn=module,cn=config
@@ -56,8 +59,8 @@ dn: olcDatabase=mdb,cn=config
 objectClass: olcDatabaseConfig
 objectClass: olcMdbConfig
 olcDatabase: mdb
-olcSuffix: ${BASEDN}
-olcRootDN: cn=Manager,${BASEDN}
+olcSuffix: ${LDAP_BASE_DN}
+olcRootDN: ${LDAP_MGMT_DN}
 olcRootPW: $PASSWD
 olcDbDirectory: /var/lib/openldap/openldap-data
 # TODO: Access Control List (https://www.openldap.org/doc/admin24/access-control.html)
@@ -65,7 +68,7 @@ olcDbDirectory: /var/lib/openldap/openldap-data
 #   to authenticate against this attribute, and (implicitly) denying all access to others.
 olcAccess: to attrs=userPassword by self =xw by anonymous auth by * none
 #   The second ACL grants authentication against the rootdn only from the local machine.
-olcAccess: to dn.base="cn=Manager,${BASEDN}" by peername.regex=127\.0\.0\.1 auth by users none by * none
+olcAccess: to dn.base="${LDAP_MGMT_DN}" by peername.regex=127\.0\.0\.1 auth by users none by * none
 #   The third ACL allows (implicitly) everyone and anyone read access to all other entries.
 olcAccess: to * by * read
 # TODO: Create further indexes
@@ -115,18 +118,11 @@ if [ "$(ls -A /etc/openldap/slapd.d)" ]; then
 fi
 slapadd -n 0 -F /etc/openldap/slapd.d/ -l /etc/openldap/config.ldif
 
-# grant access from localhost
-mkdir -p /etc/conf.d
-tee -a /etc/conf.d/slapd <<EOF
-SLAPD_URLS="ldap://127.0.0.1/ ldap://[::1]/"
-SLAPD_OPTIONS=
-EOF
-
 # Enable all configured services
 systemctl enable slapd.service
 
 # sync everything to disk
-find /etc/openldap/slapd.d/ -d -print
+find /etc/openldap/slapd.d/ -d -print | sort
 sync
 
 # cleanup

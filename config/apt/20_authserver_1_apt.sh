@@ -11,8 +11,11 @@ EOF
 install -m 0700 -o openldap -g openldap -d /var/lib/ldap/openldap-data
 install -m 0760 -o root -g openldap -d /etc/ldap/slapd.d
 
-BASEDC="internal"
-BASEDN="dc=${BASEDC}"
+LDAP_BASE_DC="$(yq -r '.setup.authserver.base_dc' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_BASE_DN="$(yq -r '.setup.authserver.base_dn' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_MGMT_CN="$(yq -r '.setup.authserver.mgmt_cn' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_MGMT_DN="$(yq -r '.setup.authserver.mgmt_dn' /var/lib/cloud/instance/config/setup.yml)"
+
 PASSWD=$(xkcdpass -w ger-anlx -R -D '1234567890' -v '[A-Xa-x]' --min=4 --max=8 -n 3)
 
 tee /etc/ldap/config.ldif <<EOF
@@ -20,14 +23,14 @@ tee /etc/ldap/config.ldif <<EOF
 dn: cn=config
 objectClass: olcGlobal
 cn: config
-olcArgsFile: /run/openldap/slapd.args
-olcPidFile: /run/openldap/slapd.pid
+olcArgsFile: /var/run/slapd/slapd.args
+olcPidFile: /var/run/slapd/slapd.pid
 
 # The config database
 dn: olcDatabase=config,cn=config
 objectClass: olcDatabaseConfig
 olcDatabase: config
-olcRootDN: cn=Manager,${BASEDN}
+olcRootDN: ${LDAP_MGMT_DN}
 
 # Module back_mdb
 dn: cn=module,cn=config
@@ -56,8 +59,8 @@ dn: olcDatabase=mdb,cn=config
 objectClass: olcDatabaseConfig
 objectClass: olcMdbConfig
 olcDatabase: mdb
-olcSuffix: ${BASEDN}
-olcRootDN: cn=Manager,${BASEDN}
+olcSuffix: ${LDAP_BASE_DN}
+olcRootDN: ${LDAP_MGMT_DN}
 olcRootPW: $PASSWD
 olcDbDirectory: /var/lib/ldap/openldap-data
 # TODO: Access Control List (https://www.openldap.org/doc/admin24/access-control.html)
@@ -65,7 +68,7 @@ olcDbDirectory: /var/lib/ldap/openldap-data
 #   to authenticate against this attribute, and (implicitly) denying all access to others.
 olcAccess: to attrs=userPassword by self =xw by anonymous auth by * none
 #   The second ACL grants authentication against the rootdn only from the local machine.
-olcAccess: to dn.base="cn=Manager,${BASEDN}" by peername.regex=127\.0\.0\.1 auth by users none by * none
+olcAccess: to dn.base="${LDAP_MGMT_DN}" by peername.regex=127\.0\.0\.1 auth by users none by * none
 #   The third ACL allows (implicitly) everyone and anyone read access to all other entries.
 olcAccess: to * by * read
 # TODO: Create further indexes
@@ -115,18 +118,11 @@ if [ "$(ls -A /etc/ldap/slapd.d)" ]; then
 fi
 slapadd -n 0 -F /etc/ldap/slapd.d/ -l /etc/ldap/config.ldif
 
-# grant access from localhost
-mkdir -p /etc/conf.d
-tee -a /etc/conf.d/slapd <<EOF
-SLAPD_URLS="ldap://127.0.0.1/ ldap://[::1]/"
-SLAPD_OPTIONS=
-EOF
-
 # Enable all configured services
 systemctl enable slapd.service
 
 # sync everything to disk
-find /etc/ldap/slapd.d/ -d -print
+find /etc/ldap/slapd.d/ -d -print | sort
 sync
 
 # cleanup

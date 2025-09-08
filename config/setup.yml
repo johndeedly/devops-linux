@@ -10,11 +10,20 @@ setup:
     image: devops-linux-archlinux.tar.zst
   ldapauth:
     enabled: false
-    authserver: ldap://0.0.0.0/
-    base: dc=internal
-    group: ou=Groups,dc=internal
-    passwd: ou=People,dc=internal
-    shadow: ou=People,dc=internal
+    authserver: ldap://127.0.0.1/
+    base: dc=lan,dc=internal
+    group: ou=Groups,dc=lan,dc=internal
+    passwd: ou=People,dc=lan,dc=internal
+    shadow: ou=People,dc=lan,dc=internal
+  authserver:
+    base_dc: lan
+    base_dn: dc=lan,dc=internal
+    group_ou: Groups
+    group_dn: ou=Groups,dc=lan,dc=internal
+    user_ou: People
+    user_dn: ou=People,dc=lan,dc=internal
+    mgmt_cn: Manager
+    mgmt_dn: cn=Manager,dc=lan,dc=internal
   remote_log:
     enabled: false
     syslog_server: 0.0.0.0
