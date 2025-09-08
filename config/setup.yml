@@ -15,6 +15,10 @@ setup:
     group: ou=Groups,dc=internal
     passwd: ou=People,dc=internal
     shadow: ou=People,dc=internal
+  remote_log:
+    enabled: false
+    syslog_server: 0.0.0.0
+    syslog_port: 514
   archiso_mirror: false
   pkg_mirror: false
   proxmox_cluster:
