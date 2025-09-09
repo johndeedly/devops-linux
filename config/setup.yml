@@ -28,11 +28,34 @@ setup:
     enabled: false
     syslog_server: 0.0.0.0
     syslog_port: 514
+    # leave empty for no tls encryption
+    x509_key: ""
+    x509_crt: ""
+    peer_verify: ""
+    x509_hash: ""
   logserver:
+    # openssl req -x509 -newkey ed25519 -days 36500 -noenc -keyout internal.key -out internal.crt -subj "/CN=internal" -addext "subjectAltName=DNS:internal,DNS:*.internal"
     enabled: false
-    logfile: /var/log/remote-messages
+    logfile: /var/log/remote.log
     bind_ip: 0.0.0.0
-    bind_port: 514
+    bind_port: 6514
+    x509_key: |
+      -----BEGIN PRIVATE KEY-----
+      MC4CAQAwBQYDK2VwBCIEIP4yBFg8NmQEn6wXHhI29GSPH2uepiq09cgLCOv8GUP0
+      -----END PRIVATE KEY-----
+    x509_crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIBXjCCARCgAwIBAgIUQruhsBL3/sXKBZG7hF3deIjabuEwBQYDK2VwMBMxETAP
+      BgNVBAMMCGludGVybmFsMCAXDTI1MDkwOTE1MTM0NloYDzIxMjUwODE2MTUxMzQ2
+      WjATMREwDwYDVQQDDAhpbnRlcm5hbDAqMAUGAytlcAMhAOhhu+Nu+d79Ytfu/j4X
+      s0ul0mpWArwOt6YWEDs+qeSHo3QwcjAdBgNVHQ4EFgQU/cx1WqPAF1MO1zbzfwSC
+      3X3maaEwHwYDVR0jBBgwFoAU/cx1WqPAF1MO1zbzfwSC3X3maaEwDwYDVR0TAQH/
+      BAUwAwEB/zAfBgNVHREEGDAWgghpbnRlcm5hbIIKKi5pbnRlcm5hbDAFBgMrZXAD
+      QQBTN3O0hReptrbG90disDKJ7b9lr3fjb9a1VPV9cmlyP26HZ7xALDIUxaEu+2zv
+      jqjaPmC66J9IzeKPTIFIIKoF
+      -----END CERTIFICATE-----
+    peer_verify: required-untrusted
+    x509_hash: SHA1:36:2C:0C:DB:5E:BB:BB:4A:E8:42:C2:4D:A5:0C:D5:0B:3C:55:20:40
   archiso_mirror: false
   pkg_mirror: false
   proxmox_cluster:
