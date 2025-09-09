@@ -145,7 +145,6 @@ keepassxc-browser keepassxc-browser@keepassxc.org
 single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
 sponsorblock sponsorBlocker@ajay.app
 forget_me_not forget-me-not@lusito.info
-adblock-for-youtube-tm {0ac04bdb-d698-452f-8048-bcef1a3f4b0d}
 EOF
 ) | tee /usr/lib/firefox/distribution/policies.json
 
@@ -173,9 +172,7 @@ jq -Rs '{"ExtensionInstallForcelist":split("\n")|map(if match(".") then .+";http
 bgnkhhnnamicmpeenaelnjfhikgbkllg
 mpiodijhokgodhhofbcjdecpffjipkle
 mnjggcdmjocbbbhaepdhchncahnbgone
-cmedhionkhpnakcndndgjdbohmhepckk
 oboonakemofpalcgghocfoadofidjkkk
-cnkdjjdmfiffagllbiiilooaoofcoeff
 EOF
 ) | tee /etc/chromium/policies/managed/extensions-default.json
 tee /etc/chromium/policies/managed/telemetry-off.json <<'EOF'
