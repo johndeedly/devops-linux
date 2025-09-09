@@ -28,6 +28,11 @@ setup:
     enabled: false
     syslog_server: 0.0.0.0
     syslog_port: 514
+  logserver:
+    enabled: false
+    logfile: /var/log/remote-messages
+    bind_ip: 0.0.0.0
+    bind_port: 514
   archiso_mirror: false
   pkg_mirror: false
   proxmox_cluster:

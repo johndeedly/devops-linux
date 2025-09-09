@@ -13,7 +13,7 @@ then
   exit 0
 fi
 
-# enable remote logging
+# enable RFC 5424 logging
 tee -a /etc/syslog-ng/syslog-ng.conf <<EOF
 
 destination d_prov_net {
