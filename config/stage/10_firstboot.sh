@@ -26,6 +26,9 @@ if [ -e /bin/apt ]; then
     # new format
     sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list
     sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
+    # deb.debian.org is unreliable
+    sed -e 's|http://|https://|g' -e 's|deb[.]debian[.]org|eu.mirror.ionos.com/linux/distributions/debian|g' -i /etc/apt/mirrors/debian.list
+    sed -e 's|http://|https://|g' -e 's|deb[.]debian[.]org|eu.mirror.ionos.com/linux/distributions/debian|g' -i /etc/apt/mirrors/debian-security.list
   elif grep -q Ubuntu /proc/version; then
     # old format
     sed -i 's/\(deb .* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
@@ -34,10 +37,10 @@ if [ -e /bin/apt ]; then
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
     # archive.ubuntu.com is unreliable
-    sed -i 's|archive[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list
-    sed -i 's|archive[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
-    sed -i 's|security[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list
-    sed -i 's|security[.]ubuntu[.]com|de.archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
+    sed -e 's|http://|https://|g' -e 's|archive[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list
+    sed -e 's|http://|https://|g' -e 's|archive[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list.d/ubuntu.sources
+    sed -e 's|http://|https://|g' -e 's|security[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list
+    sed -e 's|http://|https://|g' -e 's|security[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list.d/ubuntu.sources
   fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 fi
