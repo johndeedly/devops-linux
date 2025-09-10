@@ -361,8 +361,8 @@ if [ -e /bin/apt ]; then
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed polkit curl wget nano jq yq openssh ufw xkcdpass cryptsetup
-  systemctl enable sshd ufw
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed kernel-modules-hook polkit curl wget nano jq yq openssh ufw xkcdpass cryptsetup
+  systemctl enable linux-modules-cleanup sshd ufw
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
     bash-completion ncdu viu pv mc ranger fzf moreutils htop btop git lazygit \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
