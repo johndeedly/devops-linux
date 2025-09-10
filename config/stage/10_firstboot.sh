@@ -499,6 +499,27 @@ log {
 };
 EOF
 
+# configure logrotate
+sed -i 's/^include/#include/g' /etc/logrotate.conf
+tee -a /etc/logrotate.conf <<'EOF'
+
+# provisioned
+/var/log/*.log /var/log/messages {
+    missingok
+    notifempty
+    daily
+    rotate 7
+    compress
+    delaycompress
+    maxage 30
+    size 100M
+    sharedscripts
+    postrotate
+        /bin/kill -HUP $(cat /run/syslog-ng.pid 2>/dev/null) 2>/dev/null || true
+    endscript
+}
+EOF
+
 # prepare LazyVim environment
 mkdir -p /etc/skel/.local/share
 ( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh lua-language-server stylua" -c ":qall!" || true' ) &
