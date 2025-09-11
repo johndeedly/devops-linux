@@ -94,6 +94,9 @@ flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/
 # install obsidian as flatpak
 flatpak install --system flathub md.obsidian.Obsidian
 
+# install zen browser as flatpak
+flatpak install -y --noninteractive --system flathub app.zen_browser.zen
+
 # set slick greeter as default
 sed -i 's/^#\?greeter-show-manual-login=.*/greeter-show-manual-login=true/' /etc/lightdm/lightdm.conf
 sed -i 's/^#\?greeter-hide-users=.*/greeter-hide-users=true/' /etc/lightdm/lightdm.conf

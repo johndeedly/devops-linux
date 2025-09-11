@@ -136,6 +136,9 @@ flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/
 # install obsidian as flatpak
 flatpak install -y --noninteractive --system flathub md.obsidian.Obsidian
 
+# install zen browser as flatpak
+flatpak install -y --noninteractive --system flathub app.zen_browser.zen
+
 # compile elementary wallpapers
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install meson git gettext
 WALLPAPER_TMP=$(mktemp -d)
