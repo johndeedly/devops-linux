@@ -273,10 +273,29 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
   -device virtio-mouse -device virtio-keyboard \\
   -rtc base=utc,clock=host
-EOF
-chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
+
 # remove -display gtk,gl=on for no 3d acceleration
 # -display none, -daemonize, hostfwd=::12457-:22 for running as a daemonized server
+EOF
+chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
+tee output/devops-linux/devops-linux-x86_64.srv.sh <<EOF
+#!/usr/bin/env bash
+trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
+/usr/bin/qemu-system-x86_64 \\
+  -name devops-linux-srv-x86_64 \\
+  -machine type=q35,accel=kvm \\
+  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
+  -vga none \\
+  -display none \\
+  -cpu host \\
+  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
+  -netdev user,id=user.0,hostfwd=tcp::8022-:22,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
+  -device virtio-mouse -device virtio-keyboard \\
+  -rtc base=utc,clock=host
+
+# -daemonize for running as a daemonized server
+EOF
+chmod +x output/devops-linux/devops-linux-x86_64.srv.sh
 EOS
     ]
     only_on = ["linux"]
