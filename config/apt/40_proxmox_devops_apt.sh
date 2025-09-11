@@ -87,6 +87,77 @@ if [ -f "$target_path" ]; then
     --unprivileged 1 --pool pool0 --ostype ubuntu --onboot 1 --features nesting=1 --protection 1
 fi
 
+# Scheduled task to update all LXC containers on a regular basis
+tee /usr/local/bin/update-all-lxcs.sh <<EOF
+#!/usr/bin/env bash
+# update all running containers
+
+# list of container ids we need to iterate through
+containers=( $(pct list | grep running | awk '{print $1}') )
+
+pacman_update() {
+  echo "[ ## $container] detected pacman"
+  pct exec "$container" "LC_ALL=C yes | LC_ALL=C pacman -Syu --noconfirm"
+}
+
+apt_update() {
+  echo "[ ## $container] detected apt"
+  pct exec "$container" "apt-get update"
+  pct exec "$container" "apt-get dist-upgrade -y"
+  pct exec "$container" "apt-get clean"
+  pct exec "$container" "apt-get autoremove -y"
+}
+
+yum_update() {
+  echo "[ ## $container] detected yum"
+  pct exec "$container" "yum -y update"
+}
+
+apk_update() {
+  echo "[ ## $container] detected apk"
+  pct exec "$container" "apk upgrade"
+}
+
+for container in $containers; do
+  echo "[ ## ] create snapshot for $container"
+  today="$(date +%F)"
+  if pct snapshot "$container" "$today" --description "automatic snapshot taken on $today"; then
+    echo "[ ## ] remove old snapshot for $container"
+    daybeforeyesterday="$(date --date="-2 days" +%F)"
+    pct delsnapshot "$container" "$daybeforeyesterday" --force true || true
+  fi
+  
+  echo "[ ## ] updating $container"
+  pct exec "$container" "which pacman >/dev/null" && pacman_update
+  pct exec "$container" "which apt >/dev/null" && apt_update
+  pct exec "$container" "which yum >/dev/null" && yum_update
+  pct exec "$container" "which apk >/dev/null" && apk_update
+done
+EOF
+chmod +x /usr/local/bin/update-all-lxcs.sh
+tee /etc/systemd/system/update-all-lxcs.service <<EOF
+[Unit]
+Description=Update all LXC containers
+
+[Service]
+Type=simple
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+ExecStart=/usr/local/bin/update-all-lxcs.sh
+EOF
+tee /etc/systemd/system/update-all-lxcs.timer <<EOF
+[Unit]
+Description=Scheduled update of all LXC containers
+
+[Timer]
+OnCalendar=Tue,Thu,Sat 03:17
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable update-all-lxcs.timer
+
 # exit build environment
 popd
 
