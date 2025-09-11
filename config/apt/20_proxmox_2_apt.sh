@@ -138,6 +138,66 @@ EOF
   pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username" -propagate 1 || true
 done
 
+# Scheduled task to update all users and pools on a daily basis
+tee /usr/local/bin/update-all-users.sh <<'EOF'
+#!/usr/bin/env bash
+# update all users in @pam
+
+# add local users to group users
+getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
+  if [ -n "$home" ] && [ -d "$home" ] && [ "${home:0:6}" == "/home/" ]; then
+    if [ "$uid" -ge 1000 ]; then
+      pveum user add "$username"@pam || true
+      pveum user modify "$username"@pam -groups users || true
+    fi
+  fi
+done
+
+# create one pool per user
+pveum user list -full | grep " users " | cut -d' ' -f2 | while read -r username; do
+  poolname=$(echo -en "pool-$username" | cut -d'@' -f1)
+  pveum pool add "$poolname" || true
+  pveum acl modify "/pool/$poolname" --roles PVEAdmin -users "$username" -propagate 1 || true
+  brname=$(echo -en "br$username" | cut -d'@' -f1)
+  if ! grep -qE "$brname" /etc/network/interfaces; then
+    tee -a /etc/network/interfaces <<EOX
+
+auto $brname
+iface $brname inet static
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+EOX
+  fi
+  pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username" -propagate 1 || true
+done
+EOF
+chmod +x /usr/local/bin/update-all-users.sh
+tee /etc/systemd/system/update-all-users.service <<EOF
+[Unit]
+Description=Update all LXC containers
+
+[Service]
+Type=simple
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+ExecStart=/usr/local/bin/update-all-users.sh
+EOF
+tee /etc/systemd/system/update-all-users.timer <<EOF
+[Unit]
+Description=Scheduled update of all LXC containers
+
+[Timer]
+OnCalendar=*-*-* 02:17
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable update-all-users.timer
+
 # sync everything to disk
 sync
 
