@@ -88,7 +88,7 @@ if [ -f "$target_path" ]; then
 fi
 
 # Scheduled task to update all LXC containers on a regular basis
-tee /usr/local/bin/update-all-lxcs.sh <<EOF
+tee /usr/local/bin/update-all-lxcs.sh <<'EOF'
 #!/usr/bin/env bash
 # update all running containers
 
