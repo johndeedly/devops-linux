@@ -112,6 +112,8 @@ find /etc/skel/.var/app/app.zen_browser.zen -type f -name "prefs.js" | while rea
   echo "[ ## ] modify user config \"$line\""
   tee -a "$line" <<EOX
 user_pref("zen.welcome-screen.seen", true);
+user_pref("startup.homepage_welcome_url", "about:restartrequired");
+user_pref("startup.homepage_welcome_url.additional", "about:newtab");
 user_pref("extensions.autoDisableScopes", 14);
 EOX
   mkdir -p "${profiledir}/extensions"
