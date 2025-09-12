@@ -144,9 +144,21 @@ flatpak install -y --noninteractive --system flathub app.zen_browser.zen
 ( HOME=/etc/skel /bin/bash -c '
 /usr/bin/flatpak run --branch=stable --arch=x86_64 --file-forwarding app.zen_browser.zen -screenshot
 find /etc/skel/.var/app/app.zen_browser.zen -type f -name "prefs.js" | while read -r line; do
+  profiledir="${line%"/prefs.js"}"
   echo "[ ## ] modify user config \"$line\""
   tee -a "$line" <<EOX
 user_pref("zen.welcome-screen.seen", true);
+user_pref("extensions.autoDisableScopes", 14);
+EOX
+  mkdir -p "${profiledir}/extensions"
+  while read -r name id; do
+    wget -c -O "${profiledir}/extensions/${id}.xpi" --progress=dot:giga "https://addons.mozilla.org/firefox/downloads/latest/${name}/"
+  done <<EOX
+adguard-adblocker adguardadblocker@adguard.com
+keepassxc-browser keepassxc-browser@keepassxc.org
+single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
+sponsorblock sponsorBlocker@ajay.app
+forget_me_not forget-me-not@lusito.info
 EOX
 done
 ' ) &
