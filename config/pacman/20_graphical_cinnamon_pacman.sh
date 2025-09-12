@@ -97,6 +97,20 @@ flatpak install --system flathub md.obsidian.Obsidian
 # install zen browser as flatpak
 flatpak install -y --noninteractive --system flathub app.zen_browser.zen
 
+# configure zen (small hack starting zen in headless mode, immediately closing it afterwards
+# as it cannot take a snapshot at this point)
+( HOME=/etc/skel /bin/bash -c '
+/usr/bin/flatpak run --branch=stable --arch=x86_64 --file-forwarding app.zen_browser.zen -screenshot
+find /etc/skel/.var/app/app.zen_browser.zen -type f -name "prefs.js" | while read -r line; do
+  echo "[ ## ] modify user config \"$line\""
+  tee -a "$line" <<EOX
+user_pref("zen.welcome-screen.seen", true);
+EOX
+done
+' ) &
+pid=$!
+wait $pid
+
 # set slick greeter as default
 sed -i 's/^#\?greeter-show-manual-login=.*/greeter-show-manual-login=true/' /etc/lightdm/lightdm.conf
 sed -i 's/^#\?greeter-hide-users=.*/greeter-hide-users=true/' /etc/lightdm/lightdm.conf
