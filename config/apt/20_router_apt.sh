@@ -308,6 +308,68 @@ EOF
 systemctl enable dnsmasq ntpd.timer hosts-calc.service nfs-kernel-server rpcbind \
   tgt smbd nbd-server
 
+# enable router mDNS advertising
+tee /etc/systemd/dnssd/bootps.dnssd <<EOF
+[Service]
+Name=%H
+Type=_bootps._udp
+Port=67
+EOF
+tee /etc/systemd/dnssd/dns.dnssd <<EOF
+[Service]
+Name=%H
+Type=_dns._udp
+Port=53
+EOF
+tee /etc/systemd/dnssd/http.dnssd <<EOF
+[Service]
+Name=%H
+Type=_http._tcp
+Port=80
+EOF
+tee /etc/systemd/dnssd/nfs.dnssd <<EOF
+[Service]
+Name=%H
+Type=_nfs._tcp
+Port=2049
+EOF
+tee /etc/systemd/dnssd/tftp.dnssd <<EOF
+[Service]
+Name=%H
+Type=_tftp._udp
+Port=69
+EOF
+tee /etc/systemd/dnssd/ntp.dnssd <<EOF
+[Service]
+Name=%H
+Type=_ntp._udp
+Port=123
+EOF
+tee /etc/systemd/dnssd/nbd.dnssd <<EOF
+[Service]
+Name=%H
+Type=_nbd._tcp
+Port=10809
+EOF
+tee /etc/systemd/dnssd/cifs.dnssd <<EOF
+[Service]
+Name=%H
+Type=_cifs._tcp
+Port=445
+EOF
+tee /etc/systemd/dnssd/iscsi.dnssd <<EOF
+[Service]
+Name=%H
+Type=_iscsi._tcp
+Port=3260
+EOF
+tee /etc/systemd/dnssd/wireguard.dnssd <<EOF
+[Service]
+Name=%H
+Type=_wireguard._tcp
+Port=51820
+EOF
+
 # configure the firewall
 ufw disable
 

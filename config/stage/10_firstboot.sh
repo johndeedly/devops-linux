@@ -599,6 +599,50 @@ idnum=$((65536))
   idcounter=$((idcounter + idnum))
 done | tee /etc/subuid /etc/subgid >/dev/null
 
+# enable mDNS
+systemctl stop avahi-daemon{.service,.socket}
+systemctl disable avahi-daemon{.service,.socket}
+systemctl mask avahi-daemon{.service,.socket}
+sed -e 's/^#\?MulticastDNS.*/MulticastDNS=yes/' -e 's/^#\?LLMNR.*/LLMNR=no/' -i /etc/systemd/resolved.conf
+[ -d /etc/NetworkManager/conf.d ] && tee -a /etc/NetworkManager/conf.d/globals.conf <<EOF
+[connection]
+connection.mdns=2
+connection.llmnr=0
+[main]
+dns=none
+rc-manager=unmanaged
+EOF
+# debian 13 hack
+mkdir -p /etc/systemd/resolved.conf.d
+ln -s /dev/null /etc/systemd/resolved.conf.d/00-disable-mdns.conf
+
+# open firewall for mdns
+ufw disable
+ufw allow mdns comment 'allow mdns'
+ufw enable
+ufw status verbose
+
+# enable default mDNS advertising
+mkdir -p /etc/systemd/dnssd
+tee /etc/systemd/dnssd/ssh.dnssd <<EOF
+[Service]
+Name=%H
+Type=_ssh._tcp
+Port=22
+EOF
+tee /etc/systemd/dnssd/cockpit.dnssd <<EOF
+[Service]
+Name=%H
+Type=_cockpit._tcp
+Port=9090
+EOF
+
+# disable UPnP (keeping the rules for mDNS)
+ufw disable
+sed -i 's/^\(.*--dport 1900.*\)/#\1/' /etc/ufw/before.rules
+sed -i 's/^\(.*--dport 1900.*\)/#\1/' /etc/ufw/before6.rules
+ufw enable
+
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then

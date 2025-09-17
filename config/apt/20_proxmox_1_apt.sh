@@ -109,6 +109,14 @@ fi
 systemctl mask systemd-networkd-wait-online
 systemctl mask NetworkManager-wait-online
 
+# enable proxmox mDNS advertising
+tee /etc/systemd/dnssd/proxmox.dnssd <<EOF
+[Service]
+Name=%H
+Type=_proxmox._tcp
+Port=8006
+EOF
+
 # open up the port for the proxmox webinterface
 ufw disable
 ufw allow log 8006/tcp comment 'allow proxmox web interface'

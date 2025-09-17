@@ -70,11 +70,8 @@ setup:
       -----END OPENSSH PRIVATE KEY-----
     cluster_pub: |
       ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICxbNNDGYkgd9eFVS+qhIEzdGae2tayfLJzgtUUJR20x root
-    # leave empty for broadcast logic
-    master_ip: ""
-    broadcast_port_master: 17789
-    broadcast_port_worker: 17790
-    broadcast_range: 0.0.0.0/0
+    # leave empty for mdns logic
+    master_fqdn_or_ip: ""
 distros:
   archlinux: pacman
   debian: apt

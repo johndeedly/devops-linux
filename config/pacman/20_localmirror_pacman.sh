@@ -182,6 +182,15 @@ EOF
 
 systemctl enable nginx.service pacsync.timer
 
+# enable pkgmirror mDNS advertising
+tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
+[Service]
+Name=%H
+Type=_pkg_mirror._tcp
+SubType=_arch
+Port=8080
+EOF
+
 ufw disable
 ufw allow log 8080/tcp comment 'allow localmirror'
 ufw enable

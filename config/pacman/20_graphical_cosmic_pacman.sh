@@ -358,6 +358,14 @@ getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   fi
 done
 
+# enable rdp mDNS advertising
+tee /etc/systemd/dnssd/rdp.dnssd <<EOF
+[Service]
+Name=%H
+Type=_rdp._tcp
+Port=3389
+EOF
+
 # open firewall for rdp access
 ufw disable
 ufw allow log 3389/tcp comment 'allow rdp'

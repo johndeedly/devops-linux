@@ -148,6 +148,20 @@ EOF
   fi
 done
 
+# enable authserver mDNS advertising
+tee /etc/systemd/dnssd/ldap.dnssd <<EOF
+[Service]
+Name=%H
+Type=_ldap._tcp
+Port=389
+EOF
+tee /etc/systemd/dnssd/ldaps.dnssd <<EOF
+[Service]
+Name=%H
+Type=_ldaps._tcp
+Port=636
+EOF
+
 # open firewall for rdp access
 ufw disable
 ufw allow log 389 comment 'allow ldap'
