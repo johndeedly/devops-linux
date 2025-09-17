@@ -135,14 +135,10 @@ write_files:
       }
       export -f du
 
-      if command -v starship >/dev/null; then
-        eval "$(starship init bash)"
+      if [ $(id -u) -eq 0 ]; then
+        PS1='\[\e[;31m\][\u@\h \W]\$\[\e[m\]${?#0} '
       else
-        if [ $(id -u) -eq 0 ]; then
-          PS1='\[\e[;31m\][\u@\h \W]\$\[\e[m\]${?#0} '
-        else
-          PS1='\[\e[;32m\][\u@\h \W]\$\[\e[m\]${?#0} '
-        fi
+        PS1='\[\e[;32m\][\u@\h \W]\$\[\e[m\]${?#0} '
       fi
     owner: "root:root"
     permissions: "0644"
@@ -192,38 +188,6 @@ write_files:
       right_meters=Tasks LoadAverage Uptime
       right_meter_modes=2 2 2
       hide_function_bar=0
-    owner: "root:root"
-    permissions: "0644"
-  - path: /etc/skel/.config/starship.toml
-    content: |
-      add_newline = false
-
-      [character]
-      success_symbol = "[➜](bold green)"
-      error_symbol = "[✗](bold red)"
-
-      [directory]
-      fish_style_pwd_dir_length = 1
-      format = " in [$path]($style)[$read_only]($read_only_style) "
-      truncation_length = 1
-
-      [hostname]
-      format = " on [$hostname]($style)"
-
-      [dotnet]
-      symbol = "👾 "
-
-      [python]
-      python_binary = "python3"
-
-      [username]
-      format = "[$user]($style)"
-      show_always = true
-    owner: "root:root"
-    permissions: "0644"
-  - path: /etc/skel/.config/powershell/Microsoft.PowerShell_profile.ps1
-    content: |
-      Invoke-Expression (&starship init powershell)
     owner: "root:root"
     permissions: "0644"
   - path: /etc/skel/.config/lazygit/config.yml
