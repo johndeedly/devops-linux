@@ -523,9 +523,9 @@ tee -a /etc/logrotate.conf <<'EOF'
 }
 EOF
 
-# prepare LazyVim environment
+# prepare neovim
 mkdir -p /etc/skel/.local/share
-( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":Lazy sync | Lazy load all" -c ":MasonInstall beautysh lua-language-server stylua" -c ":qall!" || true' ) &
+( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":qall!" || true' ) &
 pid=$!
 wait $pid
 
