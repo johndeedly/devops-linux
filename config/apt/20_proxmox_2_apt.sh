@@ -35,6 +35,7 @@ iface vmbr$cnt inet $(if [ $cnt -eq 0 ]; then echo "dhcp"; else echo "manual"; f
     bridge-fd 0
     bridge-vlan-aware yes
     bridge-vids 2-4094
+    post-up resolvectl mdns vmbr$cnt yes
 EOF
 done
 
@@ -48,6 +49,7 @@ iface vmbrlan0 inet manual
     bridge-fd 0
     bridge-vlan-aware yes
     bridge-vids 2-4094
+    post-up resolvectl mdns vmbrlan0 yes
 EOF
 
 # switch from networkd to ifupdown2

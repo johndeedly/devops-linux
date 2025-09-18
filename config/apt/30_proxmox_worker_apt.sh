@@ -33,7 +33,8 @@ EOF
 # broadcast for master
 until [ -n "${PROXMOX_MASTER_FQDN_OR_IP}" ]; do
   echo "[ ## ] Broadcasting to master node..."
-  PROXMOX_MASTER_FQDN_OR_IP=$(resolvectl query -p mdns --type=PTR --json=short _master._sub._proxmoxcluster._tcp.local 2>/dev/null | jq -r '.name')
+  PROXMOX_MASTER_NAME=$(resolvectl query -p mdns --type=PTR --zone=no --json=short _master._sub._proxmoxcluster._tcp.local 2>/dev/null | jq -r '.name')
+  PROXMOX_MASTER_FQDN_OR_IP=$(resolvectl query -p mdns --type=SRV --zone=no --json=short "${PROXMOX_MASTER_NAME}" 2>/dev/null | jq -r '.name')
 done
 echo "[ ## ] Master node configured: ${PROXMOX_MASTER_FQDN_OR_IP}"
 ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new root@"${PROXMOX_MASTER_FQDN_OR_IP}" 'exit'
