@@ -459,10 +459,10 @@ Name=%H
 Type=_nbd._tcp
 Port=10809
 EOF
-tee /etc/systemd/dnssd/cifs.dnssd <<EOF
+tee /etc/systemd/dnssd/smb.dnssd <<EOF
 [Service]
 Name=%H
-Type=_cifs._tcp
+Type=_smb._tcp
 Port=445
 EOF
 tee /etc/systemd/dnssd/iscsi.dnssd <<EOF

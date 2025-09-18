@@ -183,7 +183,7 @@ if grep -q Ubuntu /proc/version; then
   tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
 [Service]
 Name=%H
-Type=_pkg_mirror._tcp
+Type=_pkgmirror._tcp
 SubType=_ubuntu
 Port=8080
 EOF
@@ -191,7 +191,7 @@ else
   tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
 [Service]
 Name=%H
-Type=_pkg_mirror._tcp
+Type=_pkgmirror._tcp
 SubType=_debian
 Port=8080
 EOF

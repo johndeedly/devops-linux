@@ -30,7 +30,7 @@ tee -a /root/.ssh/authorized_keys <<<"${PROXMOX_CLUSTER_PUB}"
 tee /etc/systemd/dnssd/proxmoxcluster.dnssd <<EOF
 [Service]
 Name=%H
-Type=_proxmox_cluster._tcp
+Type=_proxmoxcluster._tcp
 SubType=_master
 EOF
 

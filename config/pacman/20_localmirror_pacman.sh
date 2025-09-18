@@ -186,7 +186,7 @@ systemctl enable nginx.service pacsync.timer
 tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
 [Service]
 Name=%H
-Type=_pkg_mirror._tcp
+Type=_pkgmirror._tcp
 SubType=_arch
 Port=8080
 EOF

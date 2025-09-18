@@ -127,7 +127,7 @@ systemctl enable nginx.service yumsync.timer
 tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
 [Service]
 Name=%H
-Type=_pkg_mirror._tcp
+Type=_pkgmirror._tcp
 SubType=_rocky
 Port=8080
 EOF
