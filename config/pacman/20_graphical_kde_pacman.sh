@@ -242,7 +242,7 @@ FILELIST=(
   /usr/share/applications/libreoffice-writer.desktop
   /usr/share/applications/libreoffice-impress.desktop
   /usr/share/applications/kitty.desktop
-  /usr/share/applications/chromium.desktop
+  /var/lib/flatpak/app/app.zen_browser.zen/current/active/export/share/applications/app.zen_browser.zen.desktop
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/mpv.desktop
   /usr/share/applications/org.kde.kate.desktop
