@@ -56,8 +56,29 @@ setup:
       -----END CERTIFICATE-----
     peer_verify: required-untrusted
     x509_hash: SHA1:36:2C:0C:DB:5E:BB:BB:4A:E8:42:C2:4D:A5:0C:D5:0B:3C:55:20:40
-  archiso_mirror: false
-  pkg_mirror: false
+  pkg_mirror:
+    archiso: |
+      Server = https://archive.archlinux.org/repos/##ARCHISO_DATE##/$repo/os/$arch
+    archlinux: |
+      Server = https://eu.mirror.ionos.com/linux/distributions/archlinux/$repo/os/$arch
+    debian: |
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/debian/debian
+      Suites: trixie trixie-updates trixie-backports
+      Components: main contrib non-free non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/debian/debian-security
+      Suites: trixie-security
+      Components: main contrib non-free non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+    ubuntu: |
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: noble noble-updates noble-backports noble-security
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
   proxmox_cluster:
     # ssh-keygen -q -N "" -C "root" -t ed25519 -f ssh_host_cluster_key
     cluster_key: |

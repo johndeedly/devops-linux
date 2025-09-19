@@ -11,6 +11,9 @@ merge_how:
 vendor_data:
   enabled: false
 
+apt:
+  preserve_sources_list: true
+
 users:
   - name: user
     groups: users

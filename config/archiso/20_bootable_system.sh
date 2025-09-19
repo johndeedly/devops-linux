@@ -215,77 +215,16 @@ datasource:
 EOF
 
 # set local package mirror
-PKG_MIRROR=$(yq -r '.setup.pkg_mirror' /var/lib/cloud/instance/config/setup.yml)
-if [ -n "$PKG_MIRROR" ] && [ "false" != "$PKG_MIRROR" ]; then
+PKG_MIRROR=$(yq -r '.setup as $setup | .setup.pkg_mirror[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)
+if [ -n "$PKG_MIRROR" ]; then
     if [ -f /mnt/bin/apt ] && grep -q "Debian" /mnt/etc/os-release; then
-        tee /mnt/etc/apt/sources.list.d/debian.sources <<EOF
-# auto configured through setup.yml
-# <example>
-#   Types: deb
-#   URIs: http://mirror.internal:8080/debian
-#   Suites: bookworm bookworm-updates bookworm-backports bookworm-security
-#   Components: main contrib non-free non-free-firmware
-#   Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-# </example>
-
-${PKG_MIRROR}
-EOF
+        [ -f /mnt/etc/apt/sources.list.d/debian.sources ] && tee /mnt/etc/apt/sources.list.d/debian.sources <<<"$PKG_MIRROR"
     elif [ -f /mnt/bin/apt ] && grep -q "Ubuntu" /mnt/etc/os-release; then
-        tee /mnt/etc/apt/sources.list.d/ubuntu.sources <<EOF
-# auto configured through setup.yml
-# <example>
-#   Types: deb
-#   URIs: http://mirror.internal:8080/ubuntu
-#   Suites: noble noble-updates noble-backports noble-security
-#   Components: main universe restricted multiverse
-#   Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
-# </example>
-
-${PKG_MIRROR}
-EOF
+        [ -f /mnt/etc/apt/sources.list.d/ubuntu.sources ] && tee /mnt/etc/apt/sources.list.d/ubuntu.sources <<<"$PKG_MIRROR"
     elif [ -f /mnt/bin/pacman ]; then
-        tee /mnt/etc/pacman.d/mirrorlist <<EOF
-# auto configured through setup.yml
-# <example>
-#   Server = http://mirror.internal:8080/archlinux/\$repo/os/\$arch
-# </example>
-
-${PKG_MIRROR}
-EOF
+        [ -f /mnt/etc/pacman.d/mirrorlist ] && tee /mnt/etc/pacman.d/mirrorlist <<<"$PKG_MIRROR"
     elif [ -f /mnt/bin/yum ]; then
-        tee /mnt/etc/yum.repos.d/rocky.repo <<EOF
-# auto configured through setup.yml
-# <example>
-#   [baseos]
-#   name=Rocky Linux \$releasever - BaseOS
-#   baseurl=http://mirror.internal:8080/rocky/\$contentdir/\$releasever/BaseOS/\$basearch/os/
-#   gpgcheck=1
-#   enabled=1
-#   countme=1
-#   metadata_expire=6h
-#   gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
-#
-#   [appstream]
-#   name=Rocky Linux \$releasever - AppStream
-#   baseurl=http://mirror.internal:8080/rocky/\$contentdir/\$releasever/AppStream/\$basearch/os/
-#   gpgcheck=1
-#   enabled=1
-#   countme=1
-#   metadata_expire=6h
-#   gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
-#
-#   [crb]
-#   name=Rocky Linux \$releasever - CRB
-#   baseurl=http://mirror.internal:8080/rocky/\$contentdir/\$releasever/CRB/\$basearch/os/
-#   gpgcheck=1
-#   enabled=1
-#   countme=1
-#   metadata_expire=6h
-#   gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
-# </example>
-
-${PKG_MIRROR}
-EOF
+        [ -f /mnt/etc/yum.repos.d/rocky.repo ] && tee /mnt/etc/yum.repos.d/rocky.repo <<<"$PKG_MIRROR"
     fi
 fi
 

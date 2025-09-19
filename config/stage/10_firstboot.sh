@@ -26,9 +26,6 @@ if [ -e /bin/apt ]; then
     # new format
     sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list
     sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
-    # deb.debian.org is unreliable
-    sed -e 's|http://|https://|g' -e 's|deb[.]debian[.]org|eu.mirror.ionos.com/linux/distributions/debian|g' -i /etc/apt/mirrors/debian.list
-    sed -e 's|http://|https://|g' -e 's|deb[.]debian[.]org|eu.mirror.ionos.com/linux/distributions/debian|g' -i /etc/apt/mirrors/debian-security.list
   elif grep -q Ubuntu /proc/version; then
     # old format
     sed -i 's/\(deb .* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
@@ -36,11 +33,6 @@ if [ -e /bin/apt ]; then
     # new format
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
     sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
-    # archive.ubuntu.com is unreliable
-    sed -e 's|http://|https://|g' -e 's|archive[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list
-    sed -e 's|http://|https://|g' -e 's|archive[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list.d/ubuntu.sources
-    sed -e 's|http://|https://|g' -e 's|security[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list
-    sed -e 's|http://|https://|g' -e 's|security[.]ubuntu[.]com|eu.mirror.ionos.com/linux/distributions/ubuntu|g' -i /etc/apt/sources.list.d/ubuntu.sources
   fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 fi
@@ -54,8 +46,21 @@ fi
 if [ -e /bin/apt ]; then
   APT_CFGS=( /etc/apt/apt.conf.d/* )
   for cfg in "${APT_CFGS[@]}"; do
-    sed -i 's/^Acquire::http::Dl-Limit/\/\/Acquire::http::Dl-Limit/' "$cfg" || true
+    sed -i 's/Acquire::Queue-Mode.*/Acquire::Queue-Mode "host";/g' "$cfg" || true
+    sed -i 's/Acquire::Retries.*/Acquire::Retries "3";/g' "$cfg" || true
+    sed -i 's/Acquire::http::Dl-Limit.*/Acquire::http::Dl-Limit "0";/g' "$cfg" || true
+    sed -i 's/Acquire::http::Timeout.*/Acquire::http::Timeout "10";/g' "$cfg" || true
+    sed -i 's/Acquire::https::Dl-Limit.*/Acquire::https::Dl-Limit "0";/g' "$cfg" || true
+    sed -i 's/Acquire::https::Timeout.*/Acquire::https::Timeout "10";/g' "$cfg" || true
   done
+  tee /etc/apt/apt.conf.d/85provision <<EOF
+Acquire::Queue-Mode "host";
+Acquire::Retries "3";
+Acquire::http::Dl-Limit "0";
+Acquire::http::Timeout "10";
+Acquire::https::Dl-Limit "0";
+Acquire::https::Timeout "10";
+EOF
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 fi
 

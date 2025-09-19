@@ -25,10 +25,14 @@ ARCHISO_MIRROR=$(python - <<DOC
 import yaml
 with open('/var/lib/cloud/instance/config/setup.yml') as f:
     data = yaml.safe_load(f)
-    print(data['setup']['archiso_mirror'])
+    content = data['setup']['pkg_mirror']['archiso']
+    with open('/version') as g:
+        archisodate = g.readline().strip('\n')
+    parsed = content.replace("##ARCHISO_DATE##", archisodate.replace(".", "/"))
+    print(parsed)
 DOC
 )
-grep -qE "[hH][tT][tT][pP][sS]?[:]" - <<<"$ARCHISO_MIRROR" && tee /etc/pacman.d/mirrorlist <<<"Server = $ARCHISO_MIRROR" || \
+[ -n "$ARCHISO_MIRROR" ] && tee /etc/pacman.d/mirrorlist <<<"$ARCHISO_MIRROR" || \
 # otherwise: time travel the repositories back to the build day of the iso
 # the path year/month/day is resolved through the file "/version" in the archiso ram fs
 tee /etc/pacman.d/mirrorlist <<<"Server = https://archive.archlinux.org/repos/$(head -1 /version | sed -e 's|\.|/|g')/\$repo/os/\$arch"
