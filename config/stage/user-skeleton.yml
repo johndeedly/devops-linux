@@ -135,10 +135,22 @@ write_files:
       }
       export -f du
 
+      ps1_pwr_sply_bat() {
+        if [ -e /sys/class/power_supply/BAT0/present ] && [ "x$(</sys/class/power_supply/BAT0/status)" = "xDischarging" ]; then
+          echo "$(</sys/class/power_supply/BAT0/capacity)% "
+        fi
+      }
+      ps1_wrk_dir() {
+        sed -e 's|\([^/]\)[^/]*/|\1/|g' <<<"${PWD/#$HOME/\~}"
+      }
+      ps1_err_code() {
+        ps1_err_txt="${PIPESTATUS[-1]#0}"
+        sed -e 's/\(..*\)$/ \1 /' <<<"$ps1_err_txt"
+      }
       if [ $(id -u) -eq 0 ]; then
-        PS1='\[\e[;31m\][\u@\h \W]\$\[\e[m\]${?#0} '
+        PS1='\[\e[;31m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
       else
-        PS1='\[\e[;32m\][\u@\h \W]\$\[\e[m\]${?#0} '
+        PS1='\[\e[;32m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
       fi
     owner: "root:root"
     permissions: "0644"
