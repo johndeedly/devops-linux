@@ -61,9 +61,10 @@ _archiso=0
 _ram=0
 _autoreboot=1
 _proxmox=0
+_pxe=0
 parse_parameters() {
-    local _longopts="iso,archiso,isoinram,no-autoreboot,proxmox"
-    local _opts="iarnp:"
+    local _longopts="iso,archiso,isoinram,no-autoreboot,proxmox,pxe"
+    local _opts="iarnpe"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -89,6 +90,10 @@ parse_parameters() {
                 ;;
             -p|--proxmox)
                 _proxmox=1
+                shift
+                ;;
+            -e|--pxe)
+                _pxe=1
                 shift
                 ;;
             --)
@@ -163,7 +168,7 @@ while read -r line; do
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' config/setup.yml)"
 write-mime-multipart --output=build/stage/user-data "${write_mime_params[@]}"
 
-if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
+if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
     # prepare user-data for archiso, packed with stage
     write_mime_params=(
         "config/part-handler-setup.py:text/part-handler"
@@ -186,7 +191,7 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
     ARCHISOURL=$(yq -r '.download.archiso' config/setup.yml)
     DEBISO=$(yq -r '.images.debiso' config/setup.yml)
     
-    if ! [ -e "${DEBISO}" ]; then
+    if [ $_pxe -eq 1 ] || ! [ -e "${DEBISO}" ]; then
         if ! [ -e "${ARCHISO}" ]; then
             echo "Download archiso"
             if ! wget -c -N --progress=dot:giga "${ARCHISOURL}"; then
@@ -213,7 +218,20 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ]; then
             -map build/archiso/ / \
             -boot_image any replay
     
-    if [ $_proxmox -eq 1 ]; then
+    if [ $_pxe -eq 1 ]; then
+        echo "Create pxe boot setup from archiso"
+        mkdir -p build/isopxe/http/{arch/x86_64,config}
+        xorriso -osirrox on -indev "${DEVOPSISOMODDED}" \
+            -extract /boot/syslinux/archiso_pxe-linux.cfg build/isopxe/archiso_pxe-linux.cfg \
+            -extract /arch/x86_64/airootfs.sfs build/isopxe/http/arch/x86_64/airootfs.sfs \
+            -extract /arch/boot/x86_64/initramfs-linux.img build/isopxe/http/arch/x86_64/initramfs-linux.img \
+            -extract /arch/boot/x86_64/vmlinuz-linux build/isopxe/http/arch/x86_64/vmlinuz-linux \
+            -extract /meta-data build/isopxe/http/config/meta-data \
+            -extract /user-data build/isopxe/http/config/user-data
+        sed -i 's|::/arch/boot/|http://ipaddr/arch/|g' build/isopxe/archiso_pxe-linux.cfg
+        sed -i 's|cms_verify=y|cms_verify=n ds=nocloud;s=http://ipaddr/config/|g' build/isopxe/archiso_pxe-linux.cfg
+        ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf archiso_pxe-linux.tar.zst -C build/isopxe .
+    elif [ $_proxmox -eq 1 ]; then
         echo ":: Preparing proxmox"
         _proxmox_vm=0
         while [ $_proxmox_vm -lt 100 ] || [ $_proxmox_vm -gt 999999999 ]; do
