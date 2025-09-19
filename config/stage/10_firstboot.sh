@@ -186,37 +186,6 @@ elif [ -e /bin/yum ]; then
   loadkeys de-latin1 || true
 fi
 
-# Configure (virtual) environment
-VIRT_ENV=$(systemd-detect-virt)
-if [ -e /bin/apt ]; then
-  case $VIRT_ENV in
-    qemu | kvm)
-      LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install qemu-guest-agent
-      ;;
-    oracle)
-      if grep -q Ubuntu /proc/version; then
-        LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install virtualbox-guest-x11
-      fi
-      ;;
-  esac
-elif [ -e /bin/pacman ]; then
-  case $VIRT_ENV in
-    qemu | kvm)
-      LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm qemu-guest-agent
-      ;;
-    oracle)
-      LC_ALL=C yes | LC_ALL=C pacman -S --needed --noconfirm virtualbox-guest-utils
-      systemctl enable vboxservice.service
-      ;;
-  esac
-elif [ -e /bin/yum ]; then
-  case $VIRT_ENV in
-    qemu | kvm)
-      LC_ALL=C yes | LC_ALL=C yum install -y qemu-guest-agent
-      ;;
-  esac
-fi
-
 # disable hibernation and hybrid-sleep modes
 cp /etc/systemd/logind.conf /etc/systemd/logind.conf.bak
 sed -i 's/^#\?HandlePowerKey=.*/HandlePowerKey=poweroff/' /etc/systemd/logind.conf
@@ -359,7 +328,7 @@ if [ -e /bin/apt ]; then
     jq yq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup \
     syslog-ng logrotate libxml2 man manpages-de wireguard-tools python3-pip python3-venv \
     gvfs gvfs-backends cifs-utils tmux \
-    build-essential npm fd-find neovim
+    build-essential npm fd-find neovim qemu-guest-agent
   systemctl enable ssh ufw syslog-ng logrotate.timer
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
@@ -376,7 +345,7 @@ elif [ -e /bin/pacman ]; then
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
     pacman-contrib syslog-ng logrotate libxml2 core/man man-pages-de wireguard-tools python-pip \
     gvfs gvfs-smb cifs-utils tmux \
-    base-devel npm fd neovim
+    base-devel npm fd neovim qemu-guest-agent
   systemctl enable systemd-networkd systemd-resolved systemd-homed syslog-ng@default logrotate.timer
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -389,7 +358,7 @@ elif [ -e /bin/yum ]; then
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
     syslog-ng logrotate libxml2 man-db wireguard-toolsgvfs python3-pip \
     gvfs-smb cifs-utils tmux \
-    cmake make automake gcc gcc-c++ kernel-devel npm fd-find neovim
+    cmake make automake gcc gcc-c++ kernel-devel npm fd-find neovim qemu-guest-agent
   systemctl enable systemd-networkd systemd-resolved syslog-ng logrotate.timer
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
