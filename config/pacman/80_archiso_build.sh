@@ -7,6 +7,14 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed archiso
 mkdir -p /var/tmp/archlive/{work,output} /srv/liveiso
 cp -r /usr/share/archiso/configs/baseline/ /var/tmp/archlive/
 
+# switch from erofs to squashfs as it's compression is way better
+sed -i 's/airootfs_image_type=.*/airootfs_image_type="squashfs"/' /var/tmp/archlive/baseline/profiledef.sh
+sed -i "s/airootfs_image_tool_options=.*/airootfs_image_tool_options=('-comp' 'xz' '-Xbcj' 'x86' '-b' '1M' '-Xdict-size' '1M')/" /var/tmp/archlive/baseline/profiledef.sh
+
+# take syslinux config from releng to enable pxe boot
+rm /var/tmp/archlive/baseline/syslinux/*
+cp /usr/share/archiso/configs/releng/syslinux/* /var/tmp/archlive/baseline/syslinux/
+
 # baseline extended with build tools needed on archiso
 tee -a /var/tmp/archlive/baseline/packages.x86_64 <<EOF
 arch-install-scripts
@@ -50,7 +58,7 @@ xfsprogs
 EOF
 sort -u -o /var/tmp/archlive/baseline/packages.x86_64 /var/tmp/archlive/baseline/packages.x86_64
 
-# merging releng hooks into baseline archiso.conf to enable pxe boot
+# merging releng hooks into baseline mkinitcpio to enable pxe boot
 tee /var/tmp/archlive/baseline/airootfs/etc/mkinitcpio.conf.d/archiso.conf <<EOF
 HOOKS=(base udev microcode modconf archiso archiso_loop_mnt archiso_pxe_common archiso_pxe_nbd archiso_pxe_http archiso_pxe_nfs block filesystems)
 EOF
