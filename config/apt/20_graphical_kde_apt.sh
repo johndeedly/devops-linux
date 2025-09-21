@@ -24,42 +24,6 @@ if grep -q Ubuntu /proc/version; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install plasma-workspace-wayland
 fi
 
-# install chromium
-if grep -q Debian /proc/version; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install chromium
-elif grep -q Ubuntu /proc/version; then
-  add-apt-repository ppa:xtradeb/apps
-  tee /etc/apt/preferences.d/xtradebppa <<EOF
-Package: chromium*
-Pin: release o=LP-PPA-xtradeb*
-Pin-Priority: 1001
-
-Package: chromium*
-Pin: release o=Ubuntu
-Pin-Priority: -1
-EOF
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install chromium
-fi
-
-# install firefox
-if grep -q Debian /proc/version; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install firefox-esr
-elif grep -q Ubuntu /proc/version; then
-  add-apt-repository ppa:mozillateam/ppa
-  tee /etc/apt/preferences.d/mozillateamppa <<EOF
-Package: firefox*
-Pin: release o=LP-PPA-mozillateam*
-Pin-Priority: 1001
-
-Package: firefox*
-Pin: release o=Ubuntu
-Pin-Priority: -1
-EOF
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install firefox-esr
-fi
-
 # configure network manager
 mkdir -p /etc/NetworkManager/conf.d
 tee /etc/NetworkManager/conf.d/10-virtio-net-managed-devices.conf <<EOF
@@ -138,6 +102,12 @@ flatpak install -y --noninteractive --system flathub md.obsidian.Obsidian
 
 # install zen browser as flatpak
 flatpak install -y --noninteractive --system flathub app.zen_browser.zen
+
+# install firefox as flatpak
+flatpak install -y --noninteractive --system flathub org.mozilla.firefox
+
+# install chromium as flatpak
+flatpak install -y --noninteractive --system flathub org.chromium.Chromium
 
 # configure zen (small hack starting zen in headless mode, immediately closing it afterwards
 # as it cannot take a snapshot at this point)
@@ -220,7 +190,7 @@ keysym Menu = Super_R
 EOF
 
 # configure firefox
-mkdir -p /usr/lib/firefox-esr/distribution
+mkdir -p /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies
 (
   jq -Rs '{"policies":{"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
 adguard-adblocker adguardadblocker@adguard.com
@@ -229,11 +199,11 @@ single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
 sponsorblock sponsorBlocker@ajay.app
 forget_me_not forget-me-not@lusito.info
 EOF
-) | tee /usr/lib/firefox-esr/distribution/policies.json
+) | tee /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies/policies.json
 
 # configure chromium
-mkdir -p /etc/chromium/policies/managed
-tee /etc/chromium/policies/managed/adblock.json <<'EOF'
+mkdir -p /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed
+tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/adblock.json <<'EOF'
 {
     "BlockThirdPartyCookies": true,
     "AdsSettingForIntrusiveAdsSites": 2,
@@ -242,7 +212,7 @@ tee /etc/chromium/policies/managed/adblock.json <<'EOF'
     "DnsOverHttpsMode": "off"
 }
 EOF
-tee /etc/chromium/policies/managed/default-settings.json <<'EOF'
+tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/default-settings.json <<'EOF'
 {
     "ShowHomeButton": true,
     "ChromeAppsEnabled": false,
@@ -257,8 +227,8 @@ mpiodijhokgodhhofbcjdecpffjipkle
 mnjggcdmjocbbbhaepdhchncahnbgone
 oboonakemofpalcgghocfoadofidjkkk
 EOF
-) | tee /etc/chromium/policies/managed/extensions-default.json
-tee /etc/chromium/policies/managed/telemetry-off.json <<'EOF'
+) | tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/extensions-default.json
+tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/telemetry-off.json <<'EOF'
 {
     "MetricsReportingEnabled": false,
     "SafeBrowsingProtectionLevel": 0,
@@ -268,15 +238,15 @@ tee /etc/chromium/policies/managed/telemetry-off.json <<'EOF'
     "BrowserSignin": 0
 }
 EOF
-tee /etc/chromium/policies/managed/duckduckgo.json <<'EOF'
+tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/searchprovider.json <<'EOF'
 {
     "DefaultSearchProviderEnabled": true,
-    "DefaultSearchProviderName": "DuckDuckGo",
-    "DefaultSearchProviderSearchURL": "https://duckduckgo.com/?q={searchTerms}",
-    "DefaultSearchProviderSuggestURL": "https://duckduckgo.com/ac/?type=list&kl=de-de&q={searchTerms}"
+    "DefaultSearchProviderName": "Google",
+    "DefaultSearchProviderSearchURL": "https://google.com/search?sourceid=chrome&q={searchTerms}",
+    "DefaultSearchProviderSuggestURL": "https://google.com/complete/search?output=chrome&q={searchTerms}"
 }
 EOF
-tee /etc/chromium/policies/managed/restore-session.json <<'EOF'
+tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/restore-session.json <<'EOF'
 {
     "RestoreOnStartup": 1
 }
