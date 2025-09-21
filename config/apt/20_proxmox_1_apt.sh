@@ -76,9 +76,11 @@ EOF
 # == enable iommu for gpu sharing ==
 # in proxmox, after assigning the "raw gpu device" you need to select the
 # "All Functions", "ROM-Bar" and "PCI-Express" options in the "Advance" tab
+# https://passthroughpo.st/explaining-csm-efifboff-setting-boot-gpu-manually/
+# http://vfio.blogspot.com/2014/08/vfiovga-faq.html
 GRUB_CFGS=( /etc/default/grub /etc/default/grub.d/* )
 for cfg in "${GRUB_CFGS[@]}"; do
-  sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"/\1 intel_iommu=on amd_iommu=on"/' "$cfg" || true
+  sed -i 's/^\(GRUB_CMDLINE_LINUX_DEFAULT=.*\)"/\1 intel_iommu=on amd_iommu=on pcie_acs_override=downstream,multifunction nofb nomodeset video=vesafb:off,efifb:off"/' "$cfg" || true
 done
 grub-mkconfig -o /boot/grub/grub.cfg
 grub-mkconfig -o /boot/efi/EFI/debian/grub.cfg
