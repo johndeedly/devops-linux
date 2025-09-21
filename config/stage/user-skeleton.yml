@@ -148,9 +148,9 @@ write_files:
         sed -e 's/\(..*\)$/ \1 /' <<<"$ps1_err_txt"
       }
       if [ $(id -u) -eq 0 ]; then
-        PS1='\[\e[;31m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
+        PS1='\[\e[;31m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\n\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
       else
-        PS1='\[\e[;32m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
+        PS1='\[\e[;32m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\n\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
       fi
     owner: "root:root"
     permissions: "0644"
