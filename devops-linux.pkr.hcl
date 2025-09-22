@@ -40,6 +40,17 @@ variable "package_cache" {
 locals {
   build_name_qemu       = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉"), "qcow2"]) # unicode replacement char for colon
   build_name_virtualbox = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉")]) # unicode replacement char for colon
+  ovmf_code_arch        = "/usr/share/OVMF/x64/OVMF_CODE.secboot.4m.fd"
+  ovmf_code_debian      = "/usr/share/OVMF/OVMF_CODE_4M.secboot.fd"
+  ovmf_vars_arch        = "/usr/share/OVMF/x64/OVMF_VARS.4m.fd"
+  ovmf_vars_debian      = "/usr/share/OVMF/OVMF_VARS_4M.fd"
+  has_ovmf_code_arch    = fileexists(local.ovmf_code_arch)
+  has_ovmf_code_debian  = fileexists(local.ovmf_code_debian)
+  has_ovmf_vars_arch    = fileexists(local.ovmf_vars_arch)
+  has_ovmf_vars_debian  = fileexists(local.ovmf_vars_debian)
+  can_efi_boot          = local.has_ovmf_code_arch ? true : local.has_ovmf_code_debian ? true : false
+  efi_firmware_code     = local.has_ovmf_code_arch ? local.ovmf_code_arch : local.has_ovmf_code_debian ? local.ovmf_code_debian : null
+  efi_firmware_vars     = local.has_ovmf_vars_arch ? local.ovmf_vars_arch : local.has_ovmf_vars_debian ? local.ovmf_vars_debian : null
 }
 
 
@@ -59,9 +70,9 @@ source "qemu" "default" {
   vga                  = "virtio"
   machine_type         = "q35"
   cpu_model            = "host"
-  efi_boot             = true
-  efi_firmware_code    = "/usr/share/OVMF/x64/OVMF_CODE.secboot.4m.fd"
-  efi_firmware_vars    = "/usr/share/OVMF/x64/OVMF_VARS.4m.fd"
+  efi_boot             = local.can_efi_boot
+  efi_firmware_code    = local.efi_firmware_code
+  efi_firmware_vars    = local.efi_firmware_vars
   sockets              = 1
   cores                = var.cpu_cores
   threads              = 1
@@ -207,6 +218,7 @@ EOS
 tee output/devops-linux/devops-linux-x86_64.run.sh <<EOF
 #!/usr/bin/env bash
 trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
+if [ -f "${local.ovmf_code_arch}" ] || [ -f "${local.ovmf_code_debian}" ]; then
 /usr/bin/qemu-system-x86_64 \\
   -name devops-linux-x86_64 \\
   -machine type=q35,accel=kvm \\
@@ -215,7 +227,7 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
   -cpu host \\
   -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -drive file=/usr/share/OVMF/x64/OVMF_CODE.secboot.4m.fd,if=pflash,unit=0,format=raw,readonly=on \\
+  -drive file=${local.efi_firmware_code},if=pflash,unit=0,format=raw,readonly=on \\
   -drive file=efivars.fd,if=pflash,unit=1,format=raw \\
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
@@ -223,6 +235,22 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -device virtio-mouse -device virtio-keyboard \\
   -rtc base=utc,clock=host \\
   -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
+else
+/usr/bin/qemu-system-x86_64 \\
+  -name devops-linux-x86_64 \\
+  -machine type=q35,accel=kvm \\
+  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
+  -vga none \\
+  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
+  -cpu host \\
+  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
+  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
+  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
+  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
+  -device virtio-mouse -device virtio-keyboard \\
+  -rtc base=utc,clock=host \\
+  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
+fi
 
 # /usr/bin/swtpm socket --tpm2 --tpmstate dir="..." --ctrl type=unixio,path=".../vtpm.sock"
 # -device tpm-tis,tpmdev=tpm0 -tpmdev emulator,id=tpm0,chardev=vtpm -chardev "socket,id=vtpm,path=.../vtpm.sock"
@@ -234,6 +262,7 @@ chmod +x output/devops-linux/devops-linux-x86_64.run.sh
 tee output/devops-linux/devops-linux-x86_64.gl.sh <<EOF
 #!/usr/bin/env bash
 trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
+if [ -f "${local.ovmf_code_arch}" ] || [ -f "${local.ovmf_code_debian}" ]; then
 /usr/bin/qemu-system-x86_64 \\
   -name devops-linux-x86_64 \\
   -machine type=q35,accel=kvm \\
@@ -242,7 +271,7 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
   -cpu host \\
   -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -drive file=/usr/share/OVMF/x64/OVMF_CODE.secboot.4m.fd,if=pflash,unit=0,format=raw,readonly=on \\
+  -drive file=${local.efi_firmware_code},if=pflash,unit=0,format=raw,readonly=on \\
   -drive file=efivars.fd,if=pflash,unit=1,format=raw \\
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
@@ -250,6 +279,22 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -device virtio-mouse -device virtio-keyboard \\
   -rtc base=utc,clock=host \\
   -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
+else
+/usr/bin/qemu-system-x86_64 \\
+  -name devops-linux-x86_64 \\
+  -machine type=q35,accel=kvm \\
+  -device virtio-vga-gl,id=video.0,max_outputs=1,hostmem=64M \\
+  -vga none \\
+  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
+  -cpu host \\
+  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
+  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
+  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
+  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
+  -device virtio-mouse -device virtio-keyboard \\
+  -rtc base=utc,clock=host \\
+  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
+fi
 
 # /usr/bin/swtpm socket --tpm2 --tpmstate dir="..." --ctrl type=unixio,path=".../vtpm.sock"
 # -device tpm-tis,tpmdev=tpm0 -tpmdev emulator,id=tpm0,chardev=vtpm -chardev "socket,id=vtpm,path=.../vtpm.sock"
