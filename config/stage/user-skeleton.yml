@@ -140,6 +140,11 @@ write_files:
           echo "$(</sys/class/power_supply/BAT0/capacity)% "
         fi
       }
+      ps1_ssh_host() {
+        if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ] || [[ "$(ps -o comm= -p "$PPID")" =~ sshd ]]; then
+          echo "@$HOSTNAME"
+        fi
+      }
       ps1_wrk_dir() {
         sed -e 's|\([^/]\)[^/]*/|\1/|g' <<<"${PWD/#$HOME/\~}"
       }
@@ -148,9 +153,9 @@ write_files:
         sed -e 's/\(..*\)$/ \1 /' <<<"$ps1_err_txt"
       }
       if [ $(id -u) -eq 0 ]; then
-        PS1='\[\e[;31m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\n\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
+        PS1='\[\e[;31m\][$(eval "ps1_pwr_sply_bat")\u$(eval "ps1_ssh_host") $(eval "ps1_wrk_dir")]\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[;31m\]\$\[\e[m\] '
       else
-        PS1='\[\e[;32m\][$(eval "ps1_pwr_sply_bat")\u@\h $(eval "ps1_wrk_dir")]\n\$\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[m\] '
+        PS1='\[\e[;32m\][$(eval "ps1_pwr_sply_bat")\u$(eval "ps1_ssh_host") $(eval "ps1_wrk_dir")]\[\e[1;37;41m\]$(eval "ps1_err_code")\[\e[;32m\]\$\[\e[m\] '
       fi
     owner: "root:root"
     permissions: "0644"
