@@ -153,16 +153,18 @@ else
   echo "!! neither efi nor boot partitions found"
   exit 1
 fi
-# remove duplicate efi entries
-efibootmgr | sed -e '/'"${DISTRO_NAME}"'/I!d' | while read -r bootentry; do
-    bootnum=$(echo "$bootentry" | grep -Po "[A-F0-9]{4}" | head -n1)
-    if [ -n "$bootnum" ]; then
-        printf ":: remove existing ${DISTRO_NAME} entry %s\n" "$bootnum"
-        efibootmgr -b "$bootnum" -B
-    fi
-done
-# create new entry
-efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l /EFI/BOOT/BOOTX64.EFI || true
+if [ -n "${EFI_PART[0]}" ] && [ -d /sys/firmware/efi ]; then
+    # remove duplicate efi entries
+    efibootmgr | sed -e '/'"${DISTRO_NAME}"'/I!d' | while read -r bootentry; do
+        bootnum=$(echo "$bootentry" | grep -Po "[A-F0-9]{4}" | head -n1)
+        if [ -n "$bootnum" ]; then
+            printf ":: remove existing ${DISTRO_NAME} entry %s\n" "$bootnum"
+            efibootmgr -b "$bootnum" -B
+        fi
+    done
+    # create new entry
+    efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l /EFI/BOOT/BOOTX64.EFI || true
+fi
 
 # mount detected root filesystem
 mount "${ROOT_PART[0]}" /mnt
