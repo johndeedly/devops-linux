@@ -9,7 +9,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit \
   xorg xinit x11-xserver-utils xclip xsel wl-clipboard brightnessctl arandr dunst libnotify4 engrampa \
-  libinput10 xserver-xorg-input-libinput xinput kitty dex lightdm slick-greeter \
+  libinput10 xserver-xorg-input-libinput xinput dex lightdm slick-greeter \
   elementary-icon-theme fonts-dejavu fonts-liberation fonts-font-awesome fonts-hanazono \
   fonts-baekmuk fonts-noto-color-emoji \
   cups ipp-usb libreoffice libreoffice-l10n-de krita krdc gitg keepassxc pdf-presenter-console \
@@ -17,7 +17,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install 
   xdg-desktop-portal xdg-desktop-portal-kde wine wine64 winetricks mpv gpicview \
   flatpak virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db printer-driver-gutenprint hplip \
-  kde-standard libpam-kwallet5 system-config-printer
+  kde-standard libpam-kwallet5 system-config-printer konsole
 
 # Ubuntu wayland session fix
 if grep -q Ubuntu /proc/version; then
@@ -261,7 +261,7 @@ FILELIST=(
   /usr/share/applications/libreoffice-calc.desktop
   /usr/share/applications/libreoffice-writer.desktop
   /usr/share/applications/libreoffice-impress.desktop
-  /usr/share/applications/kitty.desktop
+  /usr/share/applications/org.kde.konsole.desktop
   /var/lib/flatpak/app/app.zen_browser.zen/current/active/export/share/applications/app.zen_browser.zen.desktop
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/mpv.desktop
@@ -340,13 +340,13 @@ WantedBy=sysinit.target
 EOF
 systemctl enable vm-check
 
-# global xterm fallback to kitty terminal
-ln -s /usr/bin/kitty /usr/local/bin/xterm
+# global xterm fallback to konsole terminal
+ln -s /usr/bin/konsole /usr/local/bin/xterm
 
 # configure global shortcuts
 mkdir -p /etc/skel/.config
 tee -a /etc/skel/.config/kglobalshortcutsrc <<'EOF'
-[services][kitty.desktop]
+[services][org.kde.konsole.desktop]
 _launch=Ctrl+Alt+T
 EOF
 

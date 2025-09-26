@@ -5,7 +5,7 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit realtime-privileges \
   xorg-server xorg-xinit xorg-xrandr xclip xsel wl-clipboard brightnessctl arandr dunst libnotify engrampa \
-  libinput xf86-input-libinput xorg-xinput kitty dex lightdm lightdm-slick-greeter \
+  libinput xf86-input-libinput xorg-xinput dex lightdm lightdm-slick-greeter \
   elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
   ttf-hannom ttf-baekmuk noto-fonts-emoji \
   cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita krdc gitg keepassxc pdfpc \
@@ -13,7 +13,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   xdg-desktop-portal xdg-desktop-portal-kde wine winetricks mpv gpicview drawio-desktop code \
   flatpak virt-manager \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
-  plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer
+  plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer konsole
 
 # remove meta-packages to be able to remove single entries
 LC_ALL=C yes | LC_ALL=C pacman -R --noconfirm plasma-meta kde-graphics-meta kde-system-meta kde-utilities-meta
@@ -261,7 +261,7 @@ FILELIST=(
   /usr/share/applications/libreoffice-calc.desktop
   /usr/share/applications/libreoffice-writer.desktop
   /usr/share/applications/libreoffice-impress.desktop
-  /usr/share/applications/kitty.desktop
+  /usr/share/applications/org.kde.konsole.desktop
   /var/lib/flatpak/app/app.zen_browser.zen/current/active/export/share/applications/app.zen_browser.zen.desktop
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/mpv.desktop
@@ -340,13 +340,13 @@ WantedBy=sysinit.target
 EOF
 systemctl enable vm-check
 
-# global xterm fallback to kitty terminal
-ln -s /usr/bin/kitty /usr/local/bin/xterm
+# global xterm fallback to konsole terminal
+ln -s /usr/bin/konsole /usr/local/bin/xterm
 
 # configure global shortcuts
 mkdir -p /etc/skel/.config
 tee -a /etc/skel/.config/kglobalshortcutsrc <<'EOF'
-[services][kitty.desktop]
+[services][org.kde.konsole.desktop]
 _launch=Ctrl+Alt+T
 EOF
 
