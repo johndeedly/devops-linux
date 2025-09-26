@@ -6,7 +6,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit realtime-privileges \
   xorg-server xorg-xinit xorg-xrandr xclip xsel wl-clipboard brightnessctl arandr dunst libnotify engrampa \
   libinput xf86-input-libinput xorg-xinput kitty dex lightdm lightdm-slick-greeter \
-  archlinux-wallpaper elementary-wallpapers elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
+  elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
   ttf-hannom ttf-baekmuk noto-fonts-emoji \
   cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita krdc gitg keepassxc pdfpc \
   bluez blueman \
@@ -167,7 +167,7 @@ tee /etc/lightdm/slick-greeter.conf <<EOF
 [Greeter]
 # LightDM GTK+ Configuration
 #
-background=/usr/share/backgrounds/elementaryos-default
+background=/usr/share/wallpapers/Next/contents/images/5120x2880.png
 show-hostname=true
 clock-format=%H:%M
 EOF

@@ -151,22 +151,6 @@ sponsorblock sponsorBlocker@ajay.app
 forget_me_not forget-me-not@lusito.info
 EOX
 
-# compile elementary wallpapers
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install meson git gettext
-WALLPAPER_TMP=$(mktemp -d)
-if [ -d "$WALLPAPER_TMP" ]; then
-  pushd "$WALLPAPER_TMP"
-  git clone --depth 1 https://github.com/elementary/wallpapers.git
-  pushd wallpapers
-  meson build --prefix=/usr
-  pushd build
-  ninja install
-  popd
-  popd
-  popd
-  rm -r "$WALLPAPER_TMP"
-fi
-
 # set slick greeter as default
 tee -a /etc/lightdm/lightdm.conf <<EOF
 [Seat:*]
@@ -183,7 +167,7 @@ tee /etc/lightdm/slick-greeter.conf <<EOF
 [Greeter]
 # LightDM GTK+ Configuration
 #
-background=/usr/share/backgrounds/elementaryos-default
+background=/usr/share/wallpapers/Next/contents/images/5120x2880.png
 show-hostname=true
 clock-format=%H:%M
 EOF
