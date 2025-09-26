@@ -24,6 +24,9 @@ if grep -q Ubuntu /proc/version; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install plasma-workspace-wayland
 fi
 
+# remove kde bloat
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y remove plasma-welcome
+
 # configure network manager
 mkdir -p /etc/NetworkManager/conf.d
 tee /etc/NetworkManager/conf.d/10-virtio-net-managed-devices.conf <<EOF
