@@ -100,6 +100,9 @@ flatpak install -y --noninteractive --system flathub org.mozilla.firefox
 # install chromium as flatpak
 flatpak install -y --noninteractive --system flathub org.chromium.Chromium
 
+# install tor browser as flatpak
+flatpak install -y --noninteractive --system flathub org.torproject.torbrowser-launcher
+
 # configure zen (small hack starting zen in headless mode, immediately closing it afterwards
 # as it cannot take a snapshot at this point)
 ( HOME=/etc/skel /bin/bash -c '
@@ -127,6 +130,20 @@ done
 ' ) &
 pid=$!
 wait $pid
+
+# configure tor browser
+#   extensions can be installed, but not configured to run in private mode out of the box
+browserdir="/etc/skel/.var/app/org.torproject.torbrowser-launcher/data/torbrowser/tbb/x86_64/tor-browser/Browser"
+mkdir -p "${browserdir}/distribution/extensions" "${browserdir}/TorBrowser/Data/Browser/profile.default/"
+while read -r name id; do
+  wget -c -O "${browserdir}/extensions/${id}.xpi" --progress=dot:giga "https://addons.mozilla.org/firefox/downloads/latest/${name}/"
+done <<EOX
+adguard-adblocker adguardadblocker@adguard.com
+keepassxc-browser keepassxc-browser@keepassxc.org
+single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
+sponsorblock sponsorBlocker@ajay.app
+forget_me_not forget-me-not@lusito.info
+EOX
 
 # set slick greeter as default
 tee -a /etc/lightdm/lightdm.conf <<EOF
