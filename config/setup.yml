@@ -292,9 +292,6 @@ files:
         stage: 2
       - path: pacman/20_authserver_pacman/rfc2307bis.ldif
         config: true
-    cinnamon:
-      - path: pacman/20_graphical_cinnamon_pacman.sh
-        stage: 2
     kde:
       - path: pacman/20_graphical_kde_pacman.sh
         stage: 2
