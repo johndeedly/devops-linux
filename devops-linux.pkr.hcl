@@ -79,7 +79,7 @@ source "qemu" "default" {
   qemuargs             = [
     ["-virtfs", "local,path=./database,mount_tag=database.0,security_model=mapped,id=database.0"],
     ["-rtc", "base=utc,clock=host"],
-    ["-device", "virtio-mouse"],
+    ["-device", "virtio-tablet"],
     ["-device", "virtio-keyboard"]
   ]
   headless             = var.headless
@@ -232,7 +232,7 @@ if [ -f "${local.ovmf_code_arch}" ] || [ -f "${local.ovmf_code_debian}" ]; then
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-mouse -device virtio-keyboard \\
+  -device virtio-tablet -device virtio-keyboard \\
   -rtc base=utc,clock=host \\
   -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
 else
@@ -247,7 +247,7 @@ else
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-mouse -device virtio-keyboard \\
+  -device virtio-tablet -device virtio-keyboard \\
   -rtc base=utc,clock=host \\
   -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
 fi
@@ -276,7 +276,7 @@ if [ -f "${local.ovmf_code_arch}" ] || [ -f "${local.ovmf_code_debian}" ]; then
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-mouse -device virtio-keyboard \\
+  -device virtio-tablet -device virtio-keyboard \\
   -rtc base=utc,clock=host \\
   -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
 else
@@ -291,7 +291,7 @@ else
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-mouse -device virtio-keyboard \\
+  -device virtio-tablet -device virtio-keyboard \\
   -rtc base=utc,clock=host \\
   -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
 fi
@@ -316,7 +316,7 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev socket,id=user.0,connect=:23568 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-mouse -device virtio-keyboard \\
+  -device virtio-tablet -device virtio-keyboard \\
   -rtc base=utc,clock=host
 
 # remove -display gtk,gl=on for no 3d acceleration
@@ -335,7 +335,7 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -cpu host \\
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev user,id=user.0,hostfwd=tcp::8022-:22,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -device virtio-mouse -device virtio-keyboard \\
+  -device virtio-tablet -device virtio-keyboard \\
   -rtc base=utc,clock=host
 
 # -daemonize for running as a daemonized server
