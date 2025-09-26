@@ -13,6 +13,11 @@ if [ -e /bin/apt ] || [ -f /devops-linux ]; then
 fi
 # otherwise a standard archiso off the shelf is expected from here on
 
+# allocate more space for copy on write area to install some programs
+if [ -e /run/archiso/cowspace ]; then
+    mount -o remount,size=75% /run/archiso/cowspace || true
+fi
+
 # Wait for pacman keyring init to be done
 systemctl restart pacman-init.service
 while ! systemctl show pacman-init.service | grep SubState=exited; do

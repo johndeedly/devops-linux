@@ -21,11 +21,6 @@ else
 fi
 
 # prepare setup variables
-CLOUD_IMAGE_PATH="/iso/$(yq -r '.setup as $setup | .images[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
-if [ -z "$CLOUD_IMAGE_PATH" ]; then
-    echo "!! missing cloud image entry"
-    exit 1
-fi
 TARGET_DEVICE=$(yq -r '.setup.target' /var/lib/cloud/instance/config/setup.yml)
 if [ "$TARGET_DEVICE" == "auto" ] || [ -z "$TARGET_DEVICE" ]; then
     if [ -e /dev/vda ]; then
@@ -44,7 +39,8 @@ if [ "$TARGET_DEVICE" == "auto" ] || [ -z "$TARGET_DEVICE" ]; then
         exit 1
     fi
 fi
-# download image to temp dir when not provisioned via iso
+# download image to temp dir when no cached image on the iso can be found
+CLOUD_IMAGE_PATH="/iso/$(yq -r '.setup as $setup | .images[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
 if ! [ -f "${CLOUD_IMAGE_PATH}" ]; then
     DOWNLOAD_IMAGE_PATH="$(yq -r '.setup as $setup | .download[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
     if [ -z "$DOWNLOAD_IMAGE_PATH" ]; then

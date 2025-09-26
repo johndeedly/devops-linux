@@ -10,9 +10,11 @@ if [ -f /usr/lib/systemd/system/reflector.service ]; then
 fi
 
 # improve boot time by not waiting for ntp
-systemctl stop systemd-time-wait-sync.service
-systemctl disable systemd-time-wait-sync.service
-systemctl mask time-sync.target
+if [ -f /usr/lib/systemd/system/systemd-time-wait-sync.service ]; then
+  systemctl stop systemd-time-wait-sync.service
+  systemctl disable systemd-time-wait-sync.service
+  systemctl mask time-sync.target
+fi
 
 # generate random hostname
 tee /etc/hostname >/dev/null <<EOF
