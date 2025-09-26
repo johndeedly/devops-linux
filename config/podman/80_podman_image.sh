@@ -71,11 +71,13 @@ sync
 buildah umount worker
 
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
-buildah commit worker "devops-linux-${DISTRO_NAME}"
+TMP_OPTS=( "" $(yq -r '.setup.options[]' /var/lib/cloud/instance/config/setup.yml) )
+SETUP_OPTIONS=$(IFS='-'; echo "${TMP_OPTS[*]}")
+buildah commit worker "devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}"
 
 mkdir -p /srv/docker
-buildah push "devops-linux-${DISTRO_NAME}" "docker-archive:/srv/docker/devops-linux-${DISTRO_NAME}.tar"
-zstd -4 "/srv/docker/devops-linux-${DISTRO_NAME}.tar"
+buildah push "devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}" "docker-archive:/srv/docker/devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}.tar"
+zstd -4 "/srv/docker/devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}.tar"
 buildah rm worker
 
 # create docker compose
@@ -83,13 +85,13 @@ buildah rm worker
 # resolved fails instead of silently exiting
 # will be fixed in systemd version 258
 mkdir -p /srv/docker
-tee "/srv/docker/docker-compose-${DISTRO_NAME}.yml" <<EOF
-name: ${DISTRO_NAME}
+tee "/srv/docker/docker-compose-${DISTRO_NAME}${SETUP_OPTIONS}.yml" <<EOF
+name: ${DISTRO_NAME}${SETUP_OPTIONS}
 networks:
   lan:
 services:
   main:
-    image: localhost/devops-linux-${DISTRO_NAME}
+    image: localhost/devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}
     restart: unless-stopped
     networks:
       - lan

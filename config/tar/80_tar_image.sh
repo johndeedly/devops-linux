@@ -11,18 +11,20 @@ EXCLUDE_PATHS=(
   "usr/lib/firmware/*" "root/.ssh/authorized_keys"
 )
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
+TMP_OPTS=( "" $(yq -r '.setup.options[]' /var/lib/cloud/instance/config/setup.yml) )
+SETUP_OPTIONS=$(IFS='-'; echo "${TMP_OPTS[*]}")
 mkdir -p /srv/tar
 echo "[ ## ] Create tar image"
 checked=0
 while [ "$checked" -eq 0 ]; do
   ( ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd "${EXCLUDE_PATHS[@]/#/--exclude=}" \
-    -cf "/srv/tar/devops-linux-${DISTRO_NAME}.tar.zst" -C / . ) &
+    -cf "/srv/tar/devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}.tar.zst" -C / . ) &
   pid=$!
   wait $pid
   echo "[ ## ] Verify tar image"
-  if ! ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xOf "/srv/tar/devops-linux-${DISTRO_NAME}.tar.zst" &> /dev/null; then
+  if ! ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xOf "/srv/tar/devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}.tar.zst" &> /dev/null; then
     echo "[FAIL] Broken tar image, retry"
-    [ -f "/srv/tar/devops-linux-${DISTRO_NAME}.tar.zst" ] && rm "/srv/tar/devops-linux-${DISTRO_NAME}.tar.zst"
+    [ -f "/srv/tar/devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}.tar.zst" ] && rm "/srv/tar/devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}.tar.zst"
   else
     echo "[ OK ] Valid image created"
     checked=1
