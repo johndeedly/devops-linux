@@ -3,7 +3,9 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 # load the keyboard layout for the current session
-/usr/lib/systemd/systemd-vconsole-setup
+if [ -f /usr/lib/systemd/systemd-vconsole-setup ]; then
+  /usr/lib/systemd/systemd-vconsole-setup
+fi
 
 # import cloud-init logs
 tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
