@@ -153,7 +153,23 @@ EOS
 
   provisioner "shell" {
     expect_disconnect = true
-    inline            = ["reboot now"]
+    inline            = [<<EOS
+echo "[ OK ] Rebooting the system"
+VMLINUZ=$(find /boot -maxdepth 1 -name 'vmlinuz*' | sort -Vru | head -n1)
+INITRD=$(find /boot -maxdepth 1 \( -name 'initramfs*' -o -name 'initrd*' \) | sort -Vru | head -n1)
+if [ -n "$VMLINUZ" ] && [ -e "$VMLINUZ" ] && [ -n "$INITRD" ] & [ -e "$INITRD" ]; then
+  echo "[ OK ] Found next kernel '$VMLINUZ' and initramfs '$INITRD'"
+  kexec -l "$VMLINUZ" --initrd="$INITRD" --reuse-cmdline
+  for gpumod in amdgpu radeon nouveau i915 virtio-gpu vmwgfx; do
+    modprobe -r "$gpumod" || true
+  done
+  echo "[ OK ] kexec now"
+  systemctl kexec
+else
+  reboot now
+fi
+EOS
+    ]
     pause_after       = "20s"
   }
   
