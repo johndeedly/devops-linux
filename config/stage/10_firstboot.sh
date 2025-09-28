@@ -381,7 +381,7 @@ hostnamectl hostname "$(</etc/hostname)"
 mkdir -p /etc/systemd/journald.conf.d
 tee /etc/systemd/journald.conf.d/provision.conf <<EOF
 [Journal]
-# "Storage=none" means the systemd journal will drop all messages
+# "Storage=none" means the systemd journal will drop all messages and "journalctl" will show no messages
 #  -> "ForwardToSyslog=yes" is a must have
 # With "Storage=volatile/auto" syslog-ng pulls in the messages from the systemd journal by default
 #  -> "ForwardToSyslog=yes" means wasted system resources, duplicate log entries or additional errors
