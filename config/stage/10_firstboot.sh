@@ -545,6 +545,9 @@ ufw default deny routed
 ufw default allow outgoing
 # ssh access on all devices
 ufw allow log ssh comment 'allow ssh'
+# disable UPnP (keeping the rules for mDNS)
+sed -i 's/^\(.*--dport 1900.*\)/#\1/' /etc/ufw/before.rules
+sed -i 's/^\(.*--dport 1900.*\)/#\1/' /etc/ufw/before6.rules
 ufw enable
 
 # enable cockpit
@@ -610,12 +613,6 @@ Name=%H
 Type=_cockpit._tcp
 Port=9090
 EOF
-
-# disable UPnP (keeping the rules for mDNS)
-ufw disable
-sed -i 's/^\(.*--dport 1900.*\)/#\1/' /etc/ufw/before.rules
-sed -i 's/^\(.*--dport 1900.*\)/#\1/' /etc/ufw/before6.rules
-ufw enable
 
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
