@@ -10,11 +10,13 @@ echo "[ ## ] Wait for cloud-init to finish"
   ret=$?
   if [ $ret -eq 0 ] || [ $ret -eq 2 ]; then
     echo "[ OK ] Rebooting the system"
-    VMLINUZ=$(find /boot -maxdepth 1 -name 'vmlinuz*' | sort -Vru | head -n1)
+    VMLINUZ=$(find /boot -maxdepth 1 \( -name 'vmlinuz*' -not -name '*fallback*' \) | sort -Vru | head -n1)
     INITRD=$(find /boot -maxdepth 1 \( -name 'initramfs*' -o -name 'initrd*' \) | sort -Vru | head -n1)
+    PROC_ROOT=$(sed -ne 's/.*\(root=[^ $]*\).*/\1/p' /proc/cmdline)
+    GRUB_CMDLINE=$(sed -ne 's/^GRUB_CMDLINE_LINUX_DEFAULT="\([^"]*\)"/\1/p' /etc/default/grub)
     if [ -n "$VMLINUZ" ] && [ -e "$VMLINUZ" ] && [ -n "$INITRD" ] && [ -e "$INITRD" ]; then
       echo "[ OK ] Found next kernel '$VMLINUZ' and initramfs '$INITRD'"
-      kexec -l "$VMLINUZ" --initrd="$INITRD" --reuse-cmdline
+      kexec -l "$VMLINUZ" --initrd="$INITRD" --append="$PROC_ROOT $GRUB_CMDLINE"
       for gpumod in amdgpu radeon nouveau i915 virtio-gpu vmwgfx; do
         modprobe -r "$gpumod" || true
       done
