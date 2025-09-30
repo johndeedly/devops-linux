@@ -155,8 +155,8 @@ EOS
     expect_disconnect = true
     inline            = [<<EOS
 echo "[ OK ] Rebooting the system"
-VMLINUZ=$(find /boot -maxdepth 1 \( -name 'vmlinuz*' -not -name '*fallback*' \) | sort -Vru | head -n1)
-INITRD=$(find /boot -maxdepth 1 \( -name 'initramfs*' -o -name 'initrd*' \) | sort -Vru | head -n1)
+VMLINUZ=$(find /boot -maxdepth 1 -name 'vmlinuz*' | sort -Vru | head -n1)
+INITRD=$(find /boot -maxdepth 1 \( \( -name 'initramfs-linux*' -a ! -name '*fallback*' -a ! -name '*pxe*' \) -o -name 'initrd*' \) | sort -Vru | head -n1)
 PROC_ROOT=$(sed -ne 's/.*\(root=[^ $]*\).*/\1/p' /proc/cmdline)
 GRUB_CMDLINE=$(sed -ne 's/^GRUB_CMDLINE_LINUX_DEFAULT="\([^"]*\)"/\1/p' /etc/default/grub)
 if [ -n "$VMLINUZ" ] && [ -e "$VMLINUZ" ] && [ -n "$INITRD" ] && [ -e "$INITRD" ]; then
