@@ -122,11 +122,15 @@ EOF
 # open up the port for the proxmox webinterface
 ufw disable
 ufw allow log 8006/tcp comment 'allow proxmox web interface'
-ufw allow log 5900:5999/tcp comment 'allow proxmox vnc web console'
-ufw allow log 3128/tcp comment 'allow proxmox spice proxy'
-ufw allow log 111/udp comment 'allow proxmox rpcbind'
-ufw allow log 5405:5412/udp comment 'allow proxmox corosync cluster traffic'
-ufw allow log 60000:60050/tcp comment 'allow proxmox live migration'
+ufw allow 5900:5999/tcp comment 'allow proxmox vnc web console'
+ufw allow 3128/tcp comment 'allow proxmox spice proxy'
+ufw allow 111/udp comment 'allow proxmox rpcbind'
+ufw allow 5405:5412/udp comment 'allow proxmox corosync cluster traffic'
+ufw allow 60000:60050/tcp comment 'allow proxmox live migration'
+ufw allow 6789/tcp comment 'allow ceph monitor'
+ufw allow 3300/tcp comment 'allow ceph monitor'
+ufw allow 6800:7300/tcp comment 'allow ceph osd'
+ufw allow 873/tcp comment 'allow ceph rsync'
 ufw enable
 ufw status verbose
 

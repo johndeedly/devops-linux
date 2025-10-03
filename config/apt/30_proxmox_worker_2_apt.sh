@@ -45,6 +45,15 @@ pvecm updatecerts --silent true
 pvecm status
 pvecm nodes
 
+# configure ceph
+pveceph mgr create
+pveceph mon create
+PROXMOX_CEPH_OSD_DEVICE="$(yq -r '.setup.proxmox_cluster.ceph_osd_device' /var/lib/cloud/instance/config/setup.yml)"
+if [ -n "$PROXMOX_CEPH_OSD_DEVICE" ]; then
+  pveceph osd create "$PROXMOX_CEPH_OSD_DEVICE"
+fi
+
+
 # sync everything to disk
 sync
 

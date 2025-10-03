@@ -7,8 +7,6 @@ fi
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install socat
-
 # get cluster key
 PROXMOX_CLUSTER_KEY="$(yq -r '.setup.proxmox_cluster.cluster_key' /var/lib/cloud/instance/config/setup.yml)"
 PROXMOX_CLUSTER_PUB="$(yq -r '.setup.proxmox_cluster.cluster_pub' /var/lib/cloud/instance/config/setup.yml)"
@@ -39,6 +37,14 @@ pvecm create lab
 pvecm updatecerts --silent true
 pvecm status
 pvecm nodes
+
+# configure ceph
+pveceph mgr create
+pveceph mon create
+PROXMOX_CEPH_OSD_DEVICE="$(yq -r '.setup.proxmox_cluster.ceph_osd_device' /var/lib/cloud/instance/config/setup.yml)"
+if [ -n "$PROXMOX_CEPH_OSD_DEVICE" ]; then
+  pveceph osd create "$PROXMOX_CEPH_OSD_DEVICE"
+fi
 
 # sync everything to disk
 sync

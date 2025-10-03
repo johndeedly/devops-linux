@@ -92,6 +92,8 @@ setup:
       ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICxbNNDGYkgd9eFVS+qhIEzdGae2tayfLJzgtUUJR20x root
     # leave empty for mdns logic
     master_fqdn_or_ip: ""
+    ceph_comm_network: 10.0.0.0/8
+    ceph_osd_device: ""
 distros:
   archlinux: pacman
   debian: apt
@@ -237,10 +239,14 @@ files:
       - path: apt/20_proxmox_2_apt.sh
         stage: 2
     proxmox-cluster-master:
-      - path: apt/30_proxmox_master_apt.sh
+      - path: apt/30_proxmox_master_1_apt.sh
+        stage: 1
+      - path: apt/30_proxmox_master_2_apt.sh
         stage: 2
     proxmox-cluster-worker:
-      - path: apt/30_proxmox_worker_apt.sh
+      - path: apt/30_proxmox_worker_1_apt.sh
+        stage: 1
+      - path: apt/30_proxmox_worker_2_apt.sh
         stage: 2
     proxmox-devops:
       - path: apt/40_proxmox_devops_apt.sh
