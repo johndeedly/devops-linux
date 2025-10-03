@@ -500,7 +500,7 @@ EOF
 # prepare neovim
 mkdir -p /etc/skel/.local/share /etc/skel/.config/nvim
 touch /etc/skel/.config/nvim/init.lua
-( trap 'kill -- -$$' EXIT; HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":qall!" || true' ) &
+( HOME=/etc/skel /bin/bash -c 'nvim --headless -u "/etc/skel/.config/nvim/init.lua" -c ":qall!" || true' ) &
 pid=$!
 wait $pid
 
