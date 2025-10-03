@@ -2,7 +2,6 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-SYSLOG_SERVER_ENABLED="$(yq -r '.setup.logserver.enabled' /var/lib/cloud/instance/config/setup.yml)"
 SYSLOG_LOGFILE="$(yq -r '.setup.logserver.logfile' /var/lib/cloud/instance/config/setup.yml)"
 SYSLOG_BIND_IP="$(yq -r '.setup.logserver.bind_ip' /var/lib/cloud/instance/config/setup.yml)"
 SYSLOG_BIND_PORT="$(yq -r '.setup.logserver.bind_port' /var/lib/cloud/instance/config/setup.yml)"
@@ -10,13 +9,6 @@ SYSLOG_X509_KEY="$(yq -r '.setup.remote_log.x509_key' /var/lib/cloud/instance/co
 SYSLOG_X509_CRT="$(yq -r '.setup.remote_log.x509_crt' /var/lib/cloud/instance/config/setup.yml)"
 SYSLOG_X509_HASH="$(yq -r '.setup.remote_log.x509_hash' /var/lib/cloud/instance/config/setup.yml)"
 SYSLOG_PEER_VERIFY="$(yq -r '.setup.remote_log.peer_verify' /var/lib/cloud/instance/config/setup.yml)"
-
-if [ -z "$SYSLOG_SERVER_ENABLED" ] || [[ "$SYSLOG_SERVER_ENABLED" =~ [Nn][Oo] ]] || [[ "$SYSLOG_SERVER_ENABLED" =~ [Oo][Ff][Ff] ]] || [[ "$SYSLOG_SERVER_ENABLED" =~ [Ff][Aa][Ll][Ss][Ee] ]]
-then
-  sync
-  [ -f "${0}" ] && rm -- "${0}"
-  exit 0
-fi
 
 if [ -n "${SYSLOG_X509_KEY}" ] && [ -n "${SYSLOG_X509_CRT}" ]; then
   mkdir -p /etc/syslog-ng/cert.d

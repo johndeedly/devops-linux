@@ -35,7 +35,6 @@ setup:
     x509_hash: ""
   logserver:
     # openssl req -x509 -newkey ed25519 -days 36500 -noenc -keyout internal.key -out internal.crt -subj "/CN=internal" -addext "subjectAltName=DNS:internal,DNS:*.internal"
-    enabled: false
     logfile: /var/log/remote.log
     bind_ip: 0.0.0.0
     bind_port: 6514
@@ -186,6 +185,9 @@ files:
         stage: 2
       - path: apt/20_authserver_apt/rfc2307bis.ldif
         config: true
+    logserver:
+      - path: apt/20_logserver_apt.sh
+        stage: 1
     kde:
       - path: apt/20_graphical_kde_apt.sh
         stage: 2
@@ -292,6 +294,9 @@ files:
         stage: 2
       - path: pacman/20_authserver_pacman/rfc2307bis.ldif
         config: true
+    logserver:
+      - path: pacman/20_logserver_pacman.sh
+        stage: 1
     kde:
       - path: pacman/20_graphical_kde_pacman.sh
         stage: 2

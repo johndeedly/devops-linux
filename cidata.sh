@@ -124,7 +124,6 @@ write_mime_params=(
     "config/stage/10_firstboot.sh:text/x-shellscript"
     "config/stage/18_ldap.sh:text/x-shellscript"
     "config/stage/18_syslog.sh:text/x-shellscript"
-    "config/stage/18_syslog_server.sh:text/x-shellscript"
     "config/stage/90_second_stage.sh:text/x-shellscript"
     "config/stage/90_final_stage.sh:application/x-second-stage"
     "config/setup.yml:application/x-setup-config"
