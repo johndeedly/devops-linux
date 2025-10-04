@@ -15,7 +15,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install 
   cups ipp-usb libreoffice libreoffice-l10n-de krita krdc gitg keepassxc pdf-presenter-console \
   bluez blueman \
   xdg-desktop-portal xdg-desktop-portal-kde wine wine64 winetricks mpv gpicview \
-  flatpak virt-manager \
+  flatpak virt-manager qpdf \
   ghostscript gsfonts foomatic-db-engine foomatic-db printer-driver-gutenprint hplip \
   kde-standard libpam-kwallet5 system-config-printer konsole
 
