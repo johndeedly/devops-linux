@@ -287,6 +287,9 @@ files:
       - path: audit/80_lynis.sh
         stage: 2
   pacman:
+    filesystems:
+      - path: pacman/15_filesystems_pacman.sh
+        stage: 1
     graphical-base:
       - path: stage/15_graphical_base.sh
         stage: 1
