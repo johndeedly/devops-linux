@@ -42,6 +42,16 @@ if [ -e /bin/pacman ]; then
   sed -i '/^#\[multilib\]/,/^$/ s/^#//g' /etc/pacman.conf
 fi
 
+# disable archlinux fallback initcpio
+if [ -e /bin/pacman ]; then
+  find /etc/mkinitcpio.d -name "*.preset" | while read -r line; do
+    sed -i "s/[ ]*'fallback'//g" "$line"
+  done
+  find /boot -maxdepth 1 -name "*fallback*.img" | while read -r line; do
+    rm "$line"
+  done
+fi
+
 # speedup apt on ubuntu and debian
 if [ -e /bin/apt ]; then
   APT_CFGS=( /etc/apt/apt.conf.d/* )
