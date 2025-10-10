@@ -7,6 +7,13 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed expac nginx pacman-contri
 # prepare mirror cache dir
 mkdir -p /var/cache/pacman/mirror
 
+# restore default mirror
+tee /etc/pacman.d/mirrorlist <<'EOF'
+Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch
+EOF
+LC_ALL=C yes | LC_ALL=C pacman -Sy --noconfirm
+LC_ALL=C yes | LC_ALL=C pacman -Fy --noconfirm
+
 tee /usr/local/bin/pacsync.sh <<'EOF'
 #!/usr/bin/env bash
 

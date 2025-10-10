@@ -7,6 +7,24 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install 
 mkdir -p /var/cache/apt/mirror /var/empty
 
 if grep -q Ubuntu /proc/version; then
+# restore default mirror
+(
+  source /etc/os-release
+  tee /etc/apt/sources.list.d/ubuntu.sources <<EOF
+Types: deb
+URIs: https://archive.ubuntu.com/ubuntu
+Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates ${VERSION_CODENAME}-backports
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.ubuntu.com/ubuntu
+Suites: ${VERSION_CODENAME}-security
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
+)
 tee /usr/local/bin/aptsync.sh <<'EOF'
 #!/usr/bin/env bash
 
@@ -32,10 +50,10 @@ done
 (
   source /etc/os-release
   tee /tmp/mirror_url_list.txt <<EOX
-http://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
-http://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
-http://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-backports/
-http://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-security/
+https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
+https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
+https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-backports/
+https://security.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-security/
 EOX
 )
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
@@ -45,6 +63,24 @@ wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-i386.*|.*debian-ins
 rm /tmp/mirror_url_list.txt
 EOF
 else
+# restore default mirror
+(
+  source /etc/os-release
+  tee /etc/apt/sources.list.d/debian.sources <<EOF
+Types: deb
+URIs: https://deb.debian.org/debian
+Suites: ${VERSION_CODENAME} ${VERSION_CODENAME}-updates ${VERSION_CODENAME}-backports
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://deb.debian.org/debian-security
+Suites: ${VERSION_CODENAME}-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
+)
 tee /usr/local/bin/aptsync.sh <<'EOF'
 #!/usr/bin/env bash
 
