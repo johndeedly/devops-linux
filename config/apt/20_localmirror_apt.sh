@@ -11,7 +11,7 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 #!/usr/bin/env bash
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
-/bin/apt list 2>/dev/null | tail -n +2 | cut -d' ' -f1 | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" > /tmp/mirror_url_list.txt
+/bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" > /tmp/mirror_url_list.txt
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
@@ -49,7 +49,7 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 #!/usr/bin/env bash
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
-/bin/apt list 2>/dev/null | tail -n +2 | cut -d' ' -f1 | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" | \
+/bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" | \
   sed -e 's/mirror+file:\/etc\/apt\/mirrors\/debian\.list/https:\/\/deb.debian.org\/debian/g' \
   -e 's/mirror+file:\/etc\/apt\/mirrors\/debian-security\.list/https:\/\/deb.debian.org\/debian-security/g' > /tmp/mirror_url_list.txt
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
