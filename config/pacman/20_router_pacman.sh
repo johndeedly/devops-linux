@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools syslinux dnsmasq iptraf-ng ntp step-ca step-cli nginx nfs-utils \
+LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools ipxe dnsmasq iptraf-ng ntp step-ca step-cli nginx nfs-utils \
   samba nbd tgt nvmetcli rsync
 
 DHCP_ADDITIONAL_SETUP=(
@@ -31,22 +31,12 @@ PXESETUP=(
   "dhcp-match=set:efi-x86_64,option:client-arch,9\n"
   "dhcp-match=set:efi-x86,option:client-arch,6\n"
   "dhcp-match=set:bios,option:client-arch,0\n"
+  "dhcp-match=set:ipxe,175\n"
 
-  "dhcp-boot=tag:efi-x86_64,efi64\/syslinux.efi\n"
-  "dhcp-boot=tag:efi-x86,efi32\/syslinux.efi\n"
-  "dhcp-boot=tag:bios,bios\/lpxelinux.0"
-)
-
-DHCP_209_SETUP=(
-  "dhcp-option-force=tag:efi-x86_64,209,pxelinux.cfg\/default\n"
-  "dhcp-option-force=tag:efi-x86,209,pxelinux.cfg\/default\n"
-  "dhcp-option-force=tag:bios,209,pxelinux.cfg\/default"
-)
-
-DHCP_210_SETUP=(
-  "dhcp-option-force=tag:efi-x86_64,210,efi64\/\n"
-  "dhcp-option-force=tag:efi-x86,210,efi32\/\n"
-  "dhcp-option-force=tag:bios,210,bios\/"
+  "dhcp-boot=tag:efi-x86_64,efi64\/ipxe.efi\n"
+  "dhcp-boot=tag:efi-x86,efi32\/ipxe.efi\n"
+  "dhcp-boot=tag:bios,bios\/ipxe.lkrn\n"
+  "dhcp-boot=tag:ipxe,ipxe.cfg\/default"
 )
 
 # keep all interface names
@@ -111,24 +101,22 @@ sed -i '0,/^#\?tftp-root=.*/s//tftp-root=\/srv\/tftp/' /etc/dnsmasq.conf
 sed -i '0,/^#\?log-dhcp.*/s//log-dhcp/' /etc/dnsmasq.conf
 sed -i '0,/^#\?log-queries.*/s//log-queries/' /etc/dnsmasq.conf
 sed -i '0,/^#\?dhcp-boot=.*/s//'"${PXESETUP[*]}"'/' /etc/dnsmasq.conf
-sed -i '0,/^#\?dhcp-option-force=209.*/s//'"${DHCP_209_SETUP[*]}"'/' /etc/dnsmasq.conf
-sed -i '0,/^#\?dhcp-option-force=210.*/s//'"${DHCP_210_SETUP[*]}"'/' /etc/dnsmasq.conf
 sed -i '0,/^#\?server=.*/s//'"${DNS_SERVERS[*]}"'/' /etc/dnsmasq.conf
 
 # configure pxe folders
 mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
 
 # configure tftp
-mkdir -p /srv/tftp/{,bios,efi32,efi64}/pxelinux.cfg
-rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/bios/ /srv/tftp/bios/
-rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/efi32/ /srv/tftp/efi32/
-rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/syslinux/efi64/ /srv/tftp/efi64/
-tee /srv/tftp/pxelinux.cfg/default <<EOF
-$(</var/lib/cloud/instance/provision/pacman/20_router_pacman/pxelinux.cfg.default)
+mkdir -p /srv/tftp/{,bios,efi32,efi64}/ipxe.cfg
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/ipxe.lkrn /srv/tftp/bios/ipxe.lkrn
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/i386/ipxe.efi /srv/tftp/efi32/ipxe.efi
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/x86_64/ipxe.efi /srv/tftp/efi64/ipxe.efi
+tee /srv/tftp/ipxe.cfg/default <<EOF
+$(</var/lib/cloud/instance/provision/pacman/20_router_pacman/ipxe.cfg.default)
 EOF
-ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/bios/pxelinux.cfg/default
-ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi32/pxelinux.cfg/default
-ln -s /srv/tftp/pxelinux.cfg/default /srv/tftp/efi64/pxelinux.cfg/default
+ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/bios/ipxe.cfg/default
+ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/efi32/ipxe.cfg/default
+ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/efi64/ipxe.cfg/default
 
 # configure http
 tee /etc/nginx/nginx.conf <<EOF

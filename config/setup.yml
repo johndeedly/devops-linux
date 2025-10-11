@@ -254,7 +254,7 @@ files:
     router:
       - path: apt/20_router_apt.sh
         stage: 2
-      - path: apt/20_router_apt/pxelinux.cfg.default
+      - path: apt/20_router_apt/ipxe.cfg.default
         config: true
     podman-image:
       - path: podman/80_podman_image.sh
@@ -355,7 +355,7 @@ files:
     router:
       - path: pacman/20_router_pacman.sh
         stage: 2
-      - path: pacman/20_router_pacman/pxelinux.cfg.default
+      - path: pacman/20_router_pacman/ipxe.cfg.default
         config: true
     podman-image:
       - path: podman/80_podman_image.sh

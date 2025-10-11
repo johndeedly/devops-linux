@@ -1,0 +1,246 @@
+#!ipxe
+
+# Some pxe boot runtime defaults
+set bootif 01-${net0/mac:hexhyp}
+set bootip ${net0/ip}:${next-server}:${net0/gateway}:${net0/netmask}
+
+# Some menu defaults
+set base-url http://${next-server}/
+set menu-timeout 15000
+set submenu-timeout ${menu-timeout}
+isset ${menu-default} || set menu-default archhttp
+isset ${submenu-default} || set submenu-default back
+
+# Figure out if client is 64-bit capable
+cpuid --ext 29 && set arch x64 || set arch x86
+cpuid --ext 29 && set archl amd64 || set archl i386
+
+
+###################### MAIN MENU ####################################
+
+:start
+menu iPXE boot menu
+item --gap --         BOOTIF=${bootif}
+item --gap --         ip=${bootip}
+item --gap --         ------------------------- Quickstart options -----------------------------
+item archhttp         Boot Arch Linux using HTTP
+item debianhttp       Boot Debian using HTTP
+item ubuntuhttp       Boot Ubuntu using HTTP
+item --gap --         ------------------------- Advanced options -------------------------------
+item arch             Boot Arch Linux using...
+item debian           Boot Debian using...
+item ubuntu           Boot Ubuntu using...
+item --gap --         ------------------------- Other options ----------------------------------
+item config           Configure settings
+item shell            Drop to iPXE shell
+item reboot           Reboot computer
+item --gap --         --------------------------------------------------------------------------
+item exit             Exit iPXE and continue BIOS boot
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+set menu-timeout 0
+goto ${selected}
+
+:cancel
+echo You cancelled the menu, dropping you to a shell
+
+:shell
+echo Type 'exit' to get the back to the menu
+shell
+set menu-timeout 0
+set submenu-timeout 0
+goto start
+
+:failed
+echo Booting failed, dropping to shell
+goto shell
+
+:reboot
+reboot
+
+:exit
+exit
+
+:config
+config
+goto start
+
+:back
+set submenu-timeout 0
+clear submenu-default
+goto start
+
+
+###################### ARCH MENU ################################
+
+:arch
+set pxe-kernel ${base-url}/arch/x86_64/vmlinuz-linux
+set pxe-initrd ${base-url}/arch/x86_64/initramfs-linux-pxe.img
+menu Arch Linux boot options
+item archnfs          Boot Arch Linux using NFS
+item archnfscopy      Boot Arch Linux using NFS (Copy-to-RAM)
+item archnbd          Boot Arch Linux using NBD
+item archnbdcopy      Boot Arch Linux using NBD (Copy-to-RAM)
+item archcifs         Boot Arch Linux using CIFS
+item archcifscopy     Boot Arch Linux using CIFS (Copy-to-RAM)
+item archscp          Boot Arch Linux using SCP
+item archiscsi        Boot Arch Linux using iSCSI
+item archiscsicopy    Boot Arch Linux using iSCSI (Copy-to-RAM)
+item --gap --         --------------------------------------------------------------------------
+item --key 0x08 back  Back to iPXE boot menu...
+choose --timeout ${submenu-timeout} --default ${submenu-default} selected || goto cancel
+goto ${selected}
+
+
+###################### DEBIAN MENU ################################
+
+:debian
+set pxe-kernel ${base-url}/debian/x86_64/vmlinuz
+set pxe-initrd ${base-url}/debian/x86_64/initrd.img
+menu Debian boot options
+item debiannfs        Boot Debian using NFS
+item debiannfscopy    Boot Debian using NFS (Copy-to-RAM)
+item debiancifs       Boot Debian using CIFS
+item debiancifscopy   Boot Debian using CIFS (Copy-to-RAM)
+item --gap --         --------------------------------------------------------------------------
+item --key 0x08 back  Back to iPXE boot menu...
+choose --timeout ${submenu-timeout} --default ${submenu-default} selected || goto cancel
+goto ${selected}
+
+
+###################### UBUNTU MENU ################################
+
+:ubuntu
+set pxe-kernel ${base-url}/ubuntu/x86_64/vmlinuz
+set pxe-initrd ${base-url}/ubuntu/x86_64/initrd.img
+menu Ubuntu boot options
+item ubuntunfs        Boot Ubuntu using NFS
+item ubuntunfscopy    Boot Ubuntu using NFS (Copy-to-RAM)
+item ubuntucifs       Boot Ubuntu using CIFS
+item ubuntucifscopy   Boot Ubuntu using CIFS (Copy-to-RAM)
+item --gap --         --------------------------------------------------------------------------
+item --key 0x08 back  Back to iPXE boot menu...
+choose --timeout ${submenu-timeout} --default ${submenu-default} selected || goto cancel
+goto ${selected}
+
+
+############ QUICKSTART OPTION ITEMS ############
+
+:archhttp
+echo Booting Arch Linux from HTTP
+set pxe-kernel ${base-url}/arch/x86_64/vmlinuz-linux
+set pxe-initrd ${base-url}/arch/x86_64/initramfs-linux-pxe.img
+set pxe-options pxe_http_srv=${base-url} cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:debianhttp
+echo Booting Debian from HTTP
+set pxe-kernel ${base-url}/debian/x86_64/vmlinuz
+set pxe-initrd ${base-url}/debian/x86_64/initrd.img
+set pxe-options boot=pxe dist=debian pxe_http_srv=${base-url} cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:ubuntuhttp
+echo Booting Ubuntu from HTTP
+set pxe-kernel ${base-url}/ubuntu/x86_64/vmlinuz
+set pxe-initrd ${base-url}/ubuntu/x86_64/initrd.img
+set pxe-options boot=pxe dist=ubuntu pxe_http_srv=${base-url} cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+
+############ ADVANCED OPTION ITEMS ############
+
+:archnfs
+echo Booting Arch Linux from NFS
+set pxe-options pxe_nfs_srv=${next-server}:/srv/pxe copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archnfscopy
+echo Booting Arch Linux from NFS (Copy-to-RAM)
+set pxe-options pxe_nfs_srv=${next-server}:/srv/pxe copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archnbd
+echo Booting Arch Linux from NBD
+set pxe-options pxe_nbd_srv=${next-server} copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archnbdcopy
+echo Booting Arch Linux from NBD (Copy-to-RAM)
+set pxe-options pxe_nbd_srv=${next-server} copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archcifs
+echo Booting Arch Linux from CIFS
+set pxe-options pxe_cifs_srv=//${next-server}/pxe copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archcifscopy
+echo Booting Arch Linux from CIFS (Copy-to-RAM)
+set pxe-options pxe_cifs_srv=//${next-server}/pxe copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archscp
+echo Booting Arch Linux from SCP
+set pxe-options pxe_scp_srv=${next-server} cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archiscsi
+echo Booting Arch Linux from iSCSI
+set pxe-options pxe_iscsi_srv=${next-server} copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archiscsicopy
+echo Booting Arch Linux from iSCSI (Copy-to-RAM)
+set pxe-options pxe_iscsi_srv=${next-server} copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+
+:debiannfs
+echo Booting Debian from NFS
+set pxe-options boot=pxe dist=debian pxe_nfs_srv=${next-server}:/srv/pxe copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:debiannfscopy
+echo Booting Debian from NFS (Copy-to-RAM)
+set pxe-options boot=pxe dist=debian pxe_nfs_srv=${next-server}:/srv/pxe copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:debiancifs
+echo Booting Debian from CIFS
+set pxe-options boot=pxe dist=debian pxe_cifs_srv=//${next-server}/pxe copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:debiancifscopy
+echo Booting Debian from CIFS (Copy-to-RAM)
+set pxe-options boot=pxe dist=debian pxe_cifs_srv=//${next-server}/pxe copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+
+:ubuntunfs
+echo Booting Ubuntu from NFS
+set pxe-options boot=pxe dist=ubuntu pxe_nfs_srv=${next-server}:/srv/pxe copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:ubuntunfscopy
+echo Booting Ubuntu from NFS (Copy-to-RAM)
+set pxe-options boot=pxe dist=ubuntu pxe_nfs_srv=${next-server}:/srv/pxe copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:ubuntucifs
+echo Booting Ubuntu from CIFS
+set pxe-options boot=pxe dist=ubuntu pxe_cifs_srv=//${next-server}/pxe copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:ubuntucifscopy
+echo Booting Ubuntu from CIFS (Copy-to-RAM)
+set pxe-options boot=pxe dist=ubuntu pxe_cifs_srv=//${next-server}/pxe copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+
+############ START PXE BOOT PROCESS ############
+
+:bootpxe
+kernel ${pxe-kernel} ${pxe-options} ip=${bootip} BOOTIF=${bootif}
+initrd ${pxe-initrd}
+boot || goto failed
+goto start
