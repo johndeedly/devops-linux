@@ -17,14 +17,16 @@ pxe_iscsi_mount_handler() {
     msg ":: Boot PXE over iSCSI"
 
     # 1st: setup the iscsi filesystem
-    msg ":: Setup iSCSI with '${pxe_iscsi_srv}', target '${pxe_iscsi_tgt}'"
+    msg ":: Initial iSCSI setup"
     mkdir -p /etc/iscsi /var/lib/iscsi /run/lock/iscsi
     iscsiuio
     tee /etc/iscsi/initiatorname.iscsi <<EOF
 InitiatorName=${pxe_iscsi_cli}
 EOF
     iscsid
+    msg ":: Discover targets on '${pxe_iscsi_srv}'"
     iscsiadm -m discovery -t sendtargets -p "${pxe_iscsi_srv}"
+    msg ":: Login to target '${pxe_iscsi_tgt}'"
     iscsiadm -m node -T "${pxe_iscsi_tgt}" -p "${pxe_iscsi_srv}" -l
     
     # 2nd: check the copy to RAM filesystem is present
@@ -44,9 +46,10 @@ EOF
                 break
             fi
         done
+        msg ":: ..."
         sleep 2
     done
-    msg ":: Link ${matched} into the RAM filesystem"
+    msg ":: Link ${matched} to the RAM filesystem"
     ln -s "${matched}" "${copytoram_mnt}/arch/x86_64/pxeboot.img"
 
     # 4th: mount the RAM filesystem as boot mount
