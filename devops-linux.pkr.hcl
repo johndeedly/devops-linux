@@ -172,6 +172,7 @@ else
 fi
 EOS
     ]
+    pause_after       = "20s"
   }
   
   provisioner "shell" {
