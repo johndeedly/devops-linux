@@ -13,9 +13,50 @@ fi
 
 # create a profile to include custom options
 tee /etc/lynis/custom.prf <<EOF
-# provision user (uid 0) is removed at the end
-skip-test=AUTH-9204
-skip-test=AUTH-9208
+# debian and ubuntu versions are old per design
+skip-test=LYNIS
+# pxe boot needs special attention
+skip-test=BOOT-5122
+# /var and /home shall be on the same partition
+skip-test=FILE-6310
+# usb drivers are needed
+skip-test=USB-1000
+# firewire drivers are needed
+skip-test=STRG-1846
+# not part of a domain
+skip-test=NAME-4028
+# /etc/hosts contains FQDN names, duh...
+skip-test=NAME-4404
+# security updates are always included in unattended upgrades
+skip-test=PKGS-7320
+# security updates are always included in unattended upgrades
+skip-test=PKGS-7398
+# no fiddling around with port 22/ssh
+skip-test=SSH-7408:port
+# automation tools are everywhere
+skip-test=TOOL-5002
+# kernel module loading is needed
+skip-test=KRNL-6000:kernel.modules_disabled
+# passwords lasts as long as the user wants to - this does not increase security just by enforcing it [1]
+skip-test=AUTH-9282
+# passwords lasts as long as the user wants to - this does not increase security just by enforcing it [1]
+skip-test=AUTH-9286
+# because it is configured this way
+skip-test=KRNL-5788
+# the security repository is configured
+skip-test=PKGS-7388
+# ufw leaves rules empty when not used
+skip-test=FIRE-4513
+# why should I warn unauthorized users?! Do they crap their pants when they read "please don't do this"?!
+skip-test=BANN-7126
+# why should I warn unauthorized users?! Do they crap their pants when they read "please don't do this"?!
+skip-test=BANN-7130
+# when file integrity is compromised, automation rebuilds it, backups restore it
+skip-test=FINT-4350
+# apt-listbugs has no installation candidate on ubuntu: skipping, as unattended-upgrades does the job for you
+skip-test=DEB-0810
+
+# [1]: security_considerations_when_using_password_policies.md "Question regarding the hardening of a computer system by enforcing a timed rotation policy on passwords"
 EOF
 
 # perform a security audit
