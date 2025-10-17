@@ -82,7 +82,7 @@ item archnbd          Boot Arch Linux using NBD
 item archnbdcopy      Boot Arch Linux using NBD (Copy-to-RAM)
 item archcifs         Boot Arch Linux using CIFS
 item archcifscopy     Boot Arch Linux using CIFS (Copy-to-RAM)
-item archscp          Boot Arch Linux using SCP
+item --gap --         Boot Arch Linux using SCP
 item archiscsi        Boot Arch Linux using iSCSI
 item archiscsicopy    Boot Arch Linux using iSCSI (Copy-to-RAM)
 item --gap --         --------------------------------------------------------------------------

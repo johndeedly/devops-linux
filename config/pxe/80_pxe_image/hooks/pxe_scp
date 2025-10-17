@@ -19,7 +19,7 @@ pxe_scp_mount_handler() {
     [ -z "${pxe_scp_pwd}" ] && pxe_scp_pwd="pxe"
     local scp_img="${pxe_scp_usr}@${pxe_scp_srv}:~/arch/${arch}/pxeboot.img"
 
-    msg ":: Boot PXE with SCP"
+    msg ":: Boot PXE with SCP (currently broken...)"
 
     # 1st: check the copy to RAM filesystem is present
     if ! mountpoint -q "${copytoram_mnt}"; then
@@ -51,7 +51,6 @@ Host ${pxe_scp_srv}
 StrictHostKeyChecking no
 EOF
     chmod 0400 /root/.ssh/config
-    ssh-keygen -t rsa -N "" -C "" -f /root/.ssh/id_rsa
     
     # 3rd: download the image
     msg ":: Download '${scp_img}' to '${local_img}'"
