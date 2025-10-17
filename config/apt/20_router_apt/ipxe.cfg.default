@@ -85,6 +85,8 @@ item archcifscopy     Boot Arch Linux using CIFS (Copy-to-RAM)
 item --gap --         Boot Arch Linux using SCP
 item archiscsi        Boot Arch Linux using iSCSI
 item archiscsicopy    Boot Arch Linux using iSCSI (Copy-to-RAM)
+item archnvmeof       Boot Arch Linux using NVMeoF
+item archnvmeofcopy   Boot Arch Linux using NVMeoF (Copy-to-RAM)
 item --gap --         --------------------------------------------------------------------------
 item --key 0x08 back  Back to iPXE boot menu...
 choose --timeout ${submenu-timeout} --default ${submenu-default} selected || goto cancel
@@ -192,6 +194,17 @@ goto bootpxe
 :archiscsicopy
 echo Booting Arch Linux from iSCSI (Copy-to-RAM)
 set pxe-options pxe_iscsi_srv=${next-server} copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+
+:archnvmeof
+echo Booting Arch Linux from NVMeoF
+set pxe-options pxe_nvmeof_srv=${next-server} copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
+goto bootpxe
+
+:archnvmeofcopy
+echo Booting Arch Linux from NVMeoF (Copy-to-RAM)
+set pxe-options pxe_nvmeof_srv=${next-server} copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux
 goto bootpxe
 
 

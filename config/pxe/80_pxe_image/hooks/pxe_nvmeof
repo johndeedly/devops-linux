@@ -41,7 +41,8 @@ EOF
     fi
 
     # 3rd: place the nvmeof filesystem as softlink inside the RAM filesystem
-    msg ":: Wait for NVMeoF device"
+    mkdir -p "${copytoram_mnt}/arch/x86_64"
+    msg ":: Wait for NVMeoF device..."
     matched=""
     while [ -z "${matched}" ]; do
         for i in /dev/nvme*; do
@@ -50,10 +51,10 @@ EOF
                 break
             fi
         done
+        msg ":: ..."
         sleep 2
     done
-    mkdir -p "${copytoram_mnt}/arch/x86_64"
-    msg ":: Link ${matched} into the RAM filesystem"
+    msg ":: Link ${matched} to the RAM filesystem"
     ln -s "${matched}" "${copytoram_mnt}/arch/x86_64/pxeboot.img"
 
     # 4th: mount the RAM filesystem as boot mount
