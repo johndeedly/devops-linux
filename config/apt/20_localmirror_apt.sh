@@ -33,6 +33,23 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
+(
+  source /etc/os-release
+  tee /tmp/mirror_url_list.txt <<EOX
+https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
+https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
+https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-backports/
+https://security.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-security/
+EOX
+)
+# force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
+# recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
+# ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-i386.*|.*debian-installer.*|.*dist-upgrader-all.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
+rm /tmp/mirror_url_list.txt
+
 # remove older package versions (sort -r: newest first) when packages count is larger than 3 (cnt[key]>3)
 find /var/cache/apt/mirror -name '*.deb' -printf "%P %T+\n" | sort -r -t' ' -k2,2 | awk -F '_' '{
   key=$1
@@ -47,20 +64,6 @@ find /var/cache/apt/mirror -name '*.deb' -printf "%P %T+\n" | sort -r -t' ' -k2,
   echo "removing /var/cache/apt/mirror/$pkg"
   rm "/var/cache/apt/mirror/$pkg"
 done
-(
-  source /etc/os-release
-  tee /tmp/mirror_url_list.txt <<EOX
-https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
-https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
-https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-backports/
-https://security.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-security/
-EOX
-)
-# force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
-# ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-i386.*|.*debian-installer.*|.*dist-upgrader-all.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
-rm /tmp/mirror_url_list.txt
 EOF
 else
 # restore default mirror
@@ -91,20 +94,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
-# remove older package versions (sort -r: newest first) when packages count is larger than 3 (cnt[key]>3)
-find /var/cache/apt/mirror -name '*.deb' -printf "%P %T+\n" | sort -r -t' ' -k2,2 | awk -F '_' '{
-  key=$1
-  for (i=2;i<NF-1;i++){key=sprintf("%s_%s",key,$i)}
-  cnt[key]++
-  if(cnt[key]>3){
-    out=$1
-    for (i=2;i<=NF;i++){out=sprintf("%s_%s",out,$i)}
-    printf "%i %s\n",cnt[key],out
-  }
-}' | while read -r nr pkg ctm; do
-  echo "removing /var/cache/apt/mirror/$pkg"
-  rm "/var/cache/apt/mirror/$pkg"
-done
+
 (
   source /etc/os-release
   tee /tmp/mirror_url_list.txt <<EOX
@@ -119,7 +109,23 @@ EOX
 # recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
 # ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-arm64.*|.*-armel.*|.*-armhf.*|.*-i386.*|.*-mips64el.*|.*-mipsel.*|.*-ppc64el.*|.*-s390x.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
 rm /tmp/mirror_url_list.txt
+
+# remove older package versions (sort -r: newest first) when packages count is larger than 3 (cnt[key]>3)
+find /var/cache/apt/mirror -name '*.deb' -printf "%P %T+\n" | sort -r -t' ' -k2,2 | awk -F '_' '{
+  key=$1
+  for (i=2;i<NF-1;i++){key=sprintf("%s_%s",key,$i)}
+  cnt[key]++
+  if(cnt[key]>3){
+    out=$1
+    for (i=2;i<=NF;i++){out=sprintf("%s_%s",out,$i)}
+    printf "%i %s\n",cnt[key],out
+  }
+}' | while read -r nr pkg ctm; do
+  echo "removing /var/cache/apt/mirror/$pkg"
+  rm "/var/cache/apt/mirror/$pkg"
+done
 EOF
 # install the proxmox repository key
 echo ":: download proxmox repository certificate"
