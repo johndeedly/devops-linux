@@ -48,6 +48,21 @@ EOX
 # ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-i386.*|.*debian-installer.*|.*dist-upgrader-all.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
+mkdir -p /var/cache/apt/mirror/images
+(
+  source /etc/os-release
+  tee /tmp/mirror_url_list.txt <<EOX
+https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/${VERSION_CODENAME}-server-cloudimg-amd64.img
+https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/MD5SUMS
+https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/MD5SUMS.gpg
+https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/SHA256SUMS
+https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/SHA256SUMS.gpg
+EOX
+)
+# continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -c -N -P /var/cache/apt/mirror/images -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
 rm /tmp/mirror_url_list.txt
 
 # remove older package versions (sort -r: newest first) when packages count is larger than 3 (cnt[key]>3)
@@ -109,6 +124,19 @@ EOX
 # recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
 # ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-arm64.*|.*-armel.*|.*-armhf.*|.*-i386.*|.*-mips64el.*|.*-mipsel.*|.*-ppc64el.*|.*-s390x.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
+mkdir -p /var/cache/apt/mirror/images
+(
+  source /etc/os-release
+  tee /tmp/mirror_url_list.txt <<EOX
+https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/debian-${VERSION_ID}-generic-amd64.qcow2
+https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/debian-${VERSION_ID}-nocloud-amd64.qcow2
+https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/SHA512SUMS
+EOX
+)
+# continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -c -N -P /var/cache/apt/mirror/images -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
