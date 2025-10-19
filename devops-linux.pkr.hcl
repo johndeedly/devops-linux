@@ -325,6 +325,7 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
   -vga none \\
   -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
   -cpu host \\
+  -boot n \\
   -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
   -netdev socket,id=user.0,connect=:23568 -device virtio-net,netdev=user.0 \\
   -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
