@@ -10,6 +10,9 @@ if grep -q Ubuntu /proc/version; then
 # restore default mirror
 (
   source /etc/os-release
+  tee /etc/apt/sources.list <<EOF
+# /etc/apt/sources.list.d/ubuntu.sources
+EOF
   tee /etc/apt/sources.list.d/ubuntu.sources <<EOF
 Types: deb
 URIs: https://archive.ubuntu.com/ubuntu
@@ -36,7 +39,14 @@ wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progres
 
 (
   source /etc/os-release
-  tee /tmp/mirror_url_list.txt <<EOX
+while read -r line; do
+  tee -a /tmp/mirror_url_list.txt <<EOX
+${line}/InRelease
+${line}/Release
+${line}/Release.gpg
+EOX
+  curl -sL "${line}/Release" | grep -oP '[ ]+[a-f0-9]{32}[ ]+[0-9]+[ ]+\K.*' | sed -e "s|^|${line}/|g" | tee -a /tmp/mirror_url_list.txt
+done <<EOX
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-backports/
@@ -44,9 +54,8 @@ https://security.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-security/
 EOX
 )
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
-# ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-i386.*|.*debian-installer.*|.*dist-upgrader-all.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 mkdir -p /var/cache/apt/mirror/images
 (
@@ -84,6 +93,9 @@ else
 # restore default mirror
 (
   source /etc/os-release
+  tee /etc/apt/sources.list <<EOF
+# /etc/apt/sources.list.d/debian.sources
+EOF
   tee /etc/apt/sources.list.d/debian.sources <<EOF
 Types: deb
 URIs: https://deb.debian.org/debian
@@ -112,7 +124,14 @@ wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progres
 
 (
   source /etc/os-release
-  tee /tmp/mirror_url_list.txt <<EOX
+while read -r line; do
+  tee -a /tmp/mirror_url_list.txt <<EOX
+${line}/InRelease
+${line}/Release
+${line}/Release.gpg
+EOX
+  curl -sL "${line}/Release" | grep -oP '[ ]+[a-f0-9]{32}[ ]+[0-9]+[ ]+\K.*' | sed -e "s|^|${line}/|g" | tee -a /tmp/mirror_url_list.txt
+done <<EOX
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-updates/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-backports/
@@ -121,9 +140,8 @@ http://download.proxmox.com/debian/pve/dists/${VERSION_CODENAME}/
 EOX
 )
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages, exclude paths and files from other architectures,
-# ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N -r -np -R "index.html*" --reject-regex ".*-arm64.*|.*-armel.*|.*-armhf.*|.*-i386.*|.*-mips64el.*|.*-mipsel.*|.*-ppc64el.*|.*-s390x.*|.*source.*|.*[.]changelog|.*[.]deb" -e robots=off -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 mkdir -p /var/cache/apt/mirror/images
 (
