@@ -37,6 +37,8 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
+rm /tmp/mirror_url_list.txt
+
 (
   source /etc/os-release
 while read -r line; do
@@ -56,6 +58,8 @@ EOX
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
+rm /tmp/mirror_url_list.txt
 
 mkdir -p /var/cache/apt/mirror/images
 (
@@ -122,6 +126,8 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
+rm /tmp/mirror_url_list.txt
+
 (
   source /etc/os-release
 while read -r line; do
@@ -142,6 +148,8 @@ EOX
 # force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
+rm /tmp/mirror_url_list.txt
 
 mkdir -p /var/cache/apt/mirror/images
 (
