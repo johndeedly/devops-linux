@@ -43,11 +43,11 @@ rm /tmp/mirror_url_list.txt
   source /etc/os-release
 while read -r line; do
   tee -a /tmp/mirror_url_list.txt <<EOX
-${line}/InRelease
-${line}/Release
-${line}/Release.gpg
+${line%/}/InRelease
+${line%/}/Release
+${line%/}/Release.gpg
 EOX
-  curl -sL "${line}/Release" | grep -oP '[ ]+[a-f0-9]{32}[ ]+[0-9]+[ ]+\K.*' | sed -e "s|^|${line}/|g" | tee -a /tmp/mirror_url_list.txt
+  curl -sL "${line%/}/Release" | grep -oP '[ \t]*[a-fA-F0-9]{32}[ \t]+[0-9]+[ \t]+\K.*' | sed -e "s|^|${line%/}/|g" | tee -a /tmp/mirror_url_list.txt
 done <<EOX
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
@@ -132,11 +132,11 @@ rm /tmp/mirror_url_list.txt
   source /etc/os-release
 while read -r line; do
   tee -a /tmp/mirror_url_list.txt <<EOX
-${line}/InRelease
-${line}/Release
-${line}/Release.gpg
+${line%/}/InRelease
+${line%/}/Release
+${line%/}/Release.gpg
 EOX
-  curl -sL "${line}/Release" | grep -oP '[ ]+[a-f0-9]{32}[ ]+[0-9]+[ ]+\K.*' | sed -e "s|^|${line}/|g" | tee -a /tmp/mirror_url_list.txt
+  curl -sL "${line%/}/Release" | grep -oP '[ \t]*[a-fA-F0-9]{32}[ \t]+[0-9]+[ \t]+\K.*' | sed -e "s|^|${line%/}/|g" | tee -a /tmp/mirror_url_list.txt
 done <<EOX
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-updates/
