@@ -197,6 +197,12 @@ EOS
     direction   = "download"
   }
 
+  provisioner "file" {
+    source      = var.package_cache ? "/usr/share/keyrings/" : ""
+    destination = "database/stage"
+    direction   = "download"
+  }
+
   provisioner "shell" {
     inline = ["mkdir -p /srv/pxe /srv/docker /srv/liveiso /srv/tar /srv/audit"]
   }

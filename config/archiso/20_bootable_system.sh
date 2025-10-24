@@ -49,6 +49,11 @@ if ! [ -f "${CLOUD_IMAGE_PATH}" ]; then
     fi
     CLOUD_IMAGE_PATH="$(mktemp -d)/$(yq -r '.setup as $setup | .images[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
     wget -c -O "${CLOUD_IMAGE_PATH}" --progress=dot:giga "${DOWNLOAD_IMAGE_PATH}"
+    if systemd-detect-virt && mount -t 9p database.0 /mnt; then
+        rsync -av "${CLOUD_IMAGE_PATH}" /mnt/
+        sync
+        umount /mnt
+    fi
 fi
 echo "CLOUD-IMAGE: ${CLOUD_IMAGE_PATH}, TARGET: ${TARGET_DEVICE}"
 
@@ -168,18 +173,21 @@ mount "${ROOT_PART[0]}" /mnt
 # prefill package cache
 if [ -f /mnt/bin/apt ]; then
     if [ -d /iso/stage/apt ]; then
-        mkdir -p /mnt/var/cache/apt
+        mkdir -p /mnt/var/cache/apt /mnt/usr/share/keyrings/
         rsync -av /iso/stage/apt/ /mnt/var/cache/apt/
+        rsync -av /iso/stage/keyrings/ /mnt/usr/share/keyrings/
     fi
 elif [ -f /mnt/bin/pacman ]; then
     if [ -d /iso/stage/pacman ]; then
-        mkdir -p /mnt/var/cache/pacman
+        mkdir -p /mnt/var/cache/pacman /mnt/usr/share/keyrings/
         rsync -av /iso/stage/pacman/ /mnt/var/cache/pacman/
+        rsync -av /iso/stage/keyrings/ /mnt/usr/share/keyrings/
     fi
 elif [ -f /mnt/bin/yum ]; then
     if [ -d /iso/stage/yum ]; then
-        mkdir -p /mnt/var/cache/yum
+        mkdir -p /mnt/var/cache/yum /mnt/usr/share/keyrings/
         rsync -av /iso/stage/yum/ /mnt/var/cache/yum/
+        rsync -av /iso/stage/keyrings/ /mnt/usr/share/keyrings/
     fi
 fi
 

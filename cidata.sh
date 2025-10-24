@@ -214,6 +214,7 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
     xorriso -indev "${DEVOPSISO}" \
             -outdev "${DEVOPSISOMODDED}" \
             -volid CIDATA \
+            -map database/ / \
             -map build/archiso/ / \
             -boot_image any replay
     
@@ -278,6 +279,7 @@ elif [ $_iso -eq 1 ]; then
     fi
     xorriso -outdev "${CIDATAISO}" \
             -volid CIDATA \
+            -map database/ / \
             -map build/stage/ /
 else
     echo "no valid option, exiting"
