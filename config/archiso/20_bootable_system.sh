@@ -206,9 +206,13 @@ EOF
 PKG_MIRROR=$(yq -r '.setup as $setup | .setup.pkg_mirror[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)
 if [ -n "$PKG_MIRROR" ] && [ "xnull" != "x$PKG_MIRROR" ]; then
     if [ -f /mnt/bin/apt ] && grep -q "Debian" /mnt/etc/os-release; then
-        [ -f /mnt/etc/apt/sources.list.d/debian.sources ] && tee /mnt/etc/apt/sources.list.d/debian.sources <<<"$PKG_MIRROR"
+        [ -f /mnt/etc/apt/sources.list.d/debian.sources ] && \
+            tee /mnt/etc/apt/sources.list.d/debian.sources <<<"$PKG_MIRROR" && \
+            tee /mnt/etc/apt/sources.list <<<"# see /etc/apt/sources.list.d/debian.sources"
     elif [ -f /mnt/bin/apt ] && grep -q "Ubuntu" /mnt/etc/os-release; then
-        [ -f /mnt/etc/apt/sources.list.d/ubuntu.sources ] && tee /mnt/etc/apt/sources.list.d/ubuntu.sources <<<"$PKG_MIRROR"
+        [ -f /mnt/etc/apt/sources.list.d/ubuntu.sources ] && \
+            tee /mnt/etc/apt/sources.list.d/ubuntu.sources <<<"$PKG_MIRROR" && \
+            tee /mnt/etc/apt/sources.list <<<"# see /etc/apt/sources.list.d/ubuntu.sources"
     elif [ -f /mnt/bin/pacman ]; then
         [ -f /mnt/etc/pacman.d/mirrorlist ] && tee /mnt/etc/pacman.d/mirrorlist <<<"$PKG_MIRROR"
     elif [ -f /mnt/bin/yum ]; then

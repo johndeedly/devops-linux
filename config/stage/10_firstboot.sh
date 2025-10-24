@@ -17,26 +17,6 @@ if [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -Sy --noconfirm archlinux-keyring
 fi
 
-# initialize apt sources
-if [ -e /bin/apt ]; then
-  if grep -q Debian /proc/version; then
-    # old format
-    sed -i 's/\(deb .* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list
-    sed -i 's/\(deb .* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
-    # new format
-    sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list
-    sed -i 's/\(Comp.* main\).*/\1 contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources
-  elif grep -q Ubuntu /proc/version; then
-    # old format
-    sed -i 's/\(deb .* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
-    sed -i 's/\(deb .* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
-    # new format
-    sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list
-    sed -i 's/\(Comp.* main\).*/\1 universe restricted multiverse/' /etc/apt/sources.list.d/ubuntu.sources
-  fi
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
-fi
-
 # enable multilib
 if [ -e /bin/pacman ]; then
   sed -i '/^#\[multilib\]/,/^$/ s/^#//g' /etc/pacman.conf
@@ -71,6 +51,7 @@ Acquire::http::Timeout "10";
 Acquire::https::Dl-Limit "0";
 Acquire::https::Timeout "10";
 EOF
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 fi
 
@@ -92,6 +73,7 @@ if [ -e /bin/apt ]; then
   echo -n "Kernel modules backup ($(uname -r)): "
   stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
   # upgrade now
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y full-upgrade
 elif [ -e /bin/pacman ]; then
   # backup modules of running kernel
@@ -335,18 +317,27 @@ download_yq() {
 # very essential programs
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install polkitd curl wget nano \
-    jq yq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup \
+    jq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup \
     syslog-ng logrotate libxml2 man manpages-de wireguard-tools python3-pip python3-venv \
     gvfs gvfs-backends cifs-utils tmux \
     build-essential npm fd-find neovim qemu-guest-agent kexec-tools
+  if apt-cache show yq >/dev/null 2>&1; then
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install yq
+  else
+    download_yq
+  fi
   systemctl enable ssh ufw syslog-ng logrotate.timer
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed \
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
-  systemctl enable systemd-networkd systemd-resolved systemd-homed
+  systemctl enable systemd-networkd systemd-resolved
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
+  if apt-cache show systemd-homed >/dev/null 2>&1; then
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install systemd-homed
+    systemctl enable systemd-homed
+  fi
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed kernel-modules-hook polkit curl wget nano jq yq openssh ufw xkcdpass cryptsetup
   systemctl enable linux-modules-cleanup sshd ufw
@@ -415,7 +406,7 @@ options {
   owner(0);
   group(0);
   perm(0640);
-  stats(freq(0));
+  stats-freq(0);
   bad_hostname("^gconfd$");
 };
 
