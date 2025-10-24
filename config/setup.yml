@@ -133,24 +133,6 @@ download:
   rocky-10: https://dl.rockylinux.org/pub/rocky/10/images/x86_64/Rocky-10-GenericCloud-Base.latest.x86_64.qcow2
   rocky-9: https://dl.rockylinux.org/pub/rocky/9/images/x86_64/Rocky-9-GenericCloud-Base.latest.x86_64.qcow2
   rocky-8: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud.latest.x86_64.qcow2
-endoflife:
-  debian: https://endoflife.date/api/debian/13.json
-  debian-edge: https://endoflife.date/api/debian/13.json
-  debian-13: https://endoflife.date/api/debian/13.json
-  debian-12: https://endoflife.date/api/debian/12.json
-  ubuntu: https://endoflife.date/api/ubuntu/24.04.json
-  ubuntu-edge: https://endoflife.date/api/ubuntu/25.10.json
-  ubuntu-25: https://endoflife.date/api/ubuntu/25.10.json
-  ubuntu-24: https://endoflife.date/api/ubuntu/24.04.json
-  ubuntu-22: https://endoflife.date/api/ubuntu/22.04.json
-  fedora: https://endoflife.date/api/fedora/42.json
-  fedora-edge: https://endoflife.date/api/fedora/42.json
-  fedora-42: https://endoflife.date/api/fedora/42.json
-  rocky: https://endoflife.date/api/rocky-linux/9.json
-  rocky-edge: https://endoflife.date/api/rocky-linux/10.json
-  rocky-10: https://endoflife.date/api/rocky-linux/10.json
-  rocky-9: https://endoflife.date/api/rocky-linux/9.json
-  rocky-8: https://endoflife.date/api/rocky-linux/8.json
 images:
   archiso: archlinux-x86_64.iso
   archlinux: Arch-Linux-x86_64-cloudimg.qcow2

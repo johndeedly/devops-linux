@@ -44,10 +44,6 @@ distros:
 ## "archiso" is an exception as the entry maps to the Arch ISO download link
 download:
   [...]
-## End of life for all the distro package versions. Will print an error and abort the setup
-## when no support is to be expected from the maintainers any more.
-endoflife:
-  [...]
 ## The file name of the downloaded image
 images:
   [...]

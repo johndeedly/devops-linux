@@ -2,24 +2,6 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-# check end of life
-ENDOFLIFEURL=$(yq -r '.setup as $setup | .endoflife[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)
-if [ -z "$ENDOFLIFEURL" ] || [[ "$ENDOFLIFEURL" =~ [nN][uU][lL][lL] ]]; then
-    echo ":: rolling release distro"
-else
-    ENDOFLIFEFILE="$(mktemp)"
-    wget -c -O "${ENDOFLIFEFILE}" --progress=dot "${ENDOFLIFEURL}"
-    eoldate=$(jq -r '.eol' "${ENDOFLIFEFILE}")
-    epoch=$(date -d "$eoldate" +%s)
-    rm "$ENDOFLIFEFILE"
-    if [ "$epoch" -lt "$(date -d '1 day ago' +%s)" ] ; then
-        echo "!! end of life reached. No security updates will be available any more: $eoldate"
-        exit 1
-    else
-        echo ":: end of life not reached yet: $eoldate"
-    fi
-fi
-
 # prepare setup variables
 TARGET_DEVICE=$(yq -r '.setup.target' /var/lib/cloud/instance/config/setup.yml)
 if [ "$TARGET_DEVICE" == "auto" ] || [ -z "$TARGET_DEVICE" ]; then
