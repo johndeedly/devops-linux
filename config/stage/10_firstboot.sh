@@ -406,7 +406,19 @@ options {
   owner(0);
   group(0);
   perm(0640);
-  stats-freq(0);
+EOF
+if syslog-ng -V | head -n 1 | grep -q 'syslog-ng 3'; then
+  # ubuntu jammy has an old syslog-ng version
+  tee -a /etc/syslog-ng/syslog-ng.conf <<'EOF'
+  stats_freq(0);
+EOF
+else
+  # modern syntax
+  tee -a /etc/syslog-ng/syslog-ng.conf <<'EOF'
+  stats(freq(0));
+EOF
+fi
+tee -a /etc/syslog-ng/syslog-ng.conf <<'EOF'
   bad_hostname("^gconfd$");
 };
 

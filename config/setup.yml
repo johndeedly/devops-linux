@@ -72,10 +72,46 @@ setup:
       Suites: trixie-security
       Components: main contrib non-free non-free-firmware
       Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+    debian-13: |
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/debian/debian
+      Suites: trixie trixie-updates trixie-backports
+      Components: main contrib non-free non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/debian/debian-security
+      Suites: trixie-security
+      Components: main contrib non-free non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+    debian-12: |
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/debian/debian
+      Suites: bookworm bookworm-updates bookworm-backports
+      Components: main contrib non-free non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/debian/debian-security
+      Suites: bookworm-security
+      Components: main contrib non-free non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
     ubuntu: |
       Types: deb
       URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
       Suites: noble noble-updates noble-backports noble-security
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+    ubuntu-24: |
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: noble noble-updates noble-backports noble-security
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+    ubuntu-22: |
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: jammy jammy-updates jammy-backports jammy-security
       Components: main universe restricted multiverse
       Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
   proxmox_cluster:
