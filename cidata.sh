@@ -244,7 +244,7 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
         read -e -p "Enter proxmox vm storage [local]: " -i "local" _proxmox_storage
         read -e -p "Enter proxmox vm size in GiB [512]: " -i "512" _proxmox_size
         mv "${DEVOPSISOMODDED}" "/var/lib/vz/template/iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
-        if pvs --rows | grep -E "VG ${_proxmox_storage}\$"
+        if pvs --rows | grep -E "VG.*${_proxmox_storage}"
         then
             if ! qm create "${_proxmox_vm}" --net0 "virtio,bridge=${_proxmox_bridge}" --name "${_proxmox_name}" \
             --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35 --bios ovmf \
