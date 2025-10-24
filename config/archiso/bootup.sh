@@ -23,7 +23,7 @@ EOF
 hostnamectl hostname "$(</etc/hostname)"
 
 # enable ssh provision login -> disable root, allow provisioning account, password auth, use pam
-sed -i 's/^#\? \?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+sed -i 's/^#\? \?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 sed -i 's/^#\? \?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
 sed -i 's/^#\? \?AllowTcpForwarding.*/AllowTcpForwarding no/' /etc/ssh/sshd_config
 sed -i 's/^#\? \?AllowAgentForwarding.*/AllowAgentForwarding no/' /etc/ssh/sshd_config
@@ -34,6 +34,11 @@ sed -i 's/^#\? \?UsePAM.*/UsePAM yes/' /etc/ssh/sshd_config
 sed -i '/^Match User root/,/^$/d' /etc/ssh/sshd_config
 # remove empty lines at end of file
 sed -i ':a;/^[ \n]*$/{$d;N;ba}' /etc/ssh/sshd_config
+tee -a /etc/ssh/sshd_config <<EOF
+
+Match User root
+PasswordAuthentication no
+EOF
 
 # create cidata log
 touch /cidata_log
