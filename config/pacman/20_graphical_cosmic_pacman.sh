@@ -5,7 +5,7 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   pipewire pipewire-pulse pipewire-jack pipewire-alsa wireplumber pamixer pavucontrol playerctl alsa-utils qpwgraph rtkit realtime-privileges \
   xorg-server xorg-xinit xorg-xrandr xclip xsel wl-clipboard brightnessctl arandr dunst libnotify engrampa \
-  libinput xf86-input-libinput xorg-xinput kitty dex lightdm lightdm-slick-greeter \
+  libinput xf86-input-libinput xorg-xinput dex lightdm lightdm-slick-greeter \
   elementary-icon-theme ttf-dejavu ttf-dejavu-nerd ttf-liberation ttf-font-awesome ttf-hanazono \
   ttf-hannom ttf-baekmuk noto-fonts-emoji \
   cups ipp-usb libreoffice-fresh libreoffice-fresh-de krita krdc gitg keepassxc pdfpc \
@@ -161,7 +161,7 @@ tee /etc/lightdm/slick-greeter.conf <<EOF
 [Greeter]
 # LightDM GTK+ Configuration
 #
-background=/usr/share/backgrounds/cosmic/webb-inspired-wallpaper-system76.jpg
+background=/usr/share/backgrounds/cosmic/phytoplankton_bloom_nasa_oli2_20240121.jpg
 show-hostname=true
 clock-format=%H:%M
 EOF
@@ -245,7 +245,7 @@ tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x
 EOF
 
 #
-# configure kde desktop
+# configure cosmic desktop
 #
 
 # set application mimetype defaults
@@ -255,12 +255,12 @@ FILELIST=(
   /usr/share/applications/libreoffice-calc.desktop
   /usr/share/applications/libreoffice-writer.desktop
   /usr/share/applications/libreoffice-impress.desktop
-  /usr/share/applications/kitty.desktop
+  /usr/share/applications/com.system76.CosmicTerm.desktop
   /var/lib/flatpak/app/app.zen_browser.zen/current/active/export/share/applications/app.zen_browser.zen.desktop
   /usr/share/applications/engrampa.desktop
-  /usr/share/applications/mpv.desktop
-  /usr/share/applications/org.kde.kate.desktop
-  /usr/share/applications/org.kde.dolphin.desktop
+  /usr/share/applications/com.system76.CosmicPlayer.desktop
+  /usr/share/applications/com.system76.CosmicEdit.desktop
+  /usr/share/applications/com.system76.CosmicFiles.desktop
 )
 tee /tmp/mimeapps.list.added <<EOF
 [Added Associations]
@@ -334,14 +334,32 @@ WantedBy=sysinit.target
 EOF
 systemctl enable vm-check
 
-# global xterm fallback to kitty terminal
-ln -s /usr/bin/kitty /usr/local/bin/xterm
+# global xterm fallback to cosmic terminal
+ln -s /usr/bin/cosmic-term /usr/local/bin/xterm
 
-# configure global shortcuts
-mkdir -p /etc/skel/.config
-tee -a /etc/skel/.config/kglobalshortcutsrc <<'EOF'
-[services][kitty.desktop]
-_launch=Ctrl+Alt+T
+# set background image
+mkdir -p /etc/skel/.config/cosmic/com.system76.CosmicBackground/v1
+tee /etc/skel/.config/cosmic/com.system76.CosmicBackground/v1/all <<EOF
+(
+    output: "all",
+    source: Path("/usr/share/backgrounds/cosmic/phytoplankton_bloom_nasa_oli2_20240121.jpg"),
+    filter_by_theme: true,
+    rotation_frequency: 300,
+    filter_method: Lanczos,
+    scaling_mode: Zoom,
+    sampling_method: Alphanumeric,
+)
+EOF
+tee /etc/skel/.config/cosmic/com.system76.CosmicBackground/v1/same-on-all <<EOF
+true
+EOF
+
+# set shortcut system actions
+mkdir -p /etc/skel/.config/cosmic/com.system76.CosmicSettings.Shortcuts/v1
+tee /etc/skel/.config/cosmic/com.system76.CosmicSettings.Shortcuts/v1/system_actions <<EOF
+(
+    Terminal: "cosmic-term",
+)
 EOF
 
 # install code-oss extensions for user"
