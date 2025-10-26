@@ -13,7 +13,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   xdg-desktop-portal xdg-desktop-portal-cosmic wine winetricks mpv gpicview drawio-desktop code \
   flatpak virt-manager qpdf \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
-  cosmic system-config-printer
+  cosmic gnome-keyring libsecret seahorse system-config-printer
 
 # enable some services
 systemctl enable cups libvirtd.service libvirtd.socket
@@ -243,6 +243,12 @@ tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x
     "RestoreOnStartup": 1
 }
 EOF
+
+# open gnome keyring on login
+if [ -f /etc/pam.d/system-login ]; then
+    sed -i '0,/^\(^auth.*system-auth.*\)/s||\1\nauth       optional   pam_gnome_keyring.so|' /etc/pam.d/system-login
+    sed -i '0,/^\(^session.*pam_mkhomedir[.]so.*\)/s||\1\nsession    optional   pam_gnome_keyring.so auto_start|' /etc/pam.d/system-login
+fi
 
 #
 # configure cosmic desktop
