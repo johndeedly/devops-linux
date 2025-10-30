@@ -127,7 +127,7 @@ source "virtualbox-iso" "default" {
   vboxmanage               = [["modifyvm", "{{ .Name }}", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"], ["sharedfolder", "add", "{{ .Name }}", "--name", "database.0", "--hostpath", "./database"]]
   vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"], ["sharedfolder", "remove", "{{ .Name }}", "--name", "database.0"]]
   vm_name                  = local.build_name_virtualbox
-  skip_export              = false
+  skip_export              = true
   keep_registered          = true
 }
 
