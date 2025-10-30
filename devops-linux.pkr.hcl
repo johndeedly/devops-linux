@@ -57,7 +57,7 @@ locals {
 source "qemu" "default" {
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
-  disk_size            = "524288M"
+  disk_size            = "65536M"
   memory               = var.memory
   format               = "qcow2"
   accelerator          = "kvm"
@@ -98,7 +98,7 @@ source "virtualbox-iso" "default" {
   acpi_shutdown            = true
   boot_wait                = "3s"
   boot_command             = ["<enter>"]
-  disk_size                = 524288
+  disk_size                = 65536
   memory                   = var.memory
   format                   = "ova"
   guest_additions_mode     = "disable"

@@ -3,6 +3,7 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 # prepare setup variables
+DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
 TARGET_DEVICE=$(yq -r '.setup.target' /var/lib/cloud/instance/config/setup.yml)
 if [ "$TARGET_DEVICE" == "auto" ] || [ -z "$TARGET_DEVICE" ]; then
     if [ -e /dev/vda ]; then
@@ -31,22 +32,29 @@ if ! [ -f "${CLOUD_IMAGE_PATH}" ]; then
     fi
     CLOUD_IMAGE_PATH="$(mktemp -d)/$(yq -r '.setup as $setup | .images[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)"
     wget -c -O "${CLOUD_IMAGE_PATH}" --progress=dot:giga "${DOWNLOAD_IMAGE_PATH}"
-    if systemd-detect-virt && mount -t 9p database.0 /mnt; then
-        rsync -av "${CLOUD_IMAGE_PATH}" /mnt/
-        sync
-        umount /mnt
+    if ! [ -f "${CLOUD_IMAGE_PATH}" ]; then
+        echo "!! image download is required, but failed"
+        exit 1
+    fi
+    # update cache with downloaded image (only if the image isn't an out-of-the-box ready image)
+    if [ "xdump" != "x${DISTRO_NAME}" ]; then
+        if systemd-detect-virt && mount -t 9p database.0 /mnt; then
+            rsync -av "${CLOUD_IMAGE_PATH}" /mnt/
+            sync
+            umount /mnt
+        fi
     fi
 fi
 echo "CLOUD-IMAGE: ${CLOUD_IMAGE_PATH}, TARGET: ${TARGET_DEVICE}"
 
 if file "${CLOUD_IMAGE_PATH}" | grep -q QCOW; then
     qemu-img convert -O raw "${CLOUD_IMAGE_PATH}" "${TARGET_DEVICE}"
-elif file "${CLOUD_IMAGE_PATH}" | grep -q "\(XZ\|gzip\) compressed"; then
-    LARGEST_FILE=$(tar -tvf "${CLOUD_IMAGE_PATH}" | sort -n | grep -vE "^d" | head -1 | awk '{print $9}')
-    tar -xO "${LARGEST_FILE}" -f "${CLOUD_IMAGE_PATH}" | \
-        dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
+elif file "${CLOUD_IMAGE_PATH}" | grep -q "XZ compressed"; then
+    xz -cd <"${CLOUD_IMAGE_PATH}" | dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
+elif file "${CLOUD_IMAGE_PATH}" | grep -q "gzip compressed"; then
+    gzip -cd <"${CLOUD_IMAGE_PATH}" | dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
 else
-    echo "!! wrong image file"
+    echo "[FAIL] unknown image file type"
     exit 1
 fi
 
@@ -115,7 +123,6 @@ if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
 fi
 
 # bootable system
-DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
 BIOS_PART=( $(lsblk -no MAJ:MIN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/BIOS/I!d' | head -n1) )
 BIOS_PART[0]=$( cut -d':' -f2 <<<"${BIOS_PART[0]}" )
 EFI_PART=( $(lsblk -no MAJ:MIN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
@@ -190,17 +197,19 @@ if ! grep -q '/swap/swapfile' /mnt/etc/fstab; then
 EOF
 fi
 
-# write the stage user-data to the cidata directory on disk
-install -d -m 0700 -o root -g root /mnt/cidata
-cp /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data /mnt/cidata/
-chmod 0600 /mnt/cidata/{meta,user}-data
-tee -a /mnt/etc/cloud/cloud.cfg <<EOF
+# write the stage user-data to the cidata directory on disk (only if the image isn't an out-of-the-box ready image)
+if [ "xdump" != "x${DISTRO_NAME}" ]; then
+  install -d -m 0700 -o root -g root /mnt/cidata
+  cp /var/lib/cloud/instance/provision/meta-data /var/lib/cloud/instance/provision/user-data /mnt/cidata/
+  chmod 0600 /mnt/cidata/{meta,user}-data
+  tee -a /mnt/etc/cloud/cloud.cfg <<EOF
 
 datasource_list: ["NoCloud"]
 datasource:
   NoCloud:
     seedfrom: file:///cidata/
 EOF
+fi
 
 # set local package mirror
 PKG_MIRROR=$(yq -r '.setup as $setup | .setup.pkg_mirror[$setup.distro]' /var/lib/cloud/instance/config/setup.yml)

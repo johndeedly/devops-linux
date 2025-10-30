@@ -151,6 +151,7 @@ distros:
   rocky-8: yum
 download:
   archiso: https://geo.mirror.pkgbuild.com/iso/latest/archlinux-x86_64.iso
+  dump: http://0.0.0.0/devops-linux-x86_64.qcow2
   archlinux: https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
   debian: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
   debian-edge: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
@@ -171,6 +172,7 @@ download:
   rocky-8: https://dl.rockylinux.org/pub/rocky/8/images/x86_64/Rocky-8-GenericCloud.latest.x86_64.qcow2
 images:
   archiso: archlinux-x86_64.iso
+  dump: devops-linux-x86_64.qcow2
   archlinux: Arch-Linux-x86_64-cloudimg.qcow2
   debiso: debian-x86_64.iso
   debian: debian-13-generic-amd64.qcow2
