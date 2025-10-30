@@ -33,9 +33,9 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 /bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" > /tmp/mirror_url_list.txt
-# force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
@@ -53,11 +53,16 @@ https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-backports/
 https://security.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-security/
+https://apt.releases.hashicorp.com/dists/${VERSION_CODENAME}/
+EOX
+  # gpg keyrings
+  tee -a /tmp/mirror_url_list.txt <<EOX
+https://apt.releases.hashicorp.com/gpg
 EOX
 )
-# force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
@@ -122,9 +127,9 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 /bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" | \
   sed -e 's/mirror+file:\/etc\/apt\/mirrors\/debian\.list/https:\/\/deb.debian.org\/debian/g' \
   -e 's/mirror+file:\/etc\/apt\/mirrors\/debian-security\.list/https:\/\/deb.debian.org\/debian-security/g' > /tmp/mirror_url_list.txt
-# force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
@@ -142,12 +147,18 @@ https://deb.debian.org/debian/dists/${VERSION_CODENAME}/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-updates/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-backports/
 https://deb.debian.org/debian-security/dists/${VERSION_CODENAME}-security/
-http://download.proxmox.com/debian/pve/dists/${VERSION_CODENAME}/
+https://download.proxmox.com/debian/pve/dists/${VERSION_CODENAME}/
+https://apt.releases.hashicorp.com/dists/${VERSION_CODENAME}/
+EOX
+  # gpg keyrings
+  tee -a /tmp/mirror_url_list.txt <<EOX
+https://download.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg
+https://apt.releases.hashicorp.com/gpg
 EOX
 )
-# force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 

@@ -14,7 +14,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install cur
 echo ":: download proxmox repository certificate"
 (
   source /etc/os-release
-  curl -fsSL "https://enterprise.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg" | gpg --dearmor -o "/etc/apt/trusted.gpg.d/proxmox-release-${VERSION_CODENAME}.gpg"
+  curl -fsSL "https://download.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg" | gpg --dearmor -o "/etc/apt/trusted.gpg.d/proxmox-release-${VERSION_CODENAME}.gpg"
 )
 
 # add the proxmox repository to the package sources
