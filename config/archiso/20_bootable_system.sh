@@ -5,7 +5,77 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 # prepare setup variables
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
 TARGET_DEVICE=$(yq -r '.setup.target' /var/lib/cloud/instance/config/setup.yml)
-if [ "$TARGET_DEVICE" == "auto" ] || [ -z "$TARGET_DEVICE" ]; then
+if [ "$TARGET_DEVICE" == "select" ]; then
+    ip=$(ip addr show $(ip route show default | awk '/default via/ {print $5}') | \
+        awk '/inet / {print $2}' | cut -d/ -f1 | grep -vE '^127\.|^169\.254\.' | head -n1)
+    ip6=$(ip -6 addr show $(ip -6 route show default | awk '/default via/ {print $5}') | \
+        awk '/inet6 / {print $2}' | cut -d/ -f1 | grep -vE '^fe80|^::1' | head -n1)
+    port=5000
+    echo "Open a webbrowser and point it to:"
+    [ -n "$ip" ] && echo "-> http://$ip:$port/"
+    [ -n "$ip6" ] && echo "-> http://[$ip6]:$port/"
+    TARGET_DEVICE=$( python3 - <<EOF
+import http.server
+import socketserver
+import subprocess
+import threading
+from urllib.parse import parse_qs
+
+selected = None
+
+result = subprocess.run(
+    ["lsblk", "-dn", "-o", "PATH,SIZE,TYPE"],
+    stdout=subprocess.PIPE,
+    text=True
+)
+disks = []
+for line in result.stdout.splitlines():
+    path, size, typename = line.split()
+    if typename == "disk":
+        disks.append((path, size))
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/":
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            html = "<h2>Choose installation target</h2><form method='POST'>"
+            for path, size in disks:
+                html += f"<input type='radio' name='disk' value='{path}'> {path} ({size})<br>"
+            html += "<input type='submit' value='Send'></form>"
+            self.wfile.write(html.encode())
+        else:
+            self.send_error(404)
+
+    def do_POST(self):
+        global selected
+        length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(length).decode()
+        data = parse_qs(post_data)
+        selected = data.get("disk", [""])[0]
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        for path, size in disks:
+            if selected == path:
+                self.wfile.write(f"<h2>Use installation disk: {selected}</h2>".encode())
+                threading.Thread(target=httpd.shutdown, daemon=True).start()
+                return
+        selected = None
+
+with socketserver.TCPServer(("", $port), Handler) as httpd:
+    while selected is None:
+        httpd.handle_request()
+
+print(selected if selected else "")
+EOF
+    )
+    if [ -z "$TARGET_DEVICE" ] || ! [ -e "$TARGET_DEVICE" ]; then
+        echo "!! error selecting target"
+        exit 1
+    fi
+elif [ "$TARGET_DEVICE" == "auto" ] || [ -z "$TARGET_DEVICE" ]; then
     if [ -e /dev/vda ]; then
         TARGET_DEVICE="/dev/vda"
     elif [ -e /dev/nvme0n1 ]; then
