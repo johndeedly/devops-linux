@@ -152,7 +152,7 @@ https://apt.releases.hashicorp.com/dists/${VERSION_CODENAME}/
 EOX
   # gpg keyrings
   tee -a /tmp/mirror_url_list.txt <<EOX
-https://download.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg
+https://enterprise.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg
 https://apt.releases.hashicorp.com/gpg
 EOX
 )
