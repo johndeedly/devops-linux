@@ -147,7 +147,7 @@ https://deb.debian.org/debian/dists/${VERSION_CODENAME}/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-updates/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-backports/
 https://deb.debian.org/debian-security/dists/${VERSION_CODENAME}-security/
-https://download.proxmox.com/debian/pve/dists/${VERSION_CODENAME}/
+http://download.proxmox.com/debian/pve/dists/${VERSION_CODENAME}/
 https://apt.releases.hashicorp.com/dists/${VERSION_CODENAME}/
 EOX
   # gpg keyrings
