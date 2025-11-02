@@ -106,7 +106,7 @@ rm /kernel-modules-backup.tar.zst
 
 # Configure keyboard and console
 if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install locales keyboard-configuration console-setup console-data tzdata
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install locales-all keyboard-configuration console-setup console-data tzdata
 elif [ -e /bin/yum ]; then
   LC_ALL=C yes | LC_ALL=C yum install -y glibc-common glibc-locale-source glibc-langpack-de
 fi
