@@ -68,6 +68,15 @@ tee -a /var/tmp/archlive/baseline/airootfs/devops-linux <<EOF
 $(date +%F)
 EOF
 
+# modify cloud config to use iso mount as nocloud datasource (ventoy boot bugfix)
+mkdir -p /var/tmp/archlive/baseline/airootfs/etc/cloud/cloud.cfg.d
+tee -a /var/tmp/archlive/baseline/airootfs/etc/cloud/cloud.cfg.d/10_nocloud.cfg <<EOF
+datasource_list: ["NoCloud"]
+datasource:
+  NoCloud:
+    seedfrom: file:///run/archiso/bootmnt/
+EOF
+
 # build archiso
 pushd /var/tmp/archlive
   mkarchiso -m iso -w work -o output baseline
