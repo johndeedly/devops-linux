@@ -69,12 +69,27 @@ $(date +%F)
 EOF
 
 # modify cloud config to use iso mount as nocloud datasource (ventoy boot bugfix)
+mkdir -p /var/tmp/archlive/baseline/airootfs/etc/systemd/system/cloud-init.target.wants
+tee -a /var/tmp/archlive/baseline/airootfs/etc/systemd/system/cidata.mount <<EOF
+[Unit]
+Description=CIDATA datasource (/cidata)
+Before=cloud-init.service
+
+[Mount]
+What=/dev/disk/by-label/CIDATA
+Where=/cidata
+Options=X-mount.mkdir
+
+[Install]
+WantedBy=cloud-init.target
+EOF
+ln -s /etc/systemd/system/cidata.mount /var/tmp/archlive/baseline/airootfs/etc/systemd/system/cloud-init.target.wants/cidata.mount
 mkdir -p /var/tmp/archlive/baseline/airootfs/etc/cloud/cloud.cfg.d
 tee -a /var/tmp/archlive/baseline/airootfs/etc/cloud/cloud.cfg.d/10_nocloud.cfg <<EOF
 datasource_list: ["NoCloud"]
 datasource:
   NoCloud:
-    seedfrom: file:///run/archiso/bootmnt/
+    seedfrom: file:///cidata/
 EOF
 
 # build archiso

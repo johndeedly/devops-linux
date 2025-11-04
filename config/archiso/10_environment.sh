@@ -14,7 +14,7 @@ sed -e '/DEBUG/d' /var/log/cloud-init.log | tee -a /cidata_log >/dev/null
 # locate the cidata iso and mount it to /iso
 CIDATA_DEVICE=$(lsblk -no PATH,LABEL,FSTYPE | sed -e '/cidata/I!d' -e '/iso9660/I!d' | head -n1 | cut -d' ' -f1)
 test -n "$CIDATA_DEVICE" && mount -o X-mount.mkdir "$CIDATA_DEVICE" /iso
-mountpoint -q /iso || ( test -f /run/archiso/bootmnt/meta-data && mount --bind -o X-mount.mkdir /run/archiso/bootmnt /iso )
+mountpoint -q /iso || ( test -f /dev/disk/by-label/CIDATA && mount -o X-mount.mkdir /dev/disk/by-label/CIDATA /iso )
 
 # sync everything to disk
 sync
