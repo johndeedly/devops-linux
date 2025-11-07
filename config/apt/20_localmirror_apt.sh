@@ -32,13 +32,10 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 #!/usr/bin/env bash
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
-/bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" > /tmp/mirror_url_list.txt
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
+# download the repo definitions after "apt update" as fast as possible
 (
   source /etc/os-release
 while read -r line; do
@@ -66,10 +63,23 @@ wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=ba
 
 rm /tmp/mirror_url_list.txt
 
-mkdir -p /var/cache/apt/mirror/images
+# add all available package uris to the download list
+/bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /tmp/mirror_url_list.txt
+
+# sort the uri list for faster download
+LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt && \
+  mv /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt
+
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
+rm /tmp/mirror_url_list.txt
+
+# add the cloud images to the download list
 (
   source /etc/os-release
-  tee /tmp/mirror_url_list.txt <<EOX
+  tee -a /tmp/mirror_url_list.txt <<EOX
 https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/${VERSION_CODENAME}-server-cloudimg-amd64.img
 https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/MD5SUMS
 https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/MD5SUMS.gpg
@@ -77,9 +87,10 @@ https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/SHA256SUMS
 https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/SHA256SUMS.gpg
 EOX
 )
-# continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
+
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -c -N -P /var/cache/apt/mirror/images -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
@@ -124,15 +135,10 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 #!/usr/bin/env bash
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
-/bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" | \
-  sed -e 's/mirror+file:\/etc\/apt\/mirrors\/debian\.list/https:\/\/deb.debian.org\/debian/g' \
-  -e 's/mirror+file:\/etc\/apt\/mirrors\/debian-security\.list/https:\/\/deb.debian.org\/debian-security/g' > /tmp/mirror_url_list.txt
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
+# download the repo definitions after "apt update" as fast as possible
 (
   source /etc/os-release
 while read -r line; do
@@ -162,18 +168,32 @@ wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=ba
 
 rm /tmp/mirror_url_list.txt
 
-mkdir -p /var/cache/apt/mirror/images
+# add all available package uris to the download list
+/bin/apt-cache pkgnames 2>/dev/null | xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /tmp/mirror_url_list.txt
+
+# sort the uri list for faster download
+LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt && \
+  mv /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt
+
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+
+rm /tmp/mirror_url_list.txt
+
+# add the cloud images to the download list
 (
   source /etc/os-release
-  tee /tmp/mirror_url_list.txt <<EOX
+  tee -a /tmp/mirror_url_list.txt <<EOX
 https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/debian-${VERSION_ID}-generic-amd64.qcow2
 https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/debian-${VERSION_ID}-nocloud-amd64.qcow2
 https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/SHA512SUMS
 EOX
 )
-# continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
+
+# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -c -N -P /var/cache/apt/mirror/images -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
