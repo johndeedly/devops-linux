@@ -191,8 +191,8 @@ if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
 fi
 
 # bootable system
-BIOS_PART=( $(lsblk -no PARTN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/BIOS/I!d' | head -n1) )
-EFI_PART=( $(lsblk -no PARTN,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
+BIOS_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/BIOS/I!d' | head -n1) )
+EFI_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
 echo "BIOS: ${TARGET_DEVICE}, partition ${BIOS_PART[0]}"
 echo "EFI: ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
 if [ -n "${BIOS_PART[0]}" ] && [ -n "${EFI_PART[0]}" ]; then
@@ -210,6 +210,8 @@ else
   exit 1
 fi
 if [ -n "${EFI_PART[0]}" ] && [ -d /sys/firmware/efi ]; then
+    # mount detected efi filesystem
+    mount "${EFI_PART[1]}" /mnt
     # remove duplicate efi entries
     efibootmgr | sed -e '/'"${DISTRO_NAME}"'/I!d' | while read -r bootentry; do
         bootnum=$(echo "$bootentry" | grep -Po "[A-F0-9]{4}" | head -n1)
@@ -218,8 +220,26 @@ if [ -n "${EFI_PART[0]}" ] && [ -d /sys/firmware/efi ]; then
             efibootmgr -b "$bootnum" -B
         fi
     done
+    # find the efi bootloader
+    GRUBX64EFI=( $(find /mnt -iname "grubx64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
+    if [ "${#GRUBX64EFI[@]}" = 0 ]; then
+      GRUBX64EFI=( $(find /mnt -iname "refind_x64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
+      if [ "${#GRUBX64EFI[@]}" = 0 ]; then
+        GRUBX64EFI=( $(find /mnt -iname "systemd-bootx64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
+        if [ "${#GRUBX64EFI[@]}" = 0 ]; then
+          GRUBX64EFI=( $(find /mnt -iname "bootx64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
+          if [ "${#GRUBX64EFI[@]}" = 0 ]; then
+            # nothing found, just use the default fallback bootloader path, that every efi implementation should support
+            GRUBX64EFI=( "\\EFI\\BOOT\\BOOTX64.EFI" )
+          fi
+        fi
+      fi
+    fi
     # create new entry
-    efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l /EFI/BOOT/BOOTX64.EFI || true
+    printf "[ ## ] Setting up bootloader %s, partition %s, device %s\n" "${GRUBX64EFI[0]//\\//}" "${EFI_PART[0]}" "${TARGET_DEVICE}"
+    efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l "${GRUBX64EFI[0]}" || true
+    # unmount detected efi filesystem
+    umount -l /mnt
 fi
 
 # mount detected root filesystem
