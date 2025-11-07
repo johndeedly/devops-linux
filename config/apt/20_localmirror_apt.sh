@@ -33,7 +33,7 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 
-rm /tmp/mirror_url_list.txt
+rm /tmp/mirror_url_list.txt /tmp/mirror_file_list.txt
 
 # download the repo definitions after "apt update" as fast as possible
 (
@@ -57,6 +57,11 @@ EOX
 https://apt.releases.hashicorp.com/gpg
 EOX
 )
+
+# convert the filelist to a local filelist for later
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+
 # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
@@ -70,6 +75,10 @@ LC_ALL=C /bin/apt-cache dumpavail 2>/dev/null | awk '/^Package: /{p=$2} /^Versio
 # sort the uri list for faster download
 LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt && \
   mv /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt
+
+# convert the filelist to a local filelist for later
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
 
 # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
@@ -89,26 +98,25 @@ https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/SHA256SUMS.gpg
 EOX
 )
 
+# convert the filelist to a local filelist for later
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+
 # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
-# remove older package versions (sort -r: newest first) when packages count is larger than 3 (cnt[key]>3)
-find /var/cache/apt/mirror -name '*.deb' -printf "%P %T+\n" | sort -r -t' ' -k2,2 | awk -F '_' '{
-  key=$1
-  for (i=2;i<NF-1;i++){key=sprintf("%s_%s",key,$i)}
-  cnt[key]++
-  if(cnt[key]>3){
-    out=$1
-    for (i=2;i<=NF;i++){out=sprintf("%s_%s",out,$i)}
-    printf "%i %s\n",cnt[key],out
-  }
-}' | while read -r nr pkg ctm; do
-  echo "removing /var/cache/apt/mirror/$pkg"
-  rm "/var/cache/apt/mirror/$pkg"
+# remove unneeded files
+# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
+# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
+find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/tmp/mirror_file_list.txt | while read -r line; do
+  echo "removing $line"
+  rm "$line"
 done
+
+rm /tmp/mirror_file_list.txt
 EOF
 else
 # restore default mirror
@@ -137,7 +145,7 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 
-rm /tmp/mirror_url_list.txt
+rm /tmp/mirror_url_list.txt /tmp/mirror_file_list.txt
 
 # download the repo definitions after "apt update" as fast as possible
 (
@@ -163,6 +171,11 @@ https://enterprise.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg
 https://apt.releases.hashicorp.com/gpg
 EOX
 )
+
+# convert the filelist to a local filelist for later
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+
 # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
@@ -176,6 +189,10 @@ LC_ALL=C /bin/apt-cache dumpavail 2>/dev/null | awk '/^Package: /{p=$2} /^Versio
 # sort the uri list for faster download
 LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt && \
   mv /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt
+
+# convert the filelist to a local filelist for later
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
 
 # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
@@ -193,26 +210,25 @@ https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/SHA512SUMS
 EOX
 )
 
+# convert the filelist to a local filelist for later
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+
 # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
 # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
 wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
 rm /tmp/mirror_url_list.txt
 
-# remove older package versions (sort -r: newest first) when packages count is larger than 3 (cnt[key]>3)
-find /var/cache/apt/mirror -name '*.deb' -printf "%P %T+\n" | sort -r -t' ' -k2,2 | awk -F '_' '{
-  key=$1
-  for (i=2;i<NF-1;i++){key=sprintf("%s_%s",key,$i)}
-  cnt[key]++
-  if(cnt[key]>3){
-    out=$1
-    for (i=2;i<=NF;i++){out=sprintf("%s_%s",out,$i)}
-    printf "%i %s\n",cnt[key],out
-  }
-}' | while read -r nr pkg ctm; do
-  echo "removing /var/cache/apt/mirror/$pkg"
-  rm "/var/cache/apt/mirror/$pkg"
+# remove unneeded files
+# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
+# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
+find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/tmp/mirror_file_list.txt | while read -r line; do
+  echo "removing $line"
+  rm "$line"
 done
+
+rm /tmp/mirror_file_list.txt
 EOF
 # install the proxmox repository key
 echo ":: download proxmox repository certificate"
