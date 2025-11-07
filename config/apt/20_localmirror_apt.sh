@@ -205,6 +205,15 @@ echo ":: download proxmox repository certificate"
 deb [arch=amd64] http://download.proxmox.com/debian/pve ${VERSION_CODENAME} pve-no-subscription
 EOF
 )
+# install the hashicorp repository key
+curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/hashicorp-archive-keyring.gpg
+# add the hashicorp repository to the package sources
+(
+  source /etc/os-release
+  tee /etc/apt/sources.list.d/hashicorp.list <<EOF
+deb [arch=amd64] https://apt.releases.hashicorp.com ${VERSION_CODENAME} main
+EOF
+)
 fi
 chmod +x /usr/local/bin/aptsync.sh
 
