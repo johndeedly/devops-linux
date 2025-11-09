@@ -130,6 +130,40 @@ setup:
     master_fqdn_or_ip: ""
     ceph_comm_network: 10.0.0.0/8
     ceph_osd_device: ""
+  proxmox_devops:
+    qms:
+      - image: debian-13-generic-amd64.qcow2
+        id: 400
+        name: debian-13-qm
+        cores: 2
+        memory: 2048
+        storage: local
+        networks:
+          - name: net0
+            bridge: vmbrlan0
+            vlan: 1
+        ostype: l26
+        pool: pool0
+        onboot: 0
+        reboot: 1
+    pcts:
+      - image: devops-linux-x86_64.tar.zst
+        id: 401
+        hostname: devops-linux-pct
+        cores: 2
+        memory: 2048
+        storage: local
+        size_gb: 512
+        networks:
+          - name: net0
+            alias: eth0
+            bridge: vmbrlan0
+            ip: dhcp
+            ip6: dhcp
+            vlan: 1
+        ostype: debian
+        pool: pool0
+        onboot: 0
 distros:
   archlinux: pacman
   debian: apt

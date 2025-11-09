@@ -11,81 +11,81 @@ modprobe 9p
 modprobe 9pnet
 modprobe 9pnet_virtio
 
+# locate the cidata iso and mount it to /iso
+CIDATA_DEVICE=$(lsblk -no PATH,LABEL,FSTYPE | sed -e '/cidata/I!d' -e '/iso9660/I!d' | head -n1 | cut -d' ' -f1)
+test -n "$CIDATA_DEVICE" && mount -o X-mount.mkdir "$CIDATA_DEVICE" /iso
+mountpoint -q /iso || ( test -f /dev/disk/by-label/CIDATA && mount -o X-mount.mkdir /dev/disk/by-label/CIDATA /iso )
+# fallback: locate the database mount (packer build) and mount it to /iso
+mountpoint -q /iso || ( mount -t 9p -o X-mount.mkdir,trans=virtio,version=9p2000.L database.0 /iso || mount -t vboxsf -o X-mount.mkdir database.0 /iso )
+# if iso mount is not present, quit
+if ! mountpoint -q /iso; then
+    [ -f "${0}" ] && rm -- "${0}"
+    exit 0
+fi
+
+# prepare config arrays to iterate over
+readarray QMS < <(yq -c '.setup.proxmox_devops.qms[]' /var/lib/cloud/instance/config/setup.yml)
+readarray PCTS < <(yq -c '.setup.proxmox_devops.pcts[]' /var/lib/cloud/instance/config/setup.yml)
+
 # setup build environment
 mkdir -p /var/lib/vz/template/{iso,cache}
 BUILDDIR=$(mktemp --tmpdir=/var/tmp -d)
 pushd "$BUILDDIR"
-config_base="$(yq -r '.setup.local_http_database' /var/lib/cloud/instance/config/setup.yml)"
 
-# debian router
-target_path="/var/lib/vz/template/cache/debian-x86_64-router.qcow2"
-packer_path="/run/database/proxmox-devops/debian-x86_64-router.qcow2"
-config_http="${config_base%"/"}/proxmox-devops/debian-x86_64-router.qcow2"
-container_hostname="debian-router"
-if mountpoint -q /run/database || mount -t 9p -o X-mount.mkdir,trans=virtio,version=9p2000.L database.0 /run/database || mount -t vboxsf -o X-mount.mkdir database.0 /run/database; then
-    rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "$packer_path" "$target_path"
-elif [ "x$config_base" != "x" ]; then
-    wget -c -N --progress=dot:giga -O "$target_path" "$config_http"
-fi
-if [ -f "$target_path" ]; then
-  qm create 400 --name "$container_hostname" --ostype other --cores 2 --balloon 1024 --memory 2048 --machine q35 \
-    --net0 virtio,bridge=vmbr0 --net1 virtio,bridge=vmbrlan0 \
-    --agent enabled=1 --vga virtio --onboot 1 --reboot 1 --serial0 socket --kvm 1
-  qm importdisk 400 "$target_path" local --format qcow2
-  qm set 400 --virtio0 "local:400/vm-400-disk-0.qcow2,format=qcow2,detect_zeroes=1,discard=on,iothread=1"
-  qm set 400 --boot "order=virtio0"
-fi
+# setup virtual machines
+for line in "${QMS[@]}"; do
+  read QM_IMAGE QM_ID QM_NAME QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT < \
+    <(jq '.image, .id, .name, .cores, .memory, .storage, .ostype, .pool, .onboot, .reboot' <<<"$line" | xargs)
+  # check present
+  if ! [ -f "/iso/$QM_IMAGE" ]; then
+    unset QM_IMAGE QM_ID QM_NAME QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
+    continue
+  fi
+  # create vm
+  qm create "$QM_ID" --name "$QM_NAME" --ostype "$QM_OSTYPE" --cores "$QM_CORES" --memory "$QM_MEMORY" \
+    --machine q35,viommu=virtio --kvm 1 --pool "$QM_POOL" \
+    --agent enabled=1 --vga virtio --onboot "$QM_ONBOOT" --reboot "$QM_REBOOT" --serial0 socket
+  # lvm -> raw, otherwise qcow2
+  if pvs --rows | grep -E "VG.*$QM_STORAGE"; then
+    qm disk import "$QM_ID" "/iso/$QM_IMAGE" "$QM_STORAGE" --format raw --target-disk virtio0
+  else
+    qm disk import "$QM_ID" "/iso/$QM_IMAGE" "$QM_STORAGE" --format qcow2 --target-disk virtio0
+  fi
+  qm set "$QM_ID" --boot order=virtio0
+  # set network adapters
+  readarray QM_NETWORKS < <(jq -c '.networks[]' <<<"$line")
+  for net in "${QM_NETWORKS[@]}"; do
+    read QM_NET_NAME QM_NET_BRIDGE QM_NET_VLAN < \
+      <(jq '.name, .bridge, .vlan' <<<"$net" | xargs)
+    qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500,tag=$QM_NET_VLAN"
+    unset QM_NET_NAME QM_NET_BRIDGE QM_NET_VLAN
+  done
+  unset QM_IMAGE QM_ID QM_NAME QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
+done
 
-# archlinux mirror server
-target_path="/var/lib/vz/template/cache/archlinux-x86_64-mirror.tar.zst"
-packer_path="/run/database/proxmox-devops/archlinux-x86_64-mirror.tar.zst"
-config_http="${config_base%"/"}/proxmox-devops/archlinux-x86_64-mirror.tar.zst"
-container_hostname="archlinux-mirror"
-if mountpoint -q /run/database || mount -t 9p -o X-mount.mkdir,trans=virtio,version=9p2000.L database.0 /run/database || mount -t vboxsf -o X-mount.mkdir database.0 /run/database; then
-    rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "$packer_path" "$target_path"
-elif [ "x$config_base" != "x" ]; then
-    wget -c -N --progress=dot:giga -O "$target_path" "$config_http"
-fi
-if [ -f "$target_path" ]; then
-  pct create 401 "$target_path" --ignore-unpack-errors 1 --memory 1536 \
-    --hostname "$container_hostname" --storage local --swap 512 --rootfs local:512 \
-    --net0 name=eth0,bridge=vmbrlan0,firewall=0,ip=dhcp,ip6=dhcp \
-    --unprivileged 1 --pool pool0 --ostype archlinux --onboot 1 --features nesting=1 --protection 1
-fi
-
-# debian mirror server
-target_path="/var/lib/vz/template/cache/debian-x86_64-mirror.tar.zst"
-packer_path="/run/database/proxmox-devops/debian-x86_64-mirror.tar.zst"
-config_http="${config_base%"/"}/proxmox-devops/debian-x86_64-mirror.tar.zst"
-container_hostname="debian-mirror"
-if mountpoint -q /run/database || mount -t 9p -o X-mount.mkdir,trans=virtio,version=9p2000.L database.0 /run/database || mount -t vboxsf -o X-mount.mkdir database.0 /run/database; then
-    rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "$packer_path" "$target_path"
-elif [ "x$config_base" != "x" ]; then
-    wget -c -N --progress=dot:giga -O "$target_path" "$config_http"
-fi
-if [ -f "$target_path" ]; then
-  pct create 402 "$target_path" --ignore-unpack-errors 1 --memory 1536 \
-    --hostname "$container_hostname" --storage local --swap 512 --rootfs local:512 \
-    --net0 name=eth0,bridge=vmbrlan0,firewall=0,ip=dhcp,ip6=dhcp \
-    --unprivileged 1 --pool pool0 --ostype debian --onboot 1 --features nesting=1 --protection 1
-fi
-
-# ubuntu mirror server
-target_path="/var/lib/vz/template/cache/ubuntu-x86_64-mirror.tar.zst"
-packer_path="/run/database/proxmox-devops/ubuntu-x86_64-mirror.tar.zst"
-config_http="${config_base%"/"}/proxmox-devops/ubuntu-x86_64-mirror.tar.zst"
-container_hostname="ubuntu-mirror"
-if mountpoint -q /run/database || mount -t 9p -o X-mount.mkdir,trans=virtio,version=9p2000.L database.0 /run/database || mount -t vboxsf -o X-mount.mkdir database.0 /run/database; then
-    rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r "$packer_path" "$target_path"
-elif [ "x$config_base" != "x" ]; then
-    wget -c -N --progress=dot:giga -O "$target_path" "$config_http"
-fi
-if [ -f "$target_path" ]; then
-  pct create 403 "$target_path" --ignore-unpack-errors 1 --memory 1536 \
-    --hostname "$container_hostname" --storage local --swap 512 --rootfs local:512 \
-    --net0 name=eth0,bridge=vmbrlan0,firewall=0,ip=dhcp,ip6=dhcp \
-    --unprivileged 1 --pool pool0 --ostype ubuntu --onboot 1 --features nesting=1 --protection 1
-fi
+# setup containers
+for line in "${PCTS[@]}"; do
+  read PCT_IMAGE PCT_ID PCT_HOSTNAME PCT_CORES PCT_MEMORY PCT_STORAGE PCT_SIZE_GB PCT_OSTYPE PCT_POOL PCT_ONBOOT < \
+    <(jq '.image, .id, .hostname, .cores, .memory, .storage, .size_gb, .ostype, .pool, .onboot' <<<"$line" | xargs)
+  # check present
+  if ! [ -f "/iso/$PCT_IMAGE" ]; then
+    unset PCT_IMAGE PCT_ID PCT_HOSTNAME PCT_CORES PCT_MEMORY PCT_STORAGE PCT_SIZE_GB PCT_OSTYPE PCT_POOL PCT_ONBOOT
+    continue
+  fi
+  # create container
+  pct create "$PCT_ID" "/iso/$PCT_IMAGE" --ignore-unpack-errors 1 --cores "$PCT_CORES" --memory "$PCT_MEMORY" \
+    --hostname "$PCT_HOSTNAME" --storage "$PCT_STORAGE" --rootfs "$PCT_STORAGE:$PCT_SIZE_GB" \
+    --unprivileged 1 --pool "$PCT_POOL" --ostype "$PCT_OSTYPE" --onboot "$PCT_ONBOOT" --features nesting=1
+  # set network adapters
+  readarray PCT_NETWORKS < <(jq -c '.networks[]' <<<"$line")
+  for net in "${PCT_NETWORKS[@]}"; do
+    read PCT_NET_NAME PCT_NET_ALIAS PCT_NET_BRIDGE PCT_NET_IP PCT_NET_IP6 PCT_NET_VLAN < \
+      <(jq '.name, .alias, .bridge, .ip, .ip6, .vlan' <<<"$net" | xargs)
+    pct set "$PCT_ID" "--$PCT_NET_NAME" "name=$PCT_NET_ALIAS,bridge=$PCT_NET_BRIDGE,firewall=0,ip=$PCT_NET_IP,ip6=$PCT_NET_IP6,mtu=1500,tag=$PCT_NET_VLAN"
+    unset PCT_NET_NAME PCT_NET_ALIAS PCT_NET_BRIDGE PCT_NET_IP PCT_NET_IP6 PCT_NET_VLAN
+  done
+  unset PCT_IMAGE PCT_ID PCT_HOSTNAME PCT_CORES PCT_MEMORY PCT_STORAGE PCT_SIZE_GB PCT_OSTYPE PCT_POOL PCT_ONBOOT
+done
 
 # Scheduled task to update all LXC containers on a regular basis
 tee /usr/local/bin/update-all-lxcs.sh <<'EOF'
