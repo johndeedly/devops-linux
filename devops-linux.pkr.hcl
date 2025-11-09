@@ -51,6 +51,98 @@ locals {
   can_efi_boot          = local.has_ovmf_code_arch ? true : local.has_ovmf_code_debian ? true : false
   efi_firmware_code     = local.has_ovmf_code_arch ? local.ovmf_code_arch : local.has_ovmf_code_debian ? local.ovmf_code_debian : null
   efi_firmware_vars     = local.has_ovmf_vars_arch ? local.ovmf_vars_arch : local.has_ovmf_vars_debian ? local.ovmf_vars_debian : null
+  swtpm_sbin            = "/sbin/swtpm"
+  swtpm_bin             = "/bin/swtpm"
+  has_swtpm_sbin        = fileexists(local.swtpm_sbin)
+  has_swtpm_bin         = fileexists(local.swtpm_bin)
+  can_swtpm             = local.has_swtpm_sbin ? true : local.has_swtpm_bin ? true : false
+  can_swtpm_vbox        = local.has_swtpm_sbin ? "2.0" : local.has_swtpm_bin ? "2.0" : "none"
+  qemu_intro            = <<EOF
+#!/usr/bin/env bash
+trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
+QEMUPARAMS=(
+  "-name" "devops-linux-x86_64"
+  "-machine" "type=q35,accel=kvm"
+  "-drive" "file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2"
+  "-cpu" "host"
+)
+EOF
+  qemu_no_display       = <<EOF
+QEMUPARAMS+=(
+  "-device" "virtio-vga,id=video.0,max_outputs=1,hostmem=64M"
+  "-vga" "none" "-display" "none"
+)
+EOF
+  qemu_no_gl            = <<EOF
+QEMUPARAMS+=(
+  "-device" "virtio-vga,id=video.0,max_outputs=1,hostmem=64M"
+  "-vga" "none" "-display" "gtk,gl=on,show-cursor=on,zoom-to-fit=off"
+)
+EOF
+  qemu_gl               = <<EOF
+QEMUPARAMS+=(
+  "-device" "virtio-vga-gl,id=video.0,max_outputs=1,hostmem=64M"
+  "-vga" "none" "-display" "gtk,gl=on,show-cursor=on,zoom-to-fit=off"
+)
+EOF
+  qemu_efi              = <<EOF
+if [ -f "${local.ovmf_code_arch}" ]; then
+  QEMUPARAMS+=(
+    "-drive" "file=${local.ovmf_code_arch},if=pflash,unit=0,format=raw,readonly=on"
+    "-drive" "file=efivars.fd,if=pflash,unit=1,format=raw"
+  )
+elif [ -f "${local.ovmf_code_debian}" ]; then
+  QEMUPARAMS+=(
+    "-drive" "file=${local.ovmf_code_debian},if=pflash,unit=0,format=raw,readonly=on"
+    "-drive" "file=efivars.fd,if=pflash,unit=1,format=raw"
+  )
+fi
+EOF
+  qemu_swtpm            = <<EOF
+if command -v swtpm 2>&1 >/dev/null; then
+  if ! [ -e vtpm.0/vtpm.sock ]; then
+    mkdir -p vtpm.0
+    swtpm socket --tpm2 --tpmstate dir="vtpm.0" --ctrl type=unixio,path="vtpm.0/vtpm.sock" &
+  fi
+  QEMUPARAMS+=(
+    "-device" "tpm-tis,tpmdev=tpm.0" "-tpmdev" "emulator,id=tpm.0,chardev=vtpm"
+    "-chardev" "socket,id=vtpm,path=vtpm.0/vtpm.sock"
+  )
+fi
+EOF
+  qemu_net_user         = <<EOF
+QEMUPARAMS+=(
+  "-netdev" "user,id=user.0,hostfwd=tcp::9091-:9090" "-device" "virtio-net,netdev=user.0"
+)
+EOF
+  qemu_net_router       = <<EOF
+QEMUPARAMS+=(
+  "-netdev" "user,id=user.0,hostfwd=tcp::9091-:9090" "-device" "virtio-net,netdev=user.0"
+  "-netdev" "socket,id=user.1,listen=:23568" "-device" "virtio-net,netdev=user.1"
+)
+EOF
+  qemu_net_pxe          = <<EOF
+QEMUPARAMS+=(
+  "-netdev" "socket,id=user.0,connect=:23568" "-device" "virtio-net,netdev=user.0"
+)
+EOF
+  qemu_net_server       = <<EOF
+QEMUPARAMS+=(
+  "-netdev" "user,id=user.0,hostfwd=tcp::8022-:22,hostfwd=tcp::9091-:9090" "-device" "virtio-net,netdev=user.0"
+)
+EOF
+  qemu_outro            = <<EOF
+QEMUPARAMS+=(
+  "-smp" "${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores}" "-m" "${var.memory}M"
+  "-audio" "driver=pa,model=hda,id=snd0" "-device" "hda-output,audiodev=snd0"
+  "-device" "virtio-tablet" "-device" "virtio-keyboard"
+  "-rtc" "base=utc,clock=host"
+  "-virtfs" "local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0"
+)
+EOF
+  qemu_exec             = <<EOF
+/usr/bin/qemu-system-x86_64 "\$${QEMUPARAMS[@]}"
+EOF
 }
 
 
@@ -73,6 +165,7 @@ source "qemu" "default" {
   efi_boot             = local.can_efi_boot
   efi_firmware_code    = local.efi_firmware_code
   efi_firmware_vars    = local.efi_firmware_vars
+  vtpm                 = local.can_swtpm
   sockets              = 1
   cores                = var.cpu_cores
   threads              = 1
@@ -124,7 +217,7 @@ source "virtualbox-iso" "default" {
   ssh_keypair_name         = "ssh_packer_key"
   ssh_private_key_file     = "./ssh_packer_key"
   ssh_timeout              = "10m"
-  vboxmanage               = [["modifyvm", "{{ .Name }}", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"], ["sharedfolder", "add", "{{ .Name }}", "--name", "database.0", "--hostpath", "./database"]]
+  vboxmanage               = [["modifyvm", "{{ .Name }}", "--tpm-type", "${local.can_swtpm_vbox}", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"], ["sharedfolder", "add", "{{ .Name }}", "--name", "database.0", "--hostpath", "./database"]]
   vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"], ["sharedfolder", "remove", "{{ .Name }}", "--name", "database.0"]]
   vm_name                  = local.build_name_virtualbox
   skip_export              = true
@@ -240,167 +333,49 @@ EOS
   provisioner "shell-local" {
     inline = [<<EOS
 tee output/devops-linux/devops-linux-x86_64.run.sh <<EOF
-#!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
-if [ -f "${local.ovmf_code_arch}" ] || [ -f "${local.ovmf_code_debian}" ]; then
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
-  -cpu host \\
-  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -drive file=${local.efi_firmware_code},if=pflash,unit=0,format=raw,readonly=on \\
-  -drive file=efivars.fd,if=pflash,unit=1,format=raw \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host \\
-  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
-else
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
-  -cpu host \\
-  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host \\
-  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
-fi
-
-# /usr/bin/swtpm socket --tpm2 --tpmstate dir="..." --ctrl type=unixio,path=".../vtpm.sock"
-# -device tpm-tis,tpmdev=tpm0 -tpmdev emulator,id=tpm0,chardev=vtpm -chardev "socket,id=vtpm,path=.../vtpm.sock"
+${local.qemu_intro}
+${local.qemu_no_gl}
+${local.qemu_efi}
+${local.qemu_swtpm}
+${local.qemu_net_user}
+${local.qemu_outro}
+${local.qemu_exec}
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.run.sh
 tee output/devops-linux/devops-linux-x86_64.gl.sh <<EOF
-#!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
-if [ -f "${local.ovmf_code_arch}" ] || [ -f "${local.ovmf_code_debian}" ]; then
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga-gl,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
-  -cpu host \\
-  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -drive file=${local.efi_firmware_code},if=pflash,unit=0,format=raw,readonly=on \\
-  -drive file=efivars.fd,if=pflash,unit=1,format=raw \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host \\
-  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
-else
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga-gl,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
-  -cpu host \\
-  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host \\
-  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
-fi
-
-# /usr/bin/swtpm socket --tpm2 --tpmstate dir="..." --ctrl type=unixio,path=".../vtpm.sock"
-# -device tpm-tis,tpmdev=tpm0 -tpmdev emulator,id=tpm0,chardev=vtpm -chardev "socket,id=vtpm,path=.../vtpm.sock"
+${local.qemu_intro}
+${local.qemu_gl}
+${local.qemu_efi}
+${local.qemu_swtpm}
+${local.qemu_net_user}
+${local.qemu_outro}
+${local.qemu_exec}
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.gl.sh
 tee output/devops-linux/devops-linux-x86_64.pxe.sh <<EOF
-#!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-pxe-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
-  -cpu host \\
-  -boot n \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev socket,id=user.0,connect=:23568 -device virtio-net,netdev=user.0 \\
-  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host
-
-# remove -display gtk,gl=on for no 3d acceleration
-# -display none, -daemonize, hostfwd=::12457-:22 for running as a daemonized server
+${local.qemu_intro}
+${local.qemu_no_gl}
+${local.qemu_net_pxe}
+${local.qemu_outro}
+${local.qemu_exec}
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
 tee output/devops-linux/devops-linux-x86_64.netdev.sh <<EOF
-#!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
-if [ -f "${local.ovmf_code_arch}" ] || [ -f "${local.ovmf_code_debian}" ]; then
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
-  -cpu host \\
-  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -drive file=${local.efi_firmware_code},if=pflash,unit=0,format=raw,readonly=on \\
-  -drive file=efivars.fd,if=pflash,unit=1,format=raw \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -netdev socket,id=user.1,listen=:23568 -device virtio-net,netdev=user.1 \\
-  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host \\
-  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
-else
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display gtk,gl=on,show-cursor=on,zoom-to-fit=off \\
-  -cpu host \\
-  -drive file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2 \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev user,id=user.0,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -netdev socket,id=user.1,listen=:23568 -device virtio-net,netdev=user.1 \\
-  -audio driver=pa,model=hda,id=snd0 -device hda-output,audiodev=snd0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host \\
-  -virtfs local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0
-fi
-
-# /usr/bin/swtpm socket --tpm2 --tpmstate dir="..." --ctrl type=unixio,path=".../vtpm.sock"
-# -device tpm-tis,tpmdev=tpm0 -tpmdev emulator,id=tpm0,chardev=vtpm -chardev "socket,id=vtpm,path=.../vtpm.sock"
+${local.qemu_intro}
+${local.qemu_gl}
+${local.qemu_efi}
+${local.qemu_swtpm}
+${local.qemu_net_router}
+${local.qemu_outro}
+${local.qemu_exec}
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.netdev.sh
 tee output/devops-linux/devops-linux-x86_64.srv.sh <<EOF
-#!/usr/bin/env bash
-trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
-/usr/bin/qemu-system-x86_64 \\
-  -name devops-linux-srv-x86_64 \\
-  -machine type=q35,accel=kvm \\
-  -device virtio-vga,id=video.0,max_outputs=1,hostmem=64M \\
-  -vga none \\
-  -display none \\
-  -cpu host \\
-  -smp ${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores} -m ${var.memory}M \\
-  -netdev user,id=user.0,hostfwd=tcp::8022-:22,hostfwd=tcp::9091-:9090 -device virtio-net,netdev=user.0 \\
-  -device virtio-tablet -device virtio-keyboard \\
-  -rtc base=utc,clock=host
-
-# -daemonize for running as a daemonized server
+${local.qemu_intro}
+${local.qemu_no_display}
+${local.qemu_net_server}
+${local.qemu_outro}
+${local.qemu_exec}
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.srv.sh
 EOS
