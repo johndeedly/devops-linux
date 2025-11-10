@@ -57,7 +57,11 @@ for line in "${QMS[@]}"; do
   for net in "${QM_NETWORKS[@]}"; do
     read QM_NET_NAME QM_NET_BRIDGE QM_NET_VLAN < \
       <(jq '.name, .bridge, .vlan' <<<"$net" | xargs)
-    qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500,tag=$QM_NET_VLAN"
+    if [ -n "$QM_NET_VLAN" ] && [ "$QM_NET_VLAN" -gt 0 ]; then
+      qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500,tag=$QM_NET_VLAN"
+    else
+      qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500"
+    fi
     unset QM_NET_NAME QM_NET_BRIDGE QM_NET_VLAN
   done
   unset QM_IMAGE QM_ID QM_NAME QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
@@ -81,7 +85,11 @@ for line in "${PCTS[@]}"; do
   for net in "${PCT_NETWORKS[@]}"; do
     read PCT_NET_NAME PCT_NET_ALIAS PCT_NET_BRIDGE PCT_NET_IP PCT_NET_IP6 PCT_NET_VLAN < \
       <(jq '.name, .alias, .bridge, .ip, .ip6, .vlan' <<<"$net" | xargs)
-    pct set "$PCT_ID" "--$PCT_NET_NAME" "name=$PCT_NET_ALIAS,bridge=$PCT_NET_BRIDGE,firewall=0,ip=$PCT_NET_IP,ip6=$PCT_NET_IP6,mtu=1500,tag=$PCT_NET_VLAN"
+    if [ -n "$PCT_NET_VLAN" ] && [ "$PCT_NET_VLAN" -gt 0 ]; then
+      pct set "$PCT_ID" "--$PCT_NET_NAME" "name=$PCT_NET_ALIAS,bridge=$PCT_NET_BRIDGE,firewall=0,ip=$PCT_NET_IP,ip6=$PCT_NET_IP6,mtu=1500,tag=$PCT_NET_VLAN"
+    else
+      pct set "$PCT_ID" "--$PCT_NET_NAME" "name=$PCT_NET_ALIAS,bridge=$PCT_NET_BRIDGE,firewall=0,ip=$PCT_NET_IP,ip6=$PCT_NET_IP6,mtu=1500"
+    fi
     unset PCT_NET_NAME PCT_NET_ALIAS PCT_NET_BRIDGE PCT_NET_IP PCT_NET_IP6 PCT_NET_VLAN
   done
   unset PCT_IMAGE PCT_ID PCT_HOSTNAME PCT_CORES PCT_MEMORY PCT_STORAGE PCT_SIZE_GB PCT_OSTYPE PCT_POOL PCT_ONBOOT
