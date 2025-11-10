@@ -69,7 +69,7 @@ wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=ba
 rm /tmp/mirror_url_list.txt
 
 # add all available package uris to the download list
-LC_ALL=C /bin/apt-cache dumpavail 2>/dev/null | awk '/^Package: /{p=$2} /^Version: /{print p"="$2}' | \
+LC_ALL=C /bin/apt list --all-versions 2>/dev/null | sed -e '/^$/d' -e '/^Listing...$/d' -e 's|^\([^/]*\)[^ ]* \([^ ]*\).*|\1=\2|g' | \
   xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /tmp/mirror_url_list.txt
 
 # sort the uri list for faster download
@@ -183,7 +183,7 @@ wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=ba
 rm /tmp/mirror_url_list.txt
 
 # add all available package uris to the download list
-LC_ALL=C /bin/apt-cache dumpavail 2>/dev/null | awk '/^Package: /{p=$2} /^Version: /{print p"="$2}' | \
+LC_ALL=C /bin/apt list --all-versions 2>/dev/null | sed -e '/^$/d' -e '/^Listing...$/d' -e 's|^\([^/]*\)[^ ]* \([^ ]*\).*|\1=\2|g' | \
   xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /tmp/mirror_url_list.txt
 
 # sort the uri list for faster download
