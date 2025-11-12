@@ -209,7 +209,7 @@ else
   echo "!! neither efi nor boot partitions found"
   exit 1
 fi
-if [ -n "${EFI_PART[0]}" ] && [ -d /sys/firmware/efi ]; then
+if [ -n "${EFI_PART[0]}" ] && [ -e /sys/firmware/efi/efivars ]; then
     # mount detected efi filesystem
     mount "${EFI_PART[1]}" /mnt
     # remove duplicate efi entries
@@ -220,24 +220,47 @@ if [ -n "${EFI_PART[0]}" ] && [ -d /sys/firmware/efi ]; then
             efibootmgr -b "$bootnum" -B
         fi
     done
-    # find the efi bootloader
-    GRUBX64EFI=( $(find /mnt -iname "grubx64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
+    # find a candidate for the fallback bootloader
+    # shim is needed when secure boot is enabled, but it defaults to grub either way
+    GRUBX64EFI=( $(find /mnt -iname "shimx64.efi" -printf "%P ") )
     if [ "${#GRUBX64EFI[@]}" = 0 ]; then
-      GRUBX64EFI=( $(find /mnt -iname "refind_x64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
-      if [ "${#GRUBX64EFI[@]}" = 0 ]; then
-        GRUBX64EFI=( $(find /mnt -iname "systemd-bootx64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
+        # if no shim is present, grub is used next in list
+        GRUBX64EFI=( $(find /mnt -iname "grubx64.efi" -printf "%P ") )
         if [ "${#GRUBX64EFI[@]}" = 0 ]; then
-          GRUBX64EFI=( $(find /mnt -iname "bootx64.efi" -printf "\\\\%P " | sed -e "s|/|\\\\|g") )
-          if [ "${#GRUBX64EFI[@]}" = 0 ]; then
-            # nothing found, just use the default fallback bootloader path, that every efi implementation should support
-            GRUBX64EFI=( "\\EFI\\BOOT\\BOOTX64.EFI" )
-          fi
+            # if no grub is present alltogether, the systemd bootloader could be there
+            GRUBX64EFI=( $(find /mnt -iname "systemd-bootx64.efi" -printf "%P ") )
+            if [ "${#GRUBX64EFI[@]}" = 0 ]; then
+                # if all of the above are not there, maybe there is somewhere the default location bootloader, hopefully
+                GRUBX64EFI=( $(find /mnt -iname "bootx64.efi" -printf "%P ") )
+            fi
         fi
-      fi
     fi
-    # create new entry
-    printf "[ ## ] Setting up bootloader %s, partition %s, device %s\n" "${GRUBX64EFI[0]//\\//}" "${EFI_PART[0]}" "${TARGET_DEVICE}"
-    efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l "${GRUBX64EFI[0]}" || true
+    # the grub bootloader has a config somewhere
+    GRUBCFG=( $(find /mnt -iname "grub.cfg" -printf "%P ") )
+    # copy next fallback bootloader
+    if [ "${#GRUBX64EFI[@]}" -gt 0 ] && [ "/mnt/${GRUBX64EFI[0]}" != "/mnt/EFI/BOOT/BOOTX64.EFI" ]; then
+        mkdir -p /mnt/EFI/BOOT
+        echo "[ ## ] copy /mnt/${GRUBX64EFI[0]} to /mnt/EFI/BOOT/BOOTX64.EFI"
+        cp "/mnt/${GRUBX64EFI[0]}" /mnt/EFI/BOOT/BOOTX64.EFI
+    fi
+    # copy grub config
+    if [ "${#GRUBCFG[@]}" -gt 0 ]; then
+        mkdir -p /mnt/EFI/BOOT
+        find /mnt/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+            echo "[ ## ] copy /mnt/${GRUBCFG[0]} to $line/grub.cfg"
+            cp "/mnt/${GRUBCFG[0]}" "$line/grub.cfg"
+        done
+    fi
+    # create new nvram entries
+    NEXTX64EFI=$( sed -e "s|/|\\\\|g" <<<"/${GRUBX64EFI[0]}" )
+    if [ "x${NEXTX64EFI}" != "x\\EFI\\BOOT\\BOOTX64.EFI" ]; then
+        echo "[ ## ] create fallback boot entry for device ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
+        efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}-fallback" -l "\\EFI\\BOOT\\BOOTX64.EFI" | \
+            sed -e '/'"BootOrder\|${DISTRO_NAME}"'/I!d;s/\\/\\\\/g'
+    fi
+    echo "[ ## ] create ${DISTRO_NAME} boot entry for device ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
+    efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l "${NEXTX64EFI}" | \
+        sed -e '/'"BootOrder\|${DISTRO_NAME}"'/I!d;s/\\/\\\\/g'
     # unmount detected efi filesystem
     umount -l /mnt
 fi

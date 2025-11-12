@@ -283,22 +283,26 @@ GRUB_TERMINAL=console
 GRUB_GFXMODE=auto
 GRUB_GFXPAYLOAD_LINUX=keep
 EOF
-if [ -e /bin/apt ]; then
+if [ -e /bin/apt ] || [ -e /bin/pacman ]; then
   grub-mkconfig -o /boot/grub/grub.cfg
-  if [ -d /boot/efi/EFI/debian ]; then
-    grub-mkconfig -o /boot/efi/EFI/debian/grub.cfg
-  elif [ -d /boot/efi/EFI/ubuntu ]; then
-    grub-mkconfig -o /boot/efi/EFI/ubuntu/grub.cfg
-  fi
-elif [ -e /bin/pacman ]; then
-  grub-mkconfig -o /boot/grub/grub.cfg
+  find /boot/efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+    grub-mkconfig -o "$line/grub.cfg"
+  done
+  find /efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+    grub-mkconfig -o "$line/grub.cfg"
+  done
 elif [ -e /bin/yum ]; then
   grub2-editenv - set "kernelopts=$GRUB_GLOBAL_CMDLINE"
   if [ -e /sbin/grubby ]; then
     grubby --update-kernel=ALL --args="$GRUB_GLOBAL_CMDLINE"
   fi
   grub2-mkconfig -o /boot/grub2/grub.cfg --update-bls-cmdline
-  grub2-mkconfig -o /boot/efi/EFI/rocky/grub.cfg --update-bls-cmdline
+  find /boot/efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+    grub2-mkconfig -o "$line/grub.cfg" --update-bls-cmdline
+  done
+  find /efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+    grub2-mkconfig -o "$line/grub.cfg" --update-bls-cmdline
+  done
 fi
 
 # add modules to initcpio
