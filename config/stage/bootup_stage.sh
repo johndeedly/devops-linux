@@ -28,6 +28,10 @@ Match User root
 PasswordAuthentication no
 EOF
 
+# create cidata log
+touch /cidata_log
+chmod 0600 /cidata_log
+
 # sync everything to disk
 sync
 

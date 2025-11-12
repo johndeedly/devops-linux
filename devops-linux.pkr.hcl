@@ -229,6 +229,16 @@ build {
   sources = ["source.qemu.default", "source.virtualbox-iso.default"]
 
   provisioner "shell" {
+    inline = ["touch /cidata_stage0_log"]
+  }
+
+  provisioner "file" {
+    source      = "/cidata_stage0_log"
+    destination = "output/devops-linux-cidata-stage0.log"
+    direction   = "download"
+  }
+
+  provisioner "shell" {
     inline           = [<<EOS
 ( until [ "SubState=active" = "$(systemctl show cloud-init.target -p SubState)" ]; do sleep 5; done ) &
 pid=$!

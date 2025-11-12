@@ -315,9 +315,14 @@ if [ -n "$PKG_MIRROR" ] && [ "xnull" != "x$PKG_MIRROR" ]; then
     fi
 fi
 
+# print the current partition layout of the target device
+lsblk -o +LABEL,PARTLABEL,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}"
+
 # finalize /mnt
-cp /cidata_log /mnt/cidata_log || true
-chmod 0600 /mnt/cidata_log || true
+sleep 2
+sync
+cp /cidata_log /mnt/cidata_stage0_log || true
+chmod 0600 /mnt/cidata_stage0_log || true
 sync
 umount -l /mnt
 
@@ -330,17 +335,13 @@ if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
   fi
 
   # finalize /mnt again
-  cp /cidata_log /mnt/cidata_log || true
-  chmod 0600 /mnt/cidata_log || true
+  cp /cidata_log /mnt/cidata_stage0_log || true
+  chmod 0600 /mnt/cidata_stage0_log || true
   sync
   umount -l /mnt
   cryptsetup luksClose nextroot
   sync
 fi
-
-sleep 1
-lsblk -o +LABEL,PARTLABEL,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}"
-sleep 5
 
 # sync everything to disk
 sync
