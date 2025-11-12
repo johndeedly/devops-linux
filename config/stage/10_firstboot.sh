@@ -273,15 +273,23 @@ for cfg in "${GRUB_CFGS[@]}"; do
   sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "$cfg" || true
   sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "$cfg" || true
   sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "$cfg" || true
+  sed -i 's/^GRUB_TIMEOUT_STYLE=/#GRUB_TIMEOUT_STYLE=/' "$cfg" || true
+  sed -i 's/^GRUB_TIMEOUT=/#GRUB_TIMEOUT=/' "$cfg" || true
+  sed -i 's/^GRUB_COLOR_NORMAL=/#GRUB_COLOR_NORMAL=/' "$cfg" || true
+  sed -i 's/^GRUB_COLOR_HIGHLIGHT=/#GRUB_COLOR_HIGHLIGHT=/' "$cfg" || true
 done
 tee -a /etc/default/grub <<EOF
 
 # provisioned
 GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_GLOBAL_CMDLINE}"
 GRUB_CMDLINE_LINUX=""
-GRUB_TERMINAL=console
+GRUB_TERMINAL=gfxterm
 GRUB_GFXMODE=auto
 GRUB_GFXPAYLOAD_LINUX=keep
+GRUB_TIMEOUT_STYLE=menu
+GRUB_TIMEOUT=2
+GRUB_COLOR_NORMAL="light-gray/black"
+GRUB_COLOR_HIGHLIGHT="white/blue"
 EOF
 if [ -e /bin/apt ] || [ -e /bin/pacman ]; then
   grub-mkconfig -o /boot/grub/grub.cfg
