@@ -92,6 +92,137 @@ datasource:
     seedfrom: file:///cidata/
 EOF
 
+# show menu entries for system information at boottime
+mkdir -p /var/tmp/archlive/baseline/grub
+tee -a /var/tmp/archlive/baseline/grub/grub.cfg /var/tmp/archlive/baseline/grub/loopback.cfg <<EOF
+
+submenu "Hardware Info" {
+    ### SMBIOS Type 0 – BIOS Information
+    menuentry "SMBIOS Type 0: BIOS Info" {
+        insmod smbios
+        insmod echo
+        echo "=== SMBIOS Type 0: BIOS Information ==="
+        echo -n "Vendor: "
+        smbios --type 0 --get-string 0x04
+        echo -n "BIOS Version: "
+        smbios --type 0 --get-string 0x05
+        echo -n "BIOS Release Date: "
+        smbios --type 0 --get-string 0x08
+        echo "=== End of SMBIOS Type 0 ==="
+        echo "Press any key to return..."
+        read
+    }
+    
+    ### SMBIOS Type 1 – System Information
+    menuentry "SMBIOS Type 1: System Info" {
+        insmod smbios
+        insmod echo
+        echo "=== SMBIOS Type 1: System Information ==="
+        echo -n "Manufacturer: "
+        smbios --type 1 --get-string 0x04
+        echo -n "Product Name: "
+        smbios --type 1 --get-string 0x05
+        echo -n "Version: "
+        smbios --type 1 --get-string 0x06
+        echo -n "Serial Number: "
+        smbios --type 1 --get-string 0x07
+        echo -n "UUID: "
+        smbios --type 1 --get-string 0x08
+        echo -n "SKU Number: "
+        smbios --type 1 --get-string 0x19
+        echo -n "Family: "
+        smbios --type 1 --get-string 0x1A
+        echo "=== End of SMBIOS Type 1 ==="
+        echo "Press any key to return..."
+        read
+    }
+    
+    ### SMBIOS Type 2 – Baseboard
+    menuentry "SMBIOS Type 2: Baseboard Info" {
+        insmod smbios
+        insmod echo
+        echo "=== SMBIOS Type 2: Baseboard Information ==="
+        echo -n "Manufacturer: "
+        smbios --type 2 --get-string 0x04
+        echo -n "Product Name: "
+        smbios --type 2 --get-string 0x05
+        echo -n "Version: "
+        smbios --type 2 --get-string 0x06
+        echo -n "Serial Number: "
+        smbios --type 2 --get-string 0x07
+        echo -n "Asset Tag: "
+        smbios --type 2 --get-string 0x08
+        echo -n "Location in Chassis: "
+        smbios --type 2 --get-string 0x0A
+        echo "=== End of SMBIOS Type 2 ==="
+        echo "Press any key to return..."
+        read
+    }
+    
+    ### SMBIOS Type 3 – Chassis
+    menuentry "SMBIOS Type 3: Chassis Info" {
+        insmod smbios
+        insmod echo
+        echo "=== SMBIOS Type 3: Chassis Information ==="
+        echo -n "Manufacturer: "
+        smbios --type 3 --get-string 0x04
+        echo -n "Version: "
+        smbios --type 3 --get-string 0x06
+        echo -n "Serial Number: "
+        smbios --type 3 --get-string 0x07
+        echo -n "Asset Tag: "
+        smbios --type 3 --get-string 0x08
+        echo "=== End of SMBIOS Type 3 ==="
+        echo "Press any key to return..."
+        read
+    }
+    
+    ### SMBIOS Type 4 – Processor
+    menuentry "SMBIOS Type 4: Processor Info" {
+        insmod smbios
+        insmod echo
+        echo "=== SMBIOS Type 4: Processor Information ==="
+        echo -n "Socket Designation: "
+        smbios --type 4 --get-string 0x04
+        echo -n "Processor Manufacturer: "
+        smbios --type 4 --get-string 0x07
+        echo -n "Processor Version: "
+        smbios --type 4 --get-string 0x10
+        echo -n "Serial Number: "
+        smbios --type 4 --get-string 0x20
+        echo -n "Asset Tag: "
+        smbios --type 4 --get-string 0x21
+        echo -n "Part Number: "
+        smbios --type 4 --get-string 0x22
+        echo "=== End of SMBIOS Type 4 ==="
+        echo "Press any key to return..."
+        read
+    }
+    
+    ### SMBIOS Type 17 – Memory Device
+    menuentry "SMBIOS Type 17: Memory Device Info" {
+        insmod smbios
+        insmod echo
+        echo "=== SMBIOS Type 17: Memory Device Information ==="
+        echo -n "Device Locator: "
+        smbios --type 17 --get-string 0x10
+        echo -n "Bank Locator: "
+        smbios --type 17 --get-string 0x11
+        echo -n "Manufacturer: "
+        smbios --type 17 --get-string 0x17
+        echo -n "Serial Number: "
+        smbios --type 17 --get-string 0x18
+        echo -n "Asset Tag: "
+        smbios --type 17 --get-string 0x19
+        echo -n "Part Number: "
+        smbios --type 17 --get-string 0x1A
+        echo "=== End of SMBIOS Type 17 ==="
+        echo "Press any key to return..."
+        read
+    }
+}
+EOF
+
 # build archiso
 pushd /var/tmp/archlive
   mkarchiso -m iso -w work -o output baseline
