@@ -256,6 +256,10 @@ write_files:
       unbind r
       bind r source-file "~/.config/tmux/tmux.conf"
 
+      # rebind vertical splits to equal sign
+      unbind '"'
+      bind = split-window -v
+
       # resize slow
       unbind C-Left
       unbind C-Down
