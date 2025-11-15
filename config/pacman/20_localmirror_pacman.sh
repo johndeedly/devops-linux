@@ -24,18 +24,16 @@ fi
 
 /usr/bin/pacman -Sy --noconfirm
 /usr/bin/pacman -Fy --noconfirm
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_file_list.txt
+
 while read -r repo; do
-    mkdir -p "/var/cache/pacman/mirror/$repo/os/x86_64"
-    ln -s "/var/lib/pacman/sync/$repo.db" "/var/cache/pacman/mirror/$repo/os/x86_64/$repo.db" || true
-    ln -s "/var/lib/pacman/sync/$repo.files" "/var/cache/pacman/mirror/$repo/os/x86_64/$repo.files" || true
+    mkdir -p "/var/cache/pacman/mirror/geo.mirror.pkgbuild.com/$repo/os/x86_64"
+    ln -s "/var/lib/pacman/sync/$repo.db" "/var/cache/pacman/mirror/geo.mirror.pkgbuild.com/$repo/os/x86_64/$repo.db" || true
+    ln -s "/var/lib/pacman/sync/$repo.files" "/var/cache/pacman/mirror/geo.mirror.pkgbuild.com/$repo/os/x86_64/$repo.files" || true
     /usr/bin/expac -Ss '%r/%n' | grep "^$repo/" | xargs pacman -Swddp --logfile "/dev/null" --cachedir "/dev/null" | while read -r line; do
       echo "$line"
       echo "$line".sig
-    done > /tmp/mirror_url_list.txt
-    # continue unfinished downloads and skip already downloaded ones, use timestamps,
-    # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-    wget -c -N -P "/var/cache/pacman/mirror/$repo/os/x86_64" -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
-    rm /tmp/mirror_url_list.txt
+    done >> /var/tmp/mirror_url_list.txt
 done <<EOX
 core
 extra
@@ -46,25 +44,12 @@ tmpdir=$(mktemp -d)
 wget -c -N -P "${tmpdir}" --progress=dot https://geo.mirror.pkgbuild.com/iso/latest/arch/version
 if [ -f "${tmpdir}/version" ]; then
   ISO_BASE=$(<"${tmpdir}/version")
-  ARCHIVE_BASE=${ISO_BASE//.//}
 else
   ISO_BASE=$(date +%Y.%m.01)
-  ARCHIVE_BASE=${ISO_BASE//.//}
 fi
 rm -r "${tmpdir}"
 
-mkdir -p /var/cache/pacman/mirror/iso/{core,extra,multilib}/os/x86_64
-tee /tmp/mirror_url_list.txt <<EOS
-https://archive.archlinux.org/repos/${ARCHIVE_BASE}/core/os/x86_64/
-https://archive.archlinux.org/repos/${ARCHIVE_BASE}/extra/os/x86_64/
-https://archive.archlinux.org/repos/${ARCHIVE_BASE}/multilib/os/x86_64/
-EOS
-# force paths on downloaded files, skip domain part in path, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# cut parts from remote path, recursively traverse the page, stay below the given folder structure, exclude auto-generated index pages,
-# ignore robots.txt, download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -nH -c -N --cut-dirs=4 -r -np -R "index.html*" -e robots=off -P /var/cache/pacman/mirror/iso -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
-
-tee /tmp/mirror_url_list.txt <<EOS
+tee -a /var/tmp/mirror_url_list.txt <<EOS
 https://archive.archlinux.org/iso/${ISO_BASE}/archlinux-x86_64.iso
 https://archive.archlinux.org/iso/${ISO_BASE}/archlinux-x86_64.iso.sig
 https://archive.archlinux.org/iso/${ISO_BASE}/arch/boot/x86_64/initramfs-linux.img
@@ -75,12 +60,8 @@ https://archive.archlinux.org/iso/${ISO_BASE}/arch/x86_64/airootfs.sfs
 https://archive.archlinux.org/iso/${ISO_BASE}/arch/x86_64/airootfs.sfs.cms.sig
 https://archive.archlinux.org/iso/${ISO_BASE}/arch/x86_64/airootfs.sha512
 EOS
-# continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -c -N -P /var/cache/pacman/mirror/iso -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
-mkdir -p /var/cache/pacman/mirror/images
-tee /tmp/mirror_url_list.txt <<EOS
+tee -a /var/tmp/mirror_url_list.txt <<EOS
 https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-basic.qcow2
 https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-basic.qcow2.SHA256
 https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-basic.qcow2.sig
@@ -88,28 +69,36 @@ https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2
 https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.SHA256
 https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.sig
 EOS
-# continue unfinished downloads and skip already downloaded ones, use timestamps, skip first five path elements,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -c -N -P /var/cache/pacman/mirror/images -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
 
-rm /tmp/mirror_url_list.txt
+# sort the uri list for faster download
+LC_ALL=C sort -u -o /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt && \
+  mv /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt
 
-# remove older package versions (sort -r: newest first) when packages count is larger than 3 (cnt[key]>3)
-find "/var/cache/pacman/mirror" -name '*.pkg.tar.zst' -printf "%P %T+\n" | sort -r -t' ' -k2,2 | awk -F '-' '{
-  key=$1
-  for (i=2;i<NF-4;i++){key=sprintf("%s-%s",key,$i)}
-  cnt[key]++
-  if(cnt[key]>3){
-    out=$1
-    for (i=2;i<=NF;i++){out=sprintf("%s-%s",out,$i)}
-    printf "%i %s\n",cnt[key],out
-  }
-}' | while read -r nr pkg ctm; do
-  echo "removing /var/cache/pacman/mirror/$pkg"
-  rm "/var/cache/pacman/mirror/$pkg"
-  echo "removing /var/cache/pacman/mirror/$pkg".sig
-  rm "/var/cache/pacman/mirror/$pkg".sig
+# convert the filelist to a local filelist for later
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/pacman/mirror/|g' >> /var/tmp/mirror_file_list.txt
+
+split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
+i=0
+for part in /var/tmp/mirror_url_part_*; do
+  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/pacman/mirror -i "$part" --progress=bar:force:noscroll &
+  ((i++))
 done
+wait
+
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
+
+# remove unneeded files
+# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
+# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
+find /var/cache/pacman/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
+  echo "removing $line"
+  rm "$line"
+done
+
+rm /var/tmp/mirror_file_list.txt
 EOF
 chmod +x /usr/local/bin/pacsync.sh
 

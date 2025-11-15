@@ -33,18 +33,18 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 
-rm /tmp/mirror_url_list.txt /tmp/mirror_file_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_file_list.txt
 
 # download the repo definitions after "apt update" as fast as possible
 (
   source /etc/os-release
 while read -r line; do
-  tee -a /tmp/mirror_url_list.txt <<EOX
+  tee -a /var/tmp/mirror_url_list.txt <<EOX
 ${line%/}/InRelease
 ${line%/}/Release
 ${line%/}/Release.gpg
 EOX
-  curl -sL "${line%/}/Release" | grep -oP '[ \t]*[a-fA-F0-9]{32}[ \t]+[0-9]+[ \t]+\K.*' | sed -e "s|^|${line%/}/|g" | tee -a /tmp/mirror_url_list.txt
+  curl -sL "${line%/}/Release" | grep -oP '[ \t]*[a-fA-F0-9]{32}[ \t]+[0-9]+[ \t]+\K.*' | sed -e "s|^|${line%/}/|g" | tee -a /var/tmp/mirror_url_list.txt
 done <<EOX
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}/
 https://archive.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-updates/
@@ -53,43 +53,55 @@ https://security.ubuntu.com/ubuntu/dists/${VERSION_CODENAME}-security/
 https://apt.releases.hashicorp.com/dists/${VERSION_CODENAME}/
 EOX
   # gpg keyrings
-  tee -a /tmp/mirror_url_list.txt <<EOX
+  tee -a /var/tmp/mirror_url_list.txt <<EOX
 https://apt.releases.hashicorp.com/gpg
 EOX
 )
 
 # convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
 
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
+i=0
+for part in /var/tmp/mirror_url_part_*; do
+  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
+  ((i++))
+done
+wait
 
-rm /tmp/mirror_url_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # add all available package uris to the download list
 LC_ALL=C /bin/apt list --all-versions 2>/dev/null | sed -e '/^$/d' -e '/^Listing...$/d' -e 's|^\([^/]*\)[^ ]* \([^ ]*\).*|\1=\2|g' | \
-  xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /tmp/mirror_url_list.txt
+  xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /var/tmp/mirror_url_list.txt
 
 # sort the uri list for faster download
-LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt && \
-  mv /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt
+LC_ALL=C sort -u -o /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt && \
+  mv /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt
 
 # convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
 
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
+i=0
+for part in /var/tmp/mirror_url_part_*; do
+  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
+  ((i++))
+done
+wait
 
-rm /tmp/mirror_url_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # add the cloud images to the download list
 (
   source /etc/os-release
-  tee -a /tmp/mirror_url_list.txt <<EOX
+  tee -a /var/tmp/mirror_url_list.txt <<EOX
 https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/${VERSION_CODENAME}-server-cloudimg-amd64.img
 https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/MD5SUMS
 https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/MD5SUMS.gpg
@@ -99,24 +111,30 @@ EOX
 )
 
 # convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
 
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
+i=0
+for part in /var/tmp/mirror_url_part_*; do
+  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
+  ((i++))
+done
+wait
 
-rm /tmp/mirror_url_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # remove unneeded files
 # grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
 # invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
-find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/tmp/mirror_file_list.txt | while read -r line; do
+find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
   echo "removing $line"
   rm "$line"
 done
 
-rm /tmp/mirror_file_list.txt
+rm /var/tmp/mirror_file_list.txt
 EOF
 else
 # restore default mirror
@@ -145,18 +163,18 @@ tee /usr/local/bin/aptsync.sh <<'EOF'
 
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y update
 
-rm /tmp/mirror_url_list.txt /tmp/mirror_file_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_file_list.txt
 
 # download the repo definitions after "apt update" as fast as possible
 (
   source /etc/os-release
 while read -r line; do
-  tee -a /tmp/mirror_url_list.txt <<EOX
+  tee -a /var/tmp/mirror_url_list.txt <<EOX
 ${line%/}/InRelease
 ${line%/}/Release
 ${line%/}/Release.gpg
 EOX
-  curl -sL "${line%/}/Release" | grep -oP '[ \t]*[a-fA-F0-9]{32}[ \t]+[0-9]+[ \t]+\K.*' | sed -e "s|^|${line%/}/|g" | tee -a /tmp/mirror_url_list.txt
+  curl -sL "${line%/}/Release" | grep -oP '[ \t]*[a-fA-F0-9]{32}[ \t]+[0-9]+[ \t]+\K.*' | sed -e "s|^|${line%/}/|g" | tee -a /var/tmp/mirror_url_list.txt
 done <<EOX
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}/
 https://deb.debian.org/debian/dists/${VERSION_CODENAME}-updates/
@@ -166,44 +184,56 @@ http://download.proxmox.com/debian/pve/dists/${VERSION_CODENAME}/
 https://apt.releases.hashicorp.com/dists/${VERSION_CODENAME}/
 EOX
   # gpg keyrings
-  tee -a /tmp/mirror_url_list.txt <<EOX
+  tee -a /var/tmp/mirror_url_list.txt <<EOX
 https://enterprise.proxmox.com/debian/proxmox-release-${VERSION_CODENAME}.gpg
 https://apt.releases.hashicorp.com/gpg
 EOX
 )
 
 # convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
 
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
+i=0
+for part in /var/tmp/mirror_url_part_*; do
+  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
+  ((i++))
+done
+wait
 
-rm /tmp/mirror_url_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # add all available package uris to the download list
 LC_ALL=C /bin/apt list --all-versions 2>/dev/null | sed -e '/^$/d' -e '/^Listing...$/d' -e 's|^\([^/]*\)[^ ]* \([^ ]*\).*|\1=\2|g' | \
-  xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /tmp/mirror_url_list.txt
+  xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /var/tmp/mirror_url_list.txt
 
 # sort the uri list for faster download
-LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt && \
-  mv /tmp/mirror_url_list_sorted.txt /tmp/mirror_url_list.txt
+LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt && \
+  mv /tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt
 
 # convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
 
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
+i=0
+for part in /var/tmp/mirror_url_part_*; do
+  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
+  ((i++))
+done
+wait
 
-rm /tmp/mirror_url_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # add the cloud images to the download list
 (
   source /etc/os-release
-  tee -a /tmp/mirror_url_list.txt <<EOX
+  tee -a /var/tmp/mirror_url_list.txt <<EOX
 https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/debian-${VERSION_ID}-generic-amd64.qcow2
 https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/debian-${VERSION_ID}-nocloud-amd64.qcow2
 https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/SHA512SUMS
@@ -211,24 +241,30 @@ EOX
 )
 
 # convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /tmp/mirror_file_list.txt
+python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
 
-# force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-# download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-wget -x -c -N -P /var/cache/apt/mirror -i /tmp/mirror_url_list.txt --progress=bar:force:noscroll
+split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
+i=0
+for part in /var/tmp/mirror_url_part_*; do
+  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
+  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
+  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
+  ((i++))
+done
+wait
 
-rm /tmp/mirror_url_list.txt
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # remove unneeded files
 # grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
 # invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
-find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/tmp/mirror_file_list.txt | while read -r line; do
+find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
   echo "removing $line"
   rm "$line"
 done
 
-rm /tmp/mirror_file_list.txt
+rm /var/tmp/mirror_file_list.txt
 EOF
 # install the proxmox repository key
 echo ":: download proxmox repository certificate"
