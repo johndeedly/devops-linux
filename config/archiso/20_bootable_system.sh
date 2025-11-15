@@ -121,6 +121,12 @@ if file "${CLOUD_IMAGE_PATH}" | grep -q QCOW; then
     qemu-img convert -O raw "${CLOUD_IMAGE_PATH}" "${TARGET_DEVICE}"
 elif file "${CLOUD_IMAGE_PATH}" | grep -q "XZ compressed"; then
     xz -cd <"${CLOUD_IMAGE_PATH}" | dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
+elif file "${CLOUD_IMAGE_PATH}" | grep -q "Zstandard compressed"; then
+    zstd -cd <"${CLOUD_IMAGE_PATH}" | dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
+elif file "${CLOUD_IMAGE_PATH}" | grep -q "bzip2 compressed"; then
+    bzip2 -cd <"${CLOUD_IMAGE_PATH}" | dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
+elif file "${CLOUD_IMAGE_PATH}" | grep -q "LZMA compressed"; then
+    lzma -cd <"${CLOUD_IMAGE_PATH}" | dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
 elif file "${CLOUD_IMAGE_PATH}" | grep -q "gzip compressed"; then
     gzip -cd <"${CLOUD_IMAGE_PATH}" | dd "of=${TARGET_DEVICE}" bs=1M iflag=fullblock status=progress
 else
