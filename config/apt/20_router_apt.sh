@@ -2,8 +2,9 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install net-tools ipxe dnsmasq iptraf-ng \
-  openntpd nginx nfs-kernel-server portmap nfs-common samba nbd-server tgt rsync
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install net-tools dnsmasq iptraf-ng \
+  openntpd nginx nfs-kernel-server portmap nfs-common samba nbd-server tgt rsync \
+  grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin
 
 DHCP_ADDITIONAL_SETUP=(
   "dhcp-option=option:dns-server,172.26.0.1\n"
@@ -33,10 +34,9 @@ PXESETUP=(
   "dhcp-match=set:bios,option:client-arch,0\n"
   "dhcp-match=set:ipxe,175\n"
 
-  "dhcp-boot=tag:efi-x86_64,efi64\/ipxe.efi\n"
-  "dhcp-boot=tag:efi-x86,efi32\/ipxe.efi\n"
-  "dhcp-boot=tag:bios,bios\/ipxe.lkrn\n"
-  "dhcp-boot=tag:ipxe,ipxe.cfg\/default"
+  "dhcp-boot=tag:bios,grub\/i386-pc\/grub.0\n"
+  "dhcp-boot=tag:efi-x86,grub\/i386-efi\/grubia32.efi\n"
+  "dhcp-boot=tag:efi-x86_64,grub\/x86_64-efi\/grubx64.efi\n"
 )
 
 # keep all interface names
@@ -107,16 +107,44 @@ sed -i '0,/^#\?server=.*/s//'"${DNS_SERVERS[*]}"'/' /etc/dnsmasq.conf
 mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
 
 # configure tftp
-mkdir -p /srv/tftp/{,bios,efi32,efi64}/ipxe.cfg
-rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/ipxe.lkrn /srv/tftp/bios/ipxe.lkrn
-rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/i386/ipxe.efi /srv/tftp/efi32/ipxe.efi
-rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/x86_64/ipxe.efi /srv/tftp/efi64/ipxe.efi
-tee /srv/tftp/ipxe.cfg/default <<EOF
-$(</var/lib/cloud/instance/provision/apt/20_router_apt/ipxe.cfg.default)
+mkdir -p /srv/tftp/grub/{i386-pc,i386-efi,x86_64-efi}
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/grub/i386-pc/*.mod /srv/tftp/grub/i386-pc/
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/grub/i386-efi/*.mod /srv/tftp/grub/i386-efi/
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/lib/grub/x86_64-efi/*.mod /srv/tftp/grub/x86_64-efi/
+BUILDDIR=$(mktemp --tmpdir=/var/tmp -d)
+tee "$BUILDDIR/grub.cfg" <<'EOF'
+set root="(tftp)"
+set prefix="(tftp)/grub"
+set cmdpath="(tftp)/grub/i386-pc"
+if [ "$grub_platform" = "efi" ]; then
+    if [ "$grub_cpu" = "x86_64" ]; then
+        set cmdpath="(tftp)/grub/x86_64-efi"
+    else
+        set cmdpath="(tftp)/grub/i386-efi"
+    fi
+fi
+configfile $cmdpath/grub.cfg
+normal
 EOF
-ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/bios/ipxe.cfg/default
-ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/efi32/ipxe.cfg/default
-ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/efi64/ipxe.cfg/default
+grub-mkstandalone -O i386-pc-pxe -o /srv/tftp/grub/i386-pc/grub.0 \
+  --install-modules="normal configfile chain linux http pxe net tftp boot echo test read gfxterm" \
+  --modules="normal configfile chain linux http pxe net tftp boot echo test read gfxterm" \
+  --locales="" --fonts="" --themes="" "boot/grub/grub.cfg=$BUILDDIR/grub.cfg"
+grub-mkstandalone -O i386-efi -o /srv/tftp/grub/i386-efi/grubia32.efi \
+  --install-modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
+  --modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
+  --locales="" --fonts="" --themes="" "boot/grub/grub.cfg=$BUILDDIR/grub.cfg"
+grub-mkstandalone -O x86_64-efi -o /srv/tftp/grub/x86_64-efi/grubx64.efi \
+  --install-modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
+  --modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
+  --locales="" --fonts="" --themes="" "boot/grub/grub.cfg=$BUILDDIR/grub.cfg"
+rm -r "$BUILDDIR"
+tee /srv/tftp/grub/grub.cfg <<EOF
+$(</var/lib/cloud/instance/provision/apt/20_router_apt/grub.cfg.default)
+EOF
+ln -s ../grub.cfg /srv/tftp/grub/i386-pc/grub.cfg
+ln -s ../grub.cfg /srv/tftp/grub/i386-efi/grub.cfg
+ln -s ../grub.cfg /srv/tftp/grub/x86_64-efi/grub.cfg
 
 # configure http
 tee /etc/nginx/nginx.conf <<EOF

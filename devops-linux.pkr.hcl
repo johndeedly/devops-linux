@@ -368,14 +368,23 @@ ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
 chmod +x output/devops-linux/devops-linux-x86_64.gl.sh
-tee output/devops-linux/devops-linux-x86_64.pxe.sh <<EOF
+tee output/devops-linux/devops-linux-x86_64.pxe.bios.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_no_gl}
 ${local.qemu_net_pxe}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
-chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
+chmod +x output/devops-linux/devops-linux-x86_64.pxe.bios.sh
+tee output/devops-linux/devops-linux-x86_64.pxe.uefi.sh <<EOF
+${local.qemu_intro}
+${local.qemu_no_gl}
+${local.qemu_efi}
+${local.qemu_net_pxe}
+${local.qemu_outro}
+${local.qemu_exec}
+EOF
+chmod +x output/devops-linux/devops-linux-x86_64.pxe.uefi.sh
 tee output/devops-linux/devops-linux-x86_64.netdev.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_qcow2}
