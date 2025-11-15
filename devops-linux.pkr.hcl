@@ -80,7 +80,7 @@ EOF
   qemu_no_gl            = <<EOF
 QEMUPARAMS+=(
   "-device" "virtio-vga,id=video.0,max_outputs=1,hostmem=64M"
-  "-vga" "none" "-display" "gtk,gl=on,show-cursor=on,zoom-to-fit=off"
+  "-vga" "none" "-display" "gtk,gl=off,show-cursor=on,zoom-to-fit=off"
 )
 EOF
   qemu_gl               = <<EOF
@@ -379,7 +379,7 @@ chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
 tee output/devops-linux/devops-linux-x86_64.netdev.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_qcow2}
-${local.qemu_gl}
+${local.qemu_no_gl}
 ${local.qemu_efi}
 ${local.qemu_swtpm}
 ${local.qemu_net_router}
