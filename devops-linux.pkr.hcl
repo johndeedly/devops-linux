@@ -63,8 +63,12 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
 QEMUPARAMS=(
   "-name" "devops-linux-x86_64"
   "-machine" "type=q35,accel=kvm"
-  "-drive" "file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2"
   "-cpu" "host"
+)
+EOF
+  qemu_qcow2            = <<EOF
+QEMUPARAMS+=(
+  "-drive" "file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2"
 )
 EOF
   qemu_no_display       = <<EOF
@@ -344,6 +348,7 @@ EOS
     inline = [<<EOS
 tee output/devops-linux/devops-linux-x86_64.run.sh <<EOF
 ${local.qemu_intro}
+${local.qemu_qcow2}
 ${local.qemu_no_gl}
 ${local.qemu_efi}
 ${local.qemu_swtpm}
@@ -354,6 +359,7 @@ EOF
 chmod +x output/devops-linux/devops-linux-x86_64.run.sh
 tee output/devops-linux/devops-linux-x86_64.gl.sh <<EOF
 ${local.qemu_intro}
+${local.qemu_qcow2}
 ${local.qemu_gl}
 ${local.qemu_efi}
 ${local.qemu_swtpm}
@@ -372,6 +378,7 @@ EOF
 chmod +x output/devops-linux/devops-linux-x86_64.pxe.sh
 tee output/devops-linux/devops-linux-x86_64.netdev.sh <<EOF
 ${local.qemu_intro}
+${local.qemu_qcow2}
 ${local.qemu_gl}
 ${local.qemu_efi}
 ${local.qemu_swtpm}
@@ -382,6 +389,7 @@ EOF
 chmod +x output/devops-linux/devops-linux-x86_64.netdev.sh
 tee output/devops-linux/devops-linux-x86_64.srv.sh <<EOF
 ${local.qemu_intro}
+${local.qemu_qcow2}
 ${local.qemu_no_display}
 ${local.qemu_net_server}
 ${local.qemu_outro}
