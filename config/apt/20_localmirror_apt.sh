@@ -58,45 +58,9 @@ https://apt.releases.hashicorp.com/gpg
 EOX
 )
 
-# convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
-
-split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
-i=0
-for part in /var/tmp/mirror_url_part_*; do
-  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
-  ((i++))
-done
-wait
-
-rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
-
 # add all available package uris to the download list
 LC_ALL=C /bin/apt list --all-versions 2>/dev/null | sed -e '/^$/d' -e '/^Listing...$/d' -e 's|^\([^/]*\)[^ ]* \([^ ]*\).*|\1=\2|g' | \
   xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /var/tmp/mirror_url_list.txt
-
-# sort the uri list for faster download
-LC_ALL=C sort -u -o /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt && \
-  mv /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt
-
-# convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
-
-split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
-i=0
-for part in /var/tmp/mirror_url_part_*; do
-  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
-  ((i++))
-done
-wait
-
-rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # add the cloud images to the download list
 (
@@ -110,10 +74,21 @@ https://cloud-images.ubuntu.com/${VERSION_CODENAME}/current/SHA256SUMS.gpg
 EOX
 )
 
-# convert the filelist to a local filelist for later
+# convert the filelist to a local filelist
 python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' > /var/tmp/mirror_file_list.txt
 
+# remove unneeded files first, then download the new ones
+# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
+# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
+find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
+  echo "removing $line"
+  rm "$line"
+done
+
+rm /var/tmp/mirror_file_list.txt
+
+# download the file list
 split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
 i=0
 for part in /var/tmp/mirror_url_part_*; do
@@ -125,16 +100,6 @@ done
 wait
 
 rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
-
-# remove unneeded files
-# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
-# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
-find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
-  echo "removing $line"
-  rm "$line"
-done
-
-rm /var/tmp/mirror_file_list.txt
 EOF
 else
 # restore default mirror
@@ -190,45 +155,9 @@ https://apt.releases.hashicorp.com/gpg
 EOX
 )
 
-# convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
-
-split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
-i=0
-for part in /var/tmp/mirror_url_part_*; do
-  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
-  ((i++))
-done
-wait
-
-rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
-
 # add all available package uris to the download list
 LC_ALL=C /bin/apt list --all-versions 2>/dev/null | sed -e '/^$/d' -e '/^Listing...$/d' -e 's|^\([^/]*\)[^ ]* \([^ ]*\).*|\1=\2|g' | \
   xargs /bin/apt download --print-uris 2>/dev/null | cut -d' ' -f1 | tr -d "'" >> /var/tmp/mirror_url_list.txt
-
-# sort the uri list for faster download
-LC_ALL=C sort -u -o /tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt && \
-  mv /tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt
-
-# convert the filelist to a local filelist for later
-python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
-
-split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
-i=0
-for part in /var/tmp/mirror_url_part_*; do
-  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
-  ((i++))
-done
-wait
-
-rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
 # add the cloud images to the download list
 (
@@ -240,10 +169,21 @@ https://cloud.debian.org/images/cloud/${VERSION_CODENAME}/latest/SHA512SUMS
 EOX
 )
 
-# convert the filelist to a local filelist for later
+# convert the filelist to a local filelist
 python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
-  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' >> /var/tmp/mirror_file_list.txt
+  sed -e 's|^https\?://|/var/cache/apt/mirror/|g' > /var/tmp/mirror_file_list.txt
 
+# remove unneeded files first, then download the new ones
+# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
+# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
+find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
+  echo "removing $line"
+  rm "$line"
+done
+
+rm /var/tmp/mirror_file_list.txt
+
+# download the file list
 split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
 i=0
 for part in /var/tmp/mirror_url_part_*; do
@@ -256,15 +196,6 @@ wait
 
 rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
 
-# remove unneeded files
-# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
-# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
-find /var/cache/apt/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
-  echo "removing $line"
-  rm "$line"
-done
-
-rm /var/tmp/mirror_file_list.txt
 EOF
 # install the proxmox repository key
 echo ":: download proxmox repository certificate"

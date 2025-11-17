@@ -70,14 +70,21 @@ https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.S
 https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2.sig
 EOS
 
-# sort the uri list for faster download
-LC_ALL=C sort -u -o /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt && \
-  mv /var/tmp/mirror_url_list_sorted.txt /var/tmp/mirror_url_list.txt
-
-# convert the filelist to a local filelist for later
+# convert the filelist to a local filelist
 python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
   sed -e 's|^https\?://|/var/cache/pacman/mirror/|g' >> /var/tmp/mirror_file_list.txt
 
+# remove unneeded files first, then download the new ones
+# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
+# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
+find /var/cache/pacman/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
+  echo "removing $line"
+  rm "$line"
+done
+
+rm /var/tmp/mirror_file_list.txt
+
+# download the file list
 split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
 i=0
 for part in /var/tmp/mirror_url_part_*; do
@@ -89,16 +96,6 @@ done
 wait
 
 rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
-
-# remove unneeded files
-# grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
-# invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
-find /var/cache/pacman/mirror -type f -printf '%p\n' | grep --fixed-strings --line-regexp --invert-match --file=/var/tmp/mirror_file_list.txt | while read -r line; do
-  echo "removing $line"
-  rm "$line"
-done
-
-rm /var/tmp/mirror_file_list.txt
 EOF
 chmod +x /usr/local/bin/pacsync.sh
 
