@@ -45,6 +45,11 @@ for line in "${QMS[@]}"; do
   qm create "$QM_ID" --name "$QM_NAME" --ostype "$QM_OSTYPE" --cores "$QM_CORES" --memory "$QM_MEMORY" \
     --machine q35,viommu=virtio --kvm 1 --pool "$QM_POOL" \
     --agent enabled=1 --vga virtio --onboot "$QM_ONBOOT" --reboot "$QM_REBOOT" --serial0 socket
+  if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
+    qm set "$QM_ID" --cpu "x86-64-v3,flags=+vmx;+x2apic;+nx;+cx16;+lahf_lm"
+  elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
+    qm set "$QM_ID" --cpu "x86-64-v3,flags=+svm;+x2apic;+nx;+cx16;+lahf_lm"
+  fi
   # lvm -> raw, otherwise qcow2
   if pvs --rows | grep -E "VG.*$QM_STORAGE"; then
     qm disk import "$QM_ID" "/iso/$QM_IMAGE" "$QM_STORAGE" --format raw --target-disk virtio0

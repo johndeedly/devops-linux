@@ -267,6 +267,11 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
               qm disk resize "${_proxmox_vm}" virtio0 "${_proxmox_size}G"
             fi
         fi
+        if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
+            qm set "${_proxmox_vm}" --cpu "x86-64-v3,flags=+vmx;+x2apic;+nx;+cx16;+lahf_lm"
+        elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
+            qm set "${_proxmox_vm}" --cpu "x86-64-v3,flags=+svm;+x2apic;+nx;+cx16;+lahf_lm"
+        fi
     fi
 elif [ $_iso -eq 1 ]; then
     echo "Create cidata iso"

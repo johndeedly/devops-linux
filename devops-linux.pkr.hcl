@@ -63,8 +63,16 @@ trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
 QEMUPARAMS=(
   "-name" "devops-linux-x86_64"
   "-machine" "type=q35,accel=kvm"
-  "-cpu" "host"
 )
+if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
+  QEMUPARAMS+=(
+    "-cpu" "qemu64,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+avx2,+fma,+aes,+pclmulqdq,+movbe,+xsave,+xsaveopt,+vmx,+x2apic,+nx,+cx16,+lahf_lm"
+  )
+elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
+  QEMUPARAMS+=(
+    "-cpu" "qemu64,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+avx2,+fma,+aes,+pclmulqdq,+movbe,+xsave,+xsaveopt,+svm,+x2apic,+nx,+cx16,+lahf_lm"
+  )
+fi
 EOF
   qemu_qcow2            = <<EOF
 QEMUPARAMS+=(
