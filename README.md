@@ -275,6 +275,7 @@ setup:
 setup:
   distro: debian
   options:
+    - graphical-base
     - proxmox
     - proxmox-cluster-master
     - proxmox-devops
