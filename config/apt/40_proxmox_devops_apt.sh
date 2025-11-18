@@ -34,21 +34,21 @@ pushd "$BUILDDIR"
 
 # setup virtual machines
 for line in "${QMS[@]}"; do
-  read QM_IMAGE QM_ID QM_NAME QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT < \
-    <(jq '.image, .id, .name, .cores, .memory, .storage, .ostype, .pool, .onboot, .reboot' <<<"$line" | xargs)
+  read QM_IMAGE QM_ID QM_NAME QM_CPU QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT < \
+    <(jq '.image, .id, .name, .cpu, .cores, .memory, .storage, .ostype, .pool, .onboot, .reboot' <<<"$line" | xargs)
   # check present
   if ! [ -f "/iso/$QM_IMAGE" ]; then
-    unset QM_IMAGE QM_ID QM_NAME QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
+    unset QM_IMAGE QM_ID QM_NAME QM_CPU QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
     continue
   fi
   # create vm
   qm create "$QM_ID" --name "$QM_NAME" --ostype "$QM_OSTYPE" --cores "$QM_CORES" --memory "$QM_MEMORY" \
     --machine q35,viommu=virtio --kvm 1 --pool "$QM_POOL" \
     --agent enabled=1 --vga virtio --onboot "$QM_ONBOOT" --reboot "$QM_REBOOT" --serial0 socket
-  if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
-    qm set "$QM_ID" --cpu "x86-64-v3,flags=+vmx;+x2apic;+nx;+cx16;+lahf_lm"
-  elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
-    qm set "$QM_ID" --cpu "x86-64-v3,flags=+svm;+x2apic;+nx;+cx16;+lahf_lm"
+  if [ -n "$QM_CPU" ]; then
+    qm set "$QM_ID" --cpu "$QM_CPU"
+  else
+    qm set "$QM_ID" --cpu "x86-64-v3"
   fi
   # lvm -> raw, otherwise qcow2
   if pvs --rows | grep -E "VG.*$QM_STORAGE"; then
@@ -69,7 +69,7 @@ for line in "${QMS[@]}"; do
     fi
     unset QM_NET_NAME QM_NET_BRIDGE QM_NET_VLAN
   done
-  unset QM_IMAGE QM_ID QM_NAME QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
+  unset QM_IMAGE QM_ID QM_NAME QM_CPU QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
 done
 
 # setup containers

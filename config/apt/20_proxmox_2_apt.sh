@@ -202,6 +202,18 @@ WantedBy=multi-user.target
 EOF
 systemctl enable update-all-users.timer
 
+# create custom x86-64-v3 profiles
+mkdir -p /etc/pve/virtual-guest
+tee /etc/pve/virtual-guest/cpu-models.conf <<EOF
+cpu-model: x86-64-v3-nested-intel
+    flags +vmx;+aes;+popcnt;+pni;+sse4.1;+sse4.2;+ssse3;+avx;+avx2;+bmi1;+bmi2;+f16c;+fma;+abm;+movbe;+xsave
+    reported-model qemu64
+
+cpu-model: x86-64-v3-nested-amd
+    flags +svm;+aes;+popcnt;+pni;+sse4.1;+sse4.2;+ssse3;+avx;+avx2;+bmi1;+bmi2;+f16c;+fma;+abm;+movbe;+xsave
+    reported-model qemu64
+EOF
+
 # sync everything to disk
 sync
 

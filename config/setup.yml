@@ -134,6 +134,7 @@ setup:
     qms:
       - image: debian-13-generic-amd64.qcow2
         id: 400
+        cpu: custom-x86-64-v3-nested-amd
         name: debian-13-qm
         cores: 2
         memory: 2048

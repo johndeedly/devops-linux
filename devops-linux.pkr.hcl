@@ -66,11 +66,15 @@ QEMUPARAMS=(
 )
 if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
   QEMUPARAMS+=(
-    "-cpu" "qemu64,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+avx2,+fma,+aes,+pclmulqdq,+movbe,+xsave,+xsaveopt,+vmx,+x2apic,+nx,+cx16,+lahf_lm"
+    "-cpu" "qemu64,+vmx,+aes,+popcnt,+pni,+sse4.1,+sse4.2,+ssse3,+avx,+avx2,+bmi1,+bmi2,+f16c,+fma,+abm,+movbe,+xsave"
   )
 elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
   QEMUPARAMS+=(
-    "-cpu" "qemu64,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+avx2,+fma,+aes,+pclmulqdq,+movbe,+xsave,+xsaveopt,+svm,+x2apic,+nx,+cx16,+lahf_lm"
+    "-cpu" "qemu64,+svm,+aes,+popcnt,+pni,+sse4.1,+sse4.2,+ssse3,+avx,+avx2,+bmi1,+bmi2,+f16c,+fma,+abm,+movbe,+xsave"
+  )
+else
+  QEMUPARAMS+=(
+    "-cpu" "qemu64,+aes,+popcnt,+pni,+sse4.1,+sse4.2,+ssse3,+avx,+avx2,+bmi1,+bmi2,+f16c,+fma,+abm,+movbe,+xsave"
   )
 fi
 EOF
