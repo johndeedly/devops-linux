@@ -142,6 +142,7 @@ setup:
         networks:
           - name: net0
             bridge: vmbrlan0
+            mac: "aa:bb:cc:dd:ee:ff"
             vlan: 1
         ostype: l26
         pool: pool0

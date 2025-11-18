@@ -60,14 +60,12 @@ for line in "${QMS[@]}"; do
   # set network adapters
   readarray QM_NETWORKS < <(jq -c '.networks[]' <<<"$line")
   for net in "${QM_NETWORKS[@]}"; do
-    read QM_NET_NAME QM_NET_BRIDGE QM_NET_VLAN < \
-      <(jq '.name, .bridge, .vlan' <<<"$net" | xargs)
-    if [ -n "$QM_NET_VLAN" ] && [ "$QM_NET_VLAN" -gt 0 ]; then
-      qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500,tag=$QM_NET_VLAN"
-    else
-      qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500"
-    fi
-    unset QM_NET_NAME QM_NET_BRIDGE QM_NET_VLAN
+    read QM_NET_NAME QM_NET_BRIDGE QM_NET_MAC QM_NET_VLAN < \
+      <(jq '.name, .bridge, .mac, .vlan' <<<"$net" | xargs)
+    [ -n "$QM_NET_MAC" ] && QM_NET_MAC_PRINT=",macaddr=$QM_NET_MAC" || QM_NET_MAC_PRINT=""
+    [ -n "$QM_NET_VLAN" ] && [ "$QM_NET_VLAN" -gt 0 ] && QM_NET_VLAN_PRINT=",tag=$QM_NET_VLAN" || QM_NET_VLAN_PRINT=""
+    qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500${QM_NET_MAC_PRINT}${QM_NET_VLAN_PRINT}"
+    unset QM_NET_NAME QM_NET_BRIDGE QM_NET_MAC QM_NET_VLAN
   done
   unset QM_IMAGE QM_ID QM_NAME QM_CPU QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
 done
