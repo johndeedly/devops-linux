@@ -12,6 +12,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   bluez blueman \
   xdg-desktop-portal xdg-desktop-portal-cosmic wine winetricks mpv gpicview drawio-desktop code \
   flatpak virt-manager qpdf \
+  texlive-latex texlive-latexextra texlive-plaingeneric \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
   cosmic gnome-keyring libsecret seahorse system-config-printer
 

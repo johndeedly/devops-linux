@@ -12,6 +12,7 @@ LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
   bluez blueman \
   xdg-desktop-portal xdg-desktop-portal-kde wine winetricks mpv gpicview drawio-desktop code \
   flatpak virt-manager qpdf \
+  texlive-latex texlive-latexextra texlive-plaingeneric \
   ghostscript gsfonts foomatic-db-engine foomatic-db foomatic-db-nonfree foomatic-db-ppds foomatic-db-nonfree-ppds gutenprint foomatic-db-gutenprint-ppds hplip \
   plasma-meta kwallet-pam kde-graphics-meta kde-system-meta kde-utilities-meta system-config-printer konsole
 

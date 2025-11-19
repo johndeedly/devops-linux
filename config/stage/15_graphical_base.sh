@@ -77,13 +77,6 @@ EOF
   mkinitcpio -P
 fi
 
-# text processors
-if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install texlive-latex-base texlive-latex-extra texlive-plain-generic
-elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed texlive-latex texlive-latexextra texlive-plaingeneric
-fi
-
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then
