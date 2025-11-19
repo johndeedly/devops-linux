@@ -306,6 +306,14 @@ GRUB_TIMEOUT=2
 GRUB_COLOR_NORMAL="light-gray/black"
 GRUB_COLOR_HIGHLIGHT="white/blue"
 EOF
+tee /etc/grub.d/06_override <<EOF
+#!/usr/bin/env bash
+cat <<'EOS'
+set menu_color_normal="light-gray/black"
+set menu_color_highlight="white/blue"
+EOS
+EOF
+chmod +x /etc/grub.d/06_override
 if [ -e /bin/apt ] || [ -e /bin/pacman ]; then
   grub-mkconfig -o /boot/grub/grub.cfg
   find /boot/efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
