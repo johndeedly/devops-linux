@@ -121,9 +121,10 @@ fi
 _headless="true"
 _vbox=0
 _cache="false"
+_noram=0
 parse_parameters() {
-    local _longopts="show-window,force-virtualbox,create-cache"
-    local _opts="wvc"
+    local _longopts="show-window,force-virtualbox,create-cache,no-ram-iso"
+    local _opts="wvcn"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -139,6 +140,10 @@ parse_parameters() {
                 ;;
             -c|--create-cache)
                 _cache="true"
+                shift
+                ;;
+            -n|--no-ram-iso)
+                _noram=1
                 shift
                 ;;
             --)
@@ -221,7 +226,13 @@ packer_buildappliance() {
 if [ -n "$ismsys2env" ]; then
     ./cidata.sh --archiso --no-autoreboot
 else
-    ./cidata.sh --archiso --isoinram --no-autoreboot
+    # protect the RAM from overloading (2GB max)
+    DBSIZE=$(/bin/du -b database/ | cut -f1)
+    if [ "$_noram" -eq 0 ] && [ "$DBSIZE" -lt 2147483648 ]; then
+        ./cidata.sh --archiso --isoinram --no-autoreboot
+    else
+        ./cidata.sh --archiso --no-autoreboot
+    fi
 fi
 
 mkdir -p output
