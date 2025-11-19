@@ -55,6 +55,11 @@ EOF
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 fi
 
+# ability to script the debconf database
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install debconf-utils
+fi
+
 # full system upgrade
 if [ -e /bin/apt ]; then
   if grep -q Ubuntu /proc/version; then
@@ -113,11 +118,10 @@ fi
 
 # Generate locales
 if [ -e /bin/apt ]; then
-  if [ -f /etc/locale.gen ]; then
-    sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
-  else
-    echo "de_DE.UTF-8 UTF-8" > /etc/locale.gen
-  fi
+  debconf-set-selections <<EOF
+locales locales/default_environment_locale select de_DE.UTF-8
+locales locales/locales_to_be_generated multiselect de_DE.UTF-8 UTF-8
+EOF
   dpkg-reconfigure --frontend=noninteractive locales
   update-locale LANG=de_DE.UTF-8
 elif [ -e /bin/pacman ]; then
@@ -140,32 +144,43 @@ fi
 
 # Configure timezone
 if [ -e /bin/apt ]; then
-  rm /etc/localtime || true
-  if [ -e /usr/share/zoneinfo/CET ]; then
-    ln -s /usr/share/zoneinfo/CET /etc/localtime
-  else
-    ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
-  fi
+  debconf-set-selections <<EOF
+tzdata tzdata/Areas select Europe
+tzdata tzdata/Zones/Etc select UTC
+tzdata tzdata/Zones/Europe select Brussels
+EOF
   dpkg-reconfigure --frontend=noninteractive tzdata
 elif [ -e /bin/pacman ]; then
   rm /etc/localtime || true
-  if [ -e /usr/share/zoneinfo/CET ]; then
-    ln -s /usr/share/zoneinfo/CET /etc/localtime
-  else
-    ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
-  fi
+  ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
 elif [ -e /bin/yum ]; then
   rm /etc/localtime || true
-  if [ -e /usr/share/zoneinfo/CET ]; then
-    ln -s /usr/share/zoneinfo/CET /etc/localtime
-  else
-    ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
-  fi
+  ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
 fi
 
 # Configure keyboard and console
 if [ -e /bin/apt ]; then
+  debconf-set-selections <<EOF
+keyboard-configuration keyboard-configuration/altgr select The default for the keyboard layout
+keyboard-configuration keyboard-configuration/compose select No compose key
+keyboard-configuration keyboard-configuration/switch select No temporary switch
+keyboard-configuration keyboard-configuration/toggle select No toggling
+keyboard-configuration keyboard-configuration/layoutcode string de
+keyboard-configuration keyboard-configuration/model select Generic 105-key PC
+keyboard-configuration keyboard-configuration/modelcode string pc105
+keyboard-configuration keyboard-configuration/variant select German
+keyboard-configuration keyboard-configuration/xkb-keymap select de
+EOF
   dpkg-reconfigure --frontend=noninteractive keyboard-configuration
+  debconf-set-selections <<EOF
+console-setup console-setup/charmap47 select UTF-8
+console-setup console-setup/codeset47 select # Latin2 - central Europe and Romanian
+console-setup console-setup/codesetcode string Lat2
+console-setup console-setup/fontface47 select Terminus
+console-setup console-setup/fontsize string 8x16
+console-setup console-setup/fontsize-fb47 select 8x16
+console-setup console-setup/fontsize-text47 select 8x16
+EOF
   dpkg-reconfigure --frontend=noninteractive console-setup
   mkdir -p /etc/systemd/system/console-setup.service.d
   tee /etc/systemd/system/console-setup.service.d/override.conf <<EOF
@@ -173,9 +188,9 @@ if [ -e /bin/apt ]; then
 ExecStartPost=/bin/setupcon
 EOF
 elif [ -e /bin/pacman ]; then
-  loadkeys de-latin1 || true
+  loadkeys de || true
 elif [ -e /bin/yum ]; then
-  loadkeys de-latin1 || true
+  loadkeys de || true
 fi
 
 # disable hibernation and hybrid-sleep modes

@@ -55,6 +55,13 @@ chmod +x /usr/local/sbin/no_more_nagging
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt full-upgrade
 
+# preconfigure grub-pc (otherwise it won't allow noninteractive)
+debconf-set-selections <<EOF
+grub-pc grub-pc/install_devices multiselect $(lsblk -no MOUNTPOINT,PKNAME | sed -e '/^\/ /!d' | head -n 1 | awk '{ print "/dev/"$2 }')
+grub-pc grub-pc/install_devices_empty boolean false
+grub-pc grub-pc/mixed_legacy_and_grub2 boolean true
+EOF
+
 # install proxmox default kernel
 LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt install proxmox-default-kernel
 

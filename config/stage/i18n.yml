@@ -15,7 +15,7 @@ write_files:
   # enable german keyboard
   - path: /etc/vconsole.conf
     content: |
-      KEYMAP=de-latin1
+      KEYMAP=de
       XKBLAYOUT=de
       XKBMODEL=pc105
       FONT=Lat2-Terminus16
@@ -29,7 +29,7 @@ write_files:
   # Debian/Ubuntu additional keyboard config
   - path: /etc/default/keyboard
     content: |
-      KEYMAP=de-latin1
+      KEYMAP=de
       XKBLAYOUT=de
       XKBMODEL=pc105
     owner: "root:root"
