@@ -24,13 +24,10 @@ if [ -f /root/.ssh/authorized_keys ]; then
 fi
 tee -a /root/.ssh/authorized_keys <<<"${PROXMOX_CLUSTER_PUB}"
 
-# enable proxmox cluster master mDNS advertising
-tee /etc/systemd/dnssd/proxmoxcluster.dnssd <<EOF
-[Service]
-Name=%H
-Type=_proxmoxcluster._tcp
-SubType=_master
-EOF
+# create the cluster on first boot
+tee /usr/local/bin/initialize-pve-cluster.sh <<EOF
+#!/usr/bin/env bash
+PROXMOX_CEPH_OSD_DEVICE="$(yq -r '.setup.proxmox_cluster.ceph_osd_device' /var/lib/cloud/instance/config/setup.yml)"
 
 # initialize proxmox cluster
 pvecm create lab
@@ -41,10 +38,44 @@ pvecm nodes
 # configure ceph
 pveceph mgr create
 pveceph mon create
-PROXMOX_CEPH_OSD_DEVICE="$(yq -r '.setup.proxmox_cluster.ceph_osd_device' /var/lib/cloud/instance/config/setup.yml)"
-if [ -n "$PROXMOX_CEPH_OSD_DEVICE" ]; then
-  pveceph osd create "$PROXMOX_CEPH_OSD_DEVICE"
+if [ -n "\$PROXMOX_CEPH_OSD_DEVICE" ]; then
+  pveceph osd create "\$PROXMOX_CEPH_OSD_DEVICE"
 fi
+
+# enable proxmox cluster master mDNS advertising
+tee /etc/systemd/dnssd/proxmoxcluster.dnssd <<EOX
+[Service]
+Name=%H
+Type=_proxmoxcluster._tcp
+SubType=_master
+EOX
+systemctl reload systemd-resolved.service
+
+# sync everything to disk
+sync
+
+# cleanup
+[ -f "\${0}" ] && rm -- "\${0}"
+EOF
+chmod +x /usr/local/bin/initialize-pve-cluster.sh
+tee /etc/systemd/system/initialize-pve-cluster.service <<EOF
+[Unit]
+Description=Initialize a Proxmox cluster on first startup
+ConditionPathExists=/usr/local/bin/initialize-pve-cluster.sh
+After=pve-guests.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+ExecStart=/usr/local/bin/initialize-pve-cluster.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable initialize-pve-cluster
 
 # sync everything to disk
 sync

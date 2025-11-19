@@ -18,11 +18,6 @@ else
   pveceph init
 fi
 
-# configure firewall
-ufw disable
-ufw enable
-ufw status verbose
-
 # sync everything to disk
 sync
 

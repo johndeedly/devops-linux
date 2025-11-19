@@ -29,8 +29,8 @@ Type=_proxmoxcluster._tcp
 SubType=_worker
 EOF
 
-# try joining the cluster on next boot
-tee /usr/local/bin/join-the-pve-cluster.sh <<EOF
+# join the cluster on first boot
+tee /usr/local/bin/join-pve-cluster.sh <<EOF
 #!/usr/bin/env bash
 PROXMOX_MASTER_FQDN_OR_IP="$(yq -r '.setup.proxmox_cluster.master_fqdn_or_ip' /var/lib/cloud/instance/config/setup.yml)"
 PROXMOX_CEPH_OSD_DEVICE="$(yq -r '.setup.proxmox_cluster.ceph_osd_device' /var/lib/cloud/instance/config/setup.yml)"
@@ -57,25 +57,31 @@ if [ -n "\$PROXMOX_CEPH_OSD_DEVICE" ]; then
   pveceph osd create "\$PROXMOX_CEPH_OSD_DEVICE"
 fi
 
-systemctl disable join-the-pve-cluster
+# sync everything to disk
+sync
+
+# cleanup
+[ -f "\${0}" ] && rm -- "\${0}"
 EOF
-chmod +x /usr/local/bin/join-the-pve-cluster.sh
-tee /etc/systemd/system/join-the-pve-cluster.service <<EOF
+chmod +x /usr/local/bin/join-pve-cluster.sh
+tee /etc/systemd/system/join-pve-cluster.service <<EOF
 [Unit]
-Description=Joins a Proxmox cluster on startup
+Description=Joins a Proxmox cluster on first startup
+ConditionPathExists=/usr/local/bin/join-pve-cluster.sh
+After=pve-guests.service
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
+RemainAfterExit=true
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
-ExecStart=/usr/local/bin/join-the-pve-cluster.sh
+ExecStart=/usr/local/bin/join-pve-cluster.sh
 
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable join-the-pve-cluster
+systemctl enable join-pve-cluster
 
 # sync everything to disk
 sync
