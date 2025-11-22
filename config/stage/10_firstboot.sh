@@ -280,12 +280,24 @@ EOF
 systemctl --global enable userlogin.service
 
 # modify grub
-GRUB_GLOBAL_CMDLINE="console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux"
-GRUB_CFGS=( /etc/default/grub /etc/default/grub.d/* )
+GRUB_DEFAULT_CMDLINE="loglevel=3"
+GRUB_GLOBAL_CMDLINE="console=ttyS0,115200 console=tty1 acpi=force acpi_osi=Linux"
+GRUB_ROOT_UUID="$(lsblk -no MOUNTPOINT,UUID | sed -e '/^\/ /!d' | head -n 1 | awk '{ print $2 }')"
+if findmnt -t btrfs -n /; then
+  echo "[ OK ] Detected btrfs root, enable zstd compression"
+  GRUB_GLOBAL_CMDLINE="$GRUB_GLOBAL_CMDLINE rootflags=compress-force=zstd:4"
+fi
+GRUB_CFGS=( /etc/default/grub $(find /etc/default/grub.d -type f -printf '%p ') )
 for cfg in "${GRUB_CFGS[@]}"; do
   sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/' "$cfg" || true
   sed -i 's/^GRUB_CMDLINE_LINUX=/#GRUB_CMDLINE_LINUX=/' "$cfg" || true
+  sed -i 's/^GRUB_DEVICE_UUID=/#GRUB_DEVICE_UUID=/' "$cfg" || true
+  sed -i 's/^GRUB_DISABLE_LINUX_UUID=/#GRUB_DISABLE_LINUX_UUID=/' "$cfg" || true
+  sed -i 's/^GRUB_DISABLE_LINUX_PARTUUID=/#GRUB_DISABLE_LINUX_PARTUUID=/' "$cfg" || true
   sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "$cfg" || true
+  sed -i 's/^GRUB_TERMINAL_INPUT=/#GRUB_TERMINAL_INPUT=/' "$cfg" || true
+  sed -i 's/^GRUB_TERMINAL_OUTPUT=/#GRUB_TERMINAL_OUTPUT=/' "$cfg" || true
+  sed -i 's/^GRUB_SERIAL_COMMAND=/#GRUB_SERIAL_COMMAND=/' "$cfg" || true
   sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "$cfg" || true
   sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "$cfg" || true
   sed -i 's/^GRUB_TIMEOUT_STYLE=/#GRUB_TIMEOUT_STYLE=/' "$cfg" || true
@@ -296,21 +308,27 @@ done
 tee -a /etc/default/grub <<EOF
 
 # provisioned
-GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_GLOBAL_CMDLINE}"
-GRUB_CMDLINE_LINUX=""
+GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_DEFAULT_CMDLINE}"
+GRUB_CMDLINE_LINUX="${GRUB_GLOBAL_CMDLINE}"
+GRUB_DEVICE_UUID="${GRUB_ROOT_UUID}"
+GRUB_DISABLE_LINUX_UUID=""
+GRUB_DISABLE_LINUX_PARTUUID="true"
 GRUB_TERMINAL=gfxterm
+GRUB_TERMINAL_INPUT="console serial"
+GRUB_TERMINAL_OUTPUT="gfxterm serial"
+GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"
 GRUB_GFXMODE=auto
 GRUB_GFXPAYLOAD_LINUX=keep
 GRUB_TIMEOUT_STYLE=menu
 GRUB_TIMEOUT=2
 GRUB_COLOR_NORMAL="light-gray/black"
-GRUB_COLOR_HIGHLIGHT="white/blue"
+GRUB_COLOR_HIGHLIGHT="white/red"
 EOF
 tee /etc/grub.d/06_override <<EOF
 #!/usr/bin/env bash
 cat <<'EOS'
 set menu_color_normal="light-gray/black"
-set menu_color_highlight="white/blue"
+set menu_color_highlight="white/red"
 EOS
 EOF
 chmod +x /etc/grub.d/06_override
