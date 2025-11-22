@@ -425,6 +425,8 @@ files:
         config: true
       - path: pxe/80_pxe_image/hooks/pxe_http
         config: true
+      - path: pxe/80_pxe_image/hooks/pxe_iso
+        config: true
       - path: pxe/80_pxe_image/hooks/pxe_iscsi
         config: true
       - path: pxe/80_pxe_image/hooks/pxe_nbd
@@ -442,6 +444,8 @@ files:
       - path: pxe/80_pxe_image/install/pxe_cifs
         config: true
       - path: pxe/80_pxe_image/install/pxe_http
+        config: true
+      - path: pxe/80_pxe_image/install/pxe_iso
         config: true
       - path: pxe/80_pxe_image/install/pxe_iscsi
         config: true
