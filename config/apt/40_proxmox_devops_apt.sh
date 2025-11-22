@@ -35,7 +35,7 @@ pushd "$BUILDDIR"
 # setup virtual machines
 for line in "${QMS[@]}"; do
   read QM_IMAGE QM_ID QM_NAME QM_CPU QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT < \
-    <(jq '.image, .id, .name, .cpu, .cores, .memory, .storage, .ostype, .pool, .onboot, .reboot' <<<"$line" | xargs)
+    <(jq '.image//"",.id//"",.name//"",.cpu//"",.cores//"",.memory//"",.storage//"",.ostype//"",.pool//"",.onboot//"",.reboot//""' <<<"$line" | xargs)
   # check present
   if ! [ -f "/iso/$QM_IMAGE" ]; then
     unset QM_IMAGE QM_ID QM_NAME QM_CPU QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
@@ -61,10 +61,11 @@ for line in "${QMS[@]}"; do
   readarray QM_NETWORKS < <(jq -c '.networks[]' <<<"$line")
   for net in "${QM_NETWORKS[@]}"; do
     read QM_NET_NAME QM_NET_BRIDGE QM_NET_MAC QM_NET_VLAN < \
-      <(jq '.name, .bridge, .mac, .vlan' <<<"$net" | xargs)
+      <(jq '.name//"",.bridge//"",.mac//"",.vlan//""' <<<"$net" | xargs)
+    [ -n "$QM_NET_BRIDGE" ] && QM_NET_BRIDGE_PRINT=",bridge=$QM_NET_BRIDGE" || QM_NET_BRIDGE_PRINT=""
     [ -n "$QM_NET_MAC" ] && QM_NET_MAC_PRINT=",macaddr=$QM_NET_MAC" || QM_NET_MAC_PRINT=""
     [ -n "$QM_NET_VLAN" ] && [ "$QM_NET_VLAN" -gt 0 ] && QM_NET_VLAN_PRINT=",tag=$QM_NET_VLAN" || QM_NET_VLAN_PRINT=""
-    qm set "$QM_ID" "--$QM_NET_NAME" "virtio,bridge=$QM_NET_BRIDGE,firewall=0,mtu=1500${QM_NET_MAC_PRINT}${QM_NET_VLAN_PRINT}"
+    qm set "$QM_ID" "--$QM_NET_NAME" "virtio,firewall=0,mtu=1500${QM_NET_BRIDGE_PRINT}${QM_NET_MAC_PRINT}${QM_NET_VLAN_PRINT}"
     unset QM_NET_NAME QM_NET_BRIDGE QM_NET_MAC QM_NET_VLAN
   done
   unset QM_IMAGE QM_ID QM_NAME QM_CPU QM_CORES QM_MEMORY QM_STORAGE QM_OSTYPE QM_POOL QM_ONBOOT QM_REBOOT
@@ -73,7 +74,7 @@ done
 # setup containers
 for line in "${PCTS[@]}"; do
   read PCT_IMAGE PCT_ID PCT_HOSTNAME PCT_CORES PCT_MEMORY PCT_STORAGE PCT_SIZE_GB PCT_OSTYPE PCT_POOL PCT_ONBOOT < \
-    <(jq '.image, .id, .hostname, .cores, .memory, .storage, .size_gb, .ostype, .pool, .onboot' <<<"$line" | xargs)
+    <(jq '.image//"",.id//"",.hostname//"",.cores//"",.memory//"",.storage//"",.size_gb//"",.ostype//"",.pool//"",.onboot//""' <<<"$line" | xargs)
   # check present
   if ! [ -f "/iso/$PCT_IMAGE" ]; then
     unset PCT_IMAGE PCT_ID PCT_HOSTNAME PCT_CORES PCT_MEMORY PCT_STORAGE PCT_SIZE_GB PCT_OSTYPE PCT_POOL PCT_ONBOOT
@@ -87,12 +88,12 @@ for line in "${PCTS[@]}"; do
   readarray PCT_NETWORKS < <(jq -c '.networks[]' <<<"$line")
   for net in "${PCT_NETWORKS[@]}"; do
     read PCT_NET_NAME PCT_NET_ALIAS PCT_NET_BRIDGE PCT_NET_IP PCT_NET_IP6 PCT_NET_VLAN < \
-      <(jq '.name, .alias, .bridge, .ip, .ip6, .vlan' <<<"$net" | xargs)
-    if [ -n "$PCT_NET_VLAN" ] && [ "$PCT_NET_VLAN" -gt 0 ]; then
-      pct set "$PCT_ID" "--$PCT_NET_NAME" "name=$PCT_NET_ALIAS,bridge=$PCT_NET_BRIDGE,firewall=0,ip=$PCT_NET_IP,ip6=$PCT_NET_IP6,mtu=1500,tag=$PCT_NET_VLAN"
-    else
-      pct set "$PCT_ID" "--$PCT_NET_NAME" "name=$PCT_NET_ALIAS,bridge=$PCT_NET_BRIDGE,firewall=0,ip=$PCT_NET_IP,ip6=$PCT_NET_IP6,mtu=1500"
-    fi
+      <(jq '.name//"",.alias//"",.bridge//"",.ip//"",.ip6//"",.vlan//""' <<<"$net" | xargs)
+    [ -n "$PCT_NET_BRIDGE" ] && PCT_NET_BRIDGE_PRINT=",bridge=$PCT_NET_BRIDGE" || PCT_NET_BRIDGE_PRINT=""
+    [ -n "$PCT_NET_IP" ] && PCT_NET_IP_PRINT=",ip=$PCT_NET_IP" || PCT_NET_IP_PRINT=""
+    [ -n "$PCT_NET_IP6" ] && PCT_NET_IP6_PRINT=",ip6=$PCT_NET_IP6" || PCT_NET_IP6_PRINT=""
+    [ -n "$PCT_NET_VLAN" ] && [ "$PCT_NET_VLAN" -gt 0 ] && PCT_NET_VLAN_PRINT=",tag=$PCT_NET_VLAN" || PCT_NET_VLAN_PRINT=""
+    pct set "$PCT_ID" "--$PCT_NET_NAME" "name=$PCT_NET_ALIAS,firewall=0,mtu=1500${PCT_NET_BRIDGE}${PCT_NET_IP_PRINT}${PCT_NET_IP6_PRINT}${PCT_NET_VLAN_PRINT}"
     unset PCT_NET_NAME PCT_NET_ALIAS PCT_NET_BRIDGE PCT_NET_IP PCT_NET_IP6 PCT_NET_VLAN
   done
   unset PCT_IMAGE PCT_ID PCT_HOSTNAME PCT_CORES PCT_MEMORY PCT_STORAGE PCT_SIZE_GB PCT_OSTYPE PCT_POOL PCT_ONBOOT
