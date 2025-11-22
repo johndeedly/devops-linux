@@ -126,6 +126,9 @@ insmod iso9660
 insmod all_video
 insmod font
 
+insmod echo
+insmod read
+
 set default="0"
 set timeout=15
 
