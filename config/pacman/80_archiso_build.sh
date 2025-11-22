@@ -94,7 +94,7 @@ EOF
 
 # show menu entries for system information at boottime
 mkdir -p /var/tmp/archlive/baseline/grub
-tee -a /var/tmp/archlive/baseline/grub/grub.cfg /var/tmp/archlive/baseline/grub/loopback.cfg <<EOF
+tee -a /var/tmp/archlive/baseline/grub/grub.cfg /var/tmp/archlive/baseline/grub/loopback.cfg <<'EOF'
 
 insmod smbios
 smbios --type 1 --get-string 0x04 --set smbios_system_vendor
