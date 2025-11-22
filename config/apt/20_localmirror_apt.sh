@@ -300,23 +300,21 @@ rm /etc/nginx/sites-enabled/default
 systemctl enable nginx.service aptsync.timer
 
 # enable pkgmirror mDNS advertising
-if grep -q Ubuntu /proc/version; then
+(
+  source /etc/os-release
   tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
 [Service]
 Name=%H
 Type=_pkgmirror._tcp
-SubType=_ubuntu
+SubType=_${ID}
+TxtText=distro=${ID} version=${VERSION_ID} codename=${VERSION_CODENAME}
 Port=8080
+
+# resolvectl query -p mdns --zone=no --type=PTR --json=short _${ID}._sub._pkgmirror._tcp.local -> {"name":"<hostname>._pkgmirror._tcp.local"}
+# resolvectl query -p mdns --zone=no --type=SRV --json=short <hostname>._pkgmirror._tcp.local -> {"port":8080,"name":"<hostname>.local"}
+# resolvectl query -p mdns --zone=no --type=TXT --json=short <hostname>._pkgmirror._tcp.local -> {"items":["distro=${ID}","version=${VERSION_ID}","codename=${VERSION_CODENAME}"]}
 EOF
-else
-  tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
-[Service]
-Name=%H
-Type=_pkgmirror._tcp
-SubType=_debian
-Port=8080
-EOF
-fi
+)
 
 ufw disable
 ufw allow log 8080/tcp comment 'allow localmirror'

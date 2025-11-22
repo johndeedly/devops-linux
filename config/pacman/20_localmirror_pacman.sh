@@ -181,7 +181,12 @@ tee /etc/systemd/dnssd/pkgmirror.dnssd <<EOF
 Name=%H
 Type=_pkgmirror._tcp
 SubType=_arch
+TxtText=distro=arch
 Port=8080
+
+# resolvectl query -p mdns --zone=no --type=PTR --json=short _arch._sub._pkgmirror._tcp.local -> {"name":"<hostname>._pkgmirror._tcp.local"}
+# resolvectl query -p mdns --zone=no --type=SRV --json=short <hostname>._pkgmirror._tcp.local -> {"port":8080,"name":"<hostname>.local"}
+# resolvectl query -p mdns --zone=no --type=TXT --json=short <hostname>._pkgmirror._tcp.local -> {"items":["distro=arch"]}
 EOF
 
 ufw disable
