@@ -76,8 +76,6 @@ setup:
     - /path/to/device
   ## the fqdn hostname of the produced os
   hostname: ""
-  ## the url to a 📁database location on a webserver
-  local_http_database: ""
   ## utilize a tar image placed inside the database folder as encrypted root filesystem
   encrypt:
     ## enable the encrypt build
