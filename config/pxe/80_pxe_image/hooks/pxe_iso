@@ -2,9 +2,6 @@
 
 run_hook() {
     if [ -n "${ip}" ] && [ -n "${pxe_iso_srv}" ]; then
-        # copy to RAM logic is disabled, as the image will be downloaded to RAM
-        export copytoram="n"
-
         pxe_iso_srv=$(eval echo "${pxe_iso_srv}")
 
         # enable chained http mount handler
@@ -15,51 +12,73 @@ run_hook() {
 # args: /path/to/newroot
 pxe_iso_mount_handler() {
     newroot="${1}"
-    local http_iso="${pxe_iso_srv}"
-    # append default iso path if no iso file was given
-    if [ "${pxe_iso_srv//.iso}" == "${pxe_iso_srv}" ]; then
-        http_iso="${pxe_iso_srv%/}/archlinux-x86_64.iso"
+
+    msg ":: Boot ArchISO using PXE and NFS"
+
+    local local_nfs_mnt="/run/pxe/nfsmnt"
+
+    # 1nd: mount the nfs root
+    msg ":: Mount NFS share '${pxe_iso_srv}'"
+    mkdir -p "${local_nfs_mnt}"
+    local mount_status
+    msg ":: trying nfs 4"
+    if [ -n "${pxe_nfs_opt}" ]; then
+        timeout 15 mount.nfs4 -o "${pxe_nfs_opt}" "${pxe_iso_srv}" "${local_nfs_mnt}"
+    else
+        timeout 15 mount.nfs4 "${pxe_iso_srv}" "${local_nfs_mnt}"
     fi
-
-    msg ":: Boot ArchISO using PXE"
-
-    # 1st: check the copy to RAM filesystem is present
+    mount_status=$?
+    if [ "$mount_status" -gt 0 ]; then
+        msg ":: trying nfs 3"
+        if [ -n "${pxe_nfs_opt}" ]; then
+            timeout 15 nfsmount -o "${pxe_nfs_opt}" "${pxe_iso_srv}" "${local_nfs_mnt}"
+        else
+            timeout 15 nfsmount "${pxe_iso_srv}" "${local_nfs_mnt}"
+        fi
+        mount_status=$?
+    fi
+    if [ "$mount_status" -gt 0 ]; then
+        echo "!! ERROR: failed to mount '${local_nfs_mnt}'"
+        launch_interactive_shell
+    fi
+    
+    # 2nd: check the copy to RAM filesystem is present
     if ! mountpoint -q "${copytoram_mnt}"; then
         msg ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
         mount --mkdir -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram "${copytoram_mnt}"
     fi
 
-    local local_iso="${copytoram_mnt}/archlinux-x86_64.iso"
-
-    # 2nd: download the iso
-    msg ":: Download '${http_iso}' to '${local_iso}'"
-    if ! wget -c -O "${local_iso}" "${http_iso}"; then
-        echo "!! ERROR: could not download '${http_iso}' to '${local_iso}'"
-        launch_interactive_shell
-    fi
-
-    local iso_mnt="/run/pxe/iso"
+    local iso_path="${local_nfs_mnt%/}/${pxe_iso_path}"
+    local local_iso_mnt="/run/pxe/isomnt"
 
     # 3rd: loopback mount the iso
-    msg ":: Loopback mount the ISO '${local_iso}'"
-    if ! mount --mkdir -o loop "${local_iso}" "${iso_mnt}"; then
-        echo "!! ERROR: could not loopback mount '${local_iso}' to '${iso_mnt}'"
+    msg ":: Loopback mount the ISO '${iso_path}'"
+    if ! mount --mkdir -o loop "${iso_path}" "${local_iso_mnt}"; then
+        echo "!! ERROR: could not loopback mount '${iso_path}' to '${local_iso_mnt}'"
         launch_interactive_shell
     fi
-    
+
     local local_img="${copytoram_mnt}/arch/${arch}/pxeboot.img"
 
     # 4th: symlink the containing airootfs to the correct location
-    msg ":: symlink the containing airootfs to the correct location"
+    msg ":: Wait for ISO device"
+    matched=""
+    while [ -z "${matched}" ]; do
+        for i in "${local_iso_mnt}/arch/${arch}"/*; do
+            if [ "${i%.sfs}" != "${i}" ]; then
+                matched="${i}"
+                break
+            elif [ "${i%.erofs}" != "${i}" ]; then
+                matched="${i}"
+                break
+            fi
+        done
+        msg ":: ..."
+        sleep 2
+    done
+    msg ":: Symlink '${matched}' to '${local_img}'"
     mkdir -p "${local_img%/pxeboot.img}"
-    if [ -f "${iso_mnt}/arch/x86_64/airootfs.sfs" ]; then
-        ln -s "${iso_mnt}/arch/x86_64/airootfs.sfs" "${local_img}"
-    elif [ -f "${iso_mnt}/arch/x86_64/airootfs.erofs" ]; then
-        ln -s "${iso_mnt}/arch/x86_64/airootfs.erofs" "${local_img}"
-    else
-        echo "!! ERROR: '${iso_mnt}' (${http_iso}) is no standard ArchISO format"
-        launch_interactive_shell
-    fi
+    ln -s "${matched}" "${local_img}"
 
     # 5th: create the boot mount point for pxe_mount_handler with correct image placement
     msg ":: Bindmount '${copytoram_mnt}' as '${boot_mnt}'"
@@ -69,4 +88,14 @@ pxe_iso_mount_handler() {
     fi
 
     pxe_mount_handler "${newroot}"
+
+    # last: when the image is copied to RAM, the NFS connection needs to be
+    #       closed as the boot process will hang (#bug)
+    if [ "${copytoram}" = "y" ]; then
+        msg ":: Disconnect NFS from '${pxe_iso_srv}'"
+        umount -d "${local_iso_mnt}"
+        umount -d "${local_nfs_mnt}"
+        rmdir "${local_iso_mnt}"
+        rmdir "${local_nfs_mnt}"
+    fi
 }

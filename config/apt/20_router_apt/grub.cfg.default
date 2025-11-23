@@ -209,10 +209,18 @@ submenu "Boot Ubuntu using..." {
     }
 }
 
-menuentry "Boot ArchISO using HTTP" {
+menuentry "Boot ArchISO using NFS (Copy-to-RAM)" {
     set root="(http,$pxe_default_server)"
     echo "Loading vmlinuz from ($root)..."
-    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=http://$pxe_default_server/archlinux-x86_64.iso cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+    echo "Loading initrd from ($root)..."
+    initrd /arch/x86_64/initramfs-linux-pxe.img
+    boot
+}
+menuentry "Boot ArchISO using NFS" {
+    set root="(http,$pxe_default_server)"
+    echo "Loading vmlinuz from ($root)..."
+    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
     echo "Loading initrd from ($root)..."
     initrd /arch/x86_64/initramfs-linux-pxe.img
     boot
