@@ -59,6 +59,7 @@ if [ -e /bin/apt ]; then
     nfs-common
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y reinstall linux-image-$(uname -r)
 elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed linux-firmware $(pacman -Ssq linux-firmware- | xargs)
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed sshpass mkinitcpio-nfs-utils curl ca-certificates-utils cifs-utils \
     nfs-utils nbd open-iscsi nvme-cli wireguard-tools
 fi
