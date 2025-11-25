@@ -83,6 +83,30 @@ tee -a /var/tmp/deblive/{chroot,staging}/devops-linux <<EOF
 $(date +%F)
 EOF
 
+# modify cloud config to use iso mount as nocloud datasource (ventoy boot bugfix)
+mkdir -p /var/tmp/deblive/chroot/etc/systemd/system/cloud-init.target.wants
+tee -a /var/tmp/deblive/chroot/etc/systemd/system/cidata.mount <<EOF
+[Unit]
+Description=CIDATA datasource (/cidata)
+Before=cloud-init.service
+
+[Mount]
+What=/dev/disk/by-label/CIDATA
+Where=/cidata
+Options=X-mount.mkdir
+
+[Install]
+WantedBy=cloud-init.target
+EOF
+ln -s /etc/systemd/system/cidata.mount /var/tmp/deblive/chroot/etc/systemd/system/cloud-init.target.wants/cidata.mount
+mkdir -p /var/tmp/deblive/chroot/etc/cloud/cloud.cfg.d
+tee -a /var/tmp/deblive/chroot/etc/cloud/cloud.cfg.d/10_nocloud.cfg <<EOF
+datasource_list: ["NoCloud"]
+datasource:
+  NoCloud:
+    seedfrom: file:///cidata/
+EOF
+
 # create the compressed squash filesystem
 mksquashfs /var/tmp/deblive/chroot /var/tmp/deblive/staging/live/filesystem.squashfs \
   -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards -e boot

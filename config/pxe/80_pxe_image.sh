@@ -83,6 +83,7 @@ EOF
   tee -a /etc/initramfs-tools/scripts/pxe <<EOF
 $(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe)
 $(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe-http)
+$(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe-iso)
 $(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe-nfs)
 $(</var/lib/cloud/instance/provision/pxe/80_pxe_image/apt/pxe-cifs)
 EOF

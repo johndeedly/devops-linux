@@ -263,6 +263,7 @@ mountroot() {
     init_network
     
     pxe_http_hook
+    pxe_iso_hook
     pxe_nfs_hook
     pxe_cifs_hook
     

@@ -45,23 +45,43 @@ menuentry "Boot Ubuntu using HTTP" {
     initrd /debian/x86_64/initrd.img
     boot
 }
-menuentry "Boot ArchISO using NFS" {
-    set root="(http,$pxe_default_server)"
-    echo "Loading vmlinuz from ($root)..."
-    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
-    echo "Loading initrd from ($root)..."
-    initrd /arch/x86_64/initramfs-linux-pxe.img
-    boot
-}
-menuentry "Boot ArchISO using NFS (Copy-to-RAM)" {
-    set root="(http,$pxe_default_server)"
-    echo "Loading vmlinuz from ($root)..."
-    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
-    echo "Loading initrd from ($root)..."
-    initrd /arch/x86_64/initramfs-linux-pxe.img
-    boot
-}
 
+submenu "Boot ArchISO using..." {
+    menuentry "Boot ArchISO using NFS" {
+        set root="(http,$pxe_default_server)"
+        echo "Loading vmlinuz from ($root)..."
+        linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+        echo "Loading initrd from ($root)..."
+        initrd /arch/x86_64/initramfs-linux-pxe.img
+        boot
+    }
+    menuentry "Boot ArchISO using NFS (Copy-to-RAM)" {
+        set root="(http,$pxe_default_server)"
+        echo "Loading vmlinuz from ($root)..."
+        linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+        echo "Loading initrd from ($root)..."
+        initrd /arch/x86_64/initramfs-linux-pxe.img
+        boot
+    }
+}
+submenu "Boot DebISO using..." {
+    menuentry "Boot DebISO using NFS" {
+        set root="(http,$pxe_default_server)"
+        echo "Loading vmlinuz from ($root)..."
+        linux /debian/x86_64/vmlinuz boot=pxe dist=debian pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=debian-x86_64.iso copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+        echo "Loading initrd from ($root)..."
+        initrd /debian/x86_64/initrd.img
+        boot
+    }
+    menuentry "Boot DebISO using NFS (Copy-to-RAM)" {
+        set root="(http,$pxe_default_server)"
+        echo "Loading vmlinuz from ($root)..."
+        linux /debian/x86_64/vmlinuz boot=pxe dist=debian pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=debian-x86_64.iso copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+        echo "Loading initrd from ($root)..."
+        initrd /debian/x86_64/initrd.img
+        boot
+    }
+}
 submenu "Boot Arch Linux using..." {
     menuentry "Boot Arch Linux using NFS" {
         set root="(http,$pxe_default_server)"

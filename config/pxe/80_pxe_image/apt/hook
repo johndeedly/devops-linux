@@ -28,7 +28,7 @@ for x in cifs md4 des_generic; do
     manual_add_modules "$x"
 done
 
-# nfs boot
+# nfs/iso boot
 copy_exec /sbin/mount.nfs /sbin
 copy_exec /sbin/mount.nfs4 /sbin
 copy_exec /bin/timeout /bin

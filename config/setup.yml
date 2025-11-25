@@ -325,6 +325,8 @@ files:
         config: true
       - path: pxe/80_pxe_image/apt/pxe-http
         config: true
+      - path: pxe/80_pxe_image/apt/pxe-iso
+        config: true
       - path: pxe/80_pxe_image/apt/pxe-nfs
         config: true
       - path: pxe/80_pxe_image/apt/pxe-cifs
