@@ -1,10 +1,18 @@
 #!/usr/bin/ash
 
+run_earlyhook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_iso_srv}" ]; then
+        # Module autoloading
+        modprobe nfs 2>/dev/null
+        modprobe sunrpc 2>/dev/null
+    fi
+}
+
 run_hook() {
     if [ -n "${ip}" ] && [ -n "${pxe_iso_srv}" ]; then
         pxe_iso_srv=$(eval echo "${pxe_iso_srv}")
 
-        # enable chained http mount handler
+        # enable chained iso mount handler
         export mount_handler="pxe_iso_mount_handler"
     fi
 }
@@ -17,7 +25,7 @@ pxe_iso_mount_handler() {
 
     local local_nfs_mnt="/run/pxe/nfsmnt"
 
-    # 1nd: mount the nfs root
+    # 1st: mount the nfs root
     msg ":: Mount NFS share '${pxe_iso_srv}'"
     mkdir -p "${local_nfs_mnt}"
     local mount_status
