@@ -114,6 +114,21 @@ elif [ -f "${local.ovmf_code_debian}" ]; then
   )
 fi
 EOF
+  qemu_efi_pxe          = <<EOF
+if [ -f "${local.ovmf_code_arch}" ]; then
+  cp "${local.ovmf_vars_arch}" pxevars.fd
+  QEMUPARAMS+=(
+    "-drive" "file=${local.ovmf_code_arch},if=pflash,unit=0,format=raw,readonly=on"
+    "-drive" "file=pxevars.fd,if=pflash,unit=1,format=raw"
+  )
+elif [ -f "${local.ovmf_code_debian}" ]; then
+  cp "${local.ovmf_vars_debian}" pxevars.fd
+  QEMUPARAMS+=(
+    "-drive" "file=${local.ovmf_code_debian},if=pflash,unit=0,format=raw,readonly=on"
+    "-drive" "file=pxevars.fd,if=pflash,unit=1,format=raw"
+  )
+fi
+EOF
   qemu_swtpm            = <<EOF
 if command -v swtpm 2>&1 >/dev/null; then
   if ! [ -e vtpm.0/vtpm.sock ]; then
@@ -138,8 +153,13 @@ QEMUPARAMS+=(
 )
 EOF
   qemu_net_pxe          = <<EOF
+# you need(!!) a rng device to enable uefi pxe boot on nics, as ovmf out of security concerns disables netboot without it
+# https://blog.ledoian.cz/qemu-ovmf-netboot.html
+# https://forum.proxmox.com/threads/proxmox-ve-8-4-0-unable-to-pxe-boot-under-ovmf.168220/
+# https://pve.proxmox.com/wiki/Roadmap#8.4-known-issues
 QEMUPARAMS+=(
-  "-netdev" "socket,id=user.0,connect=:23568" "-device" "virtio-net,netdev=user.0"
+  "-netdev" "socket,id=user.0,connect=:23568" "-device" "virtio-net,netdev=user.0,bootindex=1"
+  "-device" "virtio-rng"
 )
 EOF
   qemu_net_server       = <<EOF
@@ -391,7 +411,7 @@ chmod +x output/devops-linux/devops-linux-x86_64.pxe.bios.sh
 tee output/devops-linux/devops-linux-x86_64.pxe.uefi.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_no_gl}
-${local.qemu_efi}
+${local.qemu_efi_pxe}
 ${local.qemu_net_pxe}
 ${local.qemu_outro}
 ${local.qemu_exec}
