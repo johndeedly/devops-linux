@@ -96,14 +96,4 @@ pxe_iso_mount_handler() {
     fi
 
     pxe_mount_handler "${newroot}"
-
-    # last: when the image is copied to RAM, the NFS connection needs to be
-    #       closed as the boot process will hang (#bug)
-    if [ "${copytoram}" = "y" ]; then
-        msg ":: Disconnect NFS from '${pxe_iso_srv}'"
-        umount -d "${local_iso_mnt}"
-        umount -d "${local_nfs_mnt}"
-        rmdir "${local_iso_mnt}"
-        rmdir "${local_nfs_mnt}"
-    fi
 }
