@@ -127,6 +127,7 @@ insmod all_video
 insmod font
 
 insmod echo
+insmod test
 insmod read
 
 set default="0"
@@ -151,8 +152,6 @@ menuentry "Debian Live [EFI/GRUB]" {
 submenu "Hardware Info" {
     ### SMBIOS Type 0 – BIOS Information
     menuentry "SMBIOS Type 0: BIOS Info" {
-        insmod smbios
-        insmod echo
         echo "=== SMBIOS Type 0: BIOS Information ==="
         echo -n "Vendor: "
         smbios --type 0 --get-string 0x04
@@ -168,8 +167,6 @@ submenu "Hardware Info" {
     if [ "$is_vm" = "false" ]; then
         ### SMBIOS Type 1 – System Information
         menuentry "SMBIOS Type 1: System Info" {
-            insmod smbios
-            insmod echo
             echo "=== SMBIOS Type 1: System Information ==="
             echo -n "Manufacturer: "
             smbios --type 1 --get-string 0x04
@@ -192,8 +189,6 @@ submenu "Hardware Info" {
         
         ### SMBIOS Type 2 – Baseboard
         menuentry "SMBIOS Type 2: Baseboard Info" {
-            insmod smbios
-            insmod echo
             echo "=== SMBIOS Type 2: Baseboard Information ==="
             echo -n "Manufacturer: "
             smbios --type 2 --get-string 0x04
@@ -214,8 +209,6 @@ submenu "Hardware Info" {
         
         ### SMBIOS Type 3 – Chassis
         menuentry "SMBIOS Type 3: Chassis Info" {
-            insmod smbios
-            insmod echo
             echo "=== SMBIOS Type 3: Chassis Information ==="
             echo -n "Manufacturer: "
             smbios --type 3 --get-string 0x04
@@ -232,8 +225,6 @@ submenu "Hardware Info" {
         
         ### SMBIOS Type 4 – Processor
         menuentry "SMBIOS Type 4: Processor Info" {
-            insmod smbios
-            insmod echo
             echo "=== SMBIOS Type 4: Processor Information ==="
             echo -n "Socket Designation: "
             smbios --type 4 --get-string 0x04
@@ -254,8 +245,6 @@ submenu "Hardware Info" {
         
         ### SMBIOS Type 17 – Memory Device
         menuentry "SMBIOS Type 17: Memory Device Info" {
-            insmod smbios
-            insmod echo
             echo "=== SMBIOS Type 17: Memory Device Information ==="
             echo -n "Device Locator: "
             smbios --type 17 --get-string 0x10

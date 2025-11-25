@@ -126,16 +126,16 @@ configfile $cmdpath/grub.cfg
 normal
 EOF
 grub-mkstandalone -O i386-pc-pxe -o /srv/tftp/grub/i386-pc/grub.0 \
-  --install-modules="normal configfile chain linux http pxe net tftp boot echo test read gfxterm" \
-  --modules="normal configfile chain linux http pxe net tftp boot echo test read gfxterm" \
+  --install-modules="normal configfile chain linux http pxe net tftp boot echo test read gfxterm smbios part_gpt part_msdos fat iso9660 all_video font progress" \
+  --modules="normal configfile chain linux http pxe net tftp boot echo test read gfxterm smbios part_gpt part_msdos fat iso9660 all_video font progress" \
   --locales="" --fonts="" --themes="" "boot/grub/grub.cfg=$BUILDDIR/grub.cfg"
 grub-mkstandalone -O i386-efi -o /srv/tftp/grub/i386-efi/grubia32.efi \
-  --install-modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
-  --modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
+  --install-modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm smbios part_gpt part_msdos fat iso9660 all_video font progress" \
+  --modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm smbios part_gpt part_msdos fat iso9660 all_video font progress" \
   --locales="" --fonts="" --themes="" "boot/grub/grub.cfg=$BUILDDIR/grub.cfg"
 grub-mkstandalone -O x86_64-efi -o /srv/tftp/grub/x86_64-efi/grubx64.efi \
-  --install-modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
-  --modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm" \
+  --install-modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm smbios part_gpt part_msdos fat iso9660 all_video font progress" \
+  --modules="normal configfile chain linux http efinet net tftp boot echo test read gfxterm smbios part_gpt part_msdos fat iso9660 all_video font progress" \
   --locales="" --fonts="" --themes="" "boot/grub/grub.cfg=$BUILDDIR/grub.cfg"
 rm -r "$BUILDDIR"
 tee /srv/tftp/grub/grub.cfg <<EOF

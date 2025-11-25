@@ -9,21 +9,9 @@ if [ "$grub_platform" = "efi" ]; then
     fi
 fi
 
-insmod part_gpt
-insmod part_msdos
-insmod fat
-insmod iso9660
-
-insmod all_video
-insmod font
-
-insmod echo
-insmod read
-
 set default=0
 set timeout=15
 
-insmod smbios
 smbios --type 1 --get-string 0x04 --set smbios_system_vendor
 set is_vm=false
 if [ "$smbios_system_vendor" = "QEMU" ] || [ "$smbios_system_vendor" = "SeaBIOS" ]; then
@@ -55,6 +43,22 @@ menuentry "Boot Ubuntu using HTTP" {
     linux /debian/x86_64/vmlinuz boot=pxe dist=ubuntu pxe_http_srv=http://$pxe_default_server/ cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
     echo "Loading initrd from ($root)..."
     initrd /debian/x86_64/initrd.img
+    boot
+}
+menuentry "Boot ArchISO using NFS" {
+    set root="(http,$pxe_default_server)"
+    echo "Loading vmlinuz from ($root)..."
+    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+    echo "Loading initrd from ($root)..."
+    initrd /arch/x86_64/initramfs-linux-pxe.img
+    boot
+}
+menuentry "Boot ArchISO using NFS (Copy-to-RAM)" {
+    set root="(http,$pxe_default_server)"
+    echo "Loading vmlinuz from ($root)..."
+    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
+    echo "Loading initrd from ($root)..."
+    initrd /arch/x86_64/initramfs-linux-pxe.img
     boot
 }
 
@@ -207,23 +211,6 @@ submenu "Boot Ubuntu using..." {
         initrd /ubuntu/x86_64/initrd.img
         boot
     }
-}
-
-menuentry "Boot ArchISO using NFS (Copy-to-RAM)" {
-    set root="(http,$pxe_default_server)"
-    echo "Loading vmlinuz from ($root)..."
-    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=y cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
-    echo "Loading initrd from ($root)..."
-    initrd /arch/x86_64/initramfs-linux-pxe.img
-    boot
-}
-menuentry "Boot ArchISO using NFS" {
-    set root="(http,$pxe_default_server)"
-    echo "Loading vmlinuz from ($root)..."
-    linux /arch/x86_64/vmlinuz-linux pxe_iso_srv=$pxe_default_server:/srv/pxe pxe_iso_path=archlinux-x86_64.iso copytoram=n cow_spacesize=75% console=tty1 rw loglevel=3 acpi=force acpi_osi=Linux BOOTIF=01-$net_default_mac ip=dhcp
-    echo "Loading initrd from ($root)..."
-    initrd /arch/x86_64/initramfs-linux-pxe.img
-    boot
 }
 
 submenu "Hardware Info" {
