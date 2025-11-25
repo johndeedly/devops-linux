@@ -345,7 +345,7 @@ if [ -n "$PKG_MIRROR" ] && [ "xnull" != "x$PKG_MIRROR" ]; then
 fi
 
 # print the current partition layout of the target device
-lsblk -o +LABEL,PARTLABEL,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}"
+lsblk -o NAME,PARTN,SIZE,TYPE,LABEL,PARTLABEL,FSTYPE,PARTTYPENAME,UUID "${TARGET_DEVICE}"
 
 # finalize /mnt
 sleep 2
