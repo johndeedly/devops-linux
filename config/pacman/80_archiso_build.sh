@@ -30,6 +30,7 @@ gptfdisk
 grub
 jfsutils
 jq
+kexec-tools
 libguestfs
 libisoburn
 lvm2

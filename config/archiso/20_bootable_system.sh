@@ -199,8 +199,10 @@ fi
 # bootable system
 BIOS_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/BIOS/I!d' | head -n1) )
 EFI_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
+BOOT_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/linux extended boot/I!d' | head -n1) )
 echo "BIOS: ${TARGET_DEVICE}, partition ${BIOS_PART[0]}"
 echo "EFI: ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
+echo "BOOT: ${TARGET_DEVICE}, partition ${BOOT_PART[0]}"
 if [ -n "${BIOS_PART[0]}" ] && [ -n "${EFI_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${BIOS_PART[0]}" bios \
@@ -212,8 +214,12 @@ elif [ -n "${BIOS_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${BIOS_PART[0]}" bios
 else
-  echo "!! neither efi nor boot partitions found"
+  echo "!! neither efi nor bios partitions found"
   exit 1
+fi
+if [ -n "${BOOT_PART[0]}" ]; then
+  LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
+    name "${BOOT_PART[0]}" boot
 fi
 if [ -n "${EFI_PART[0]}" ] && [ -e /sys/firmware/efi/efivars ]; then
     # mount detected efi filesystem
@@ -273,6 +279,21 @@ fi
 
 # mount detected root filesystem
 mount "${ROOT_PART[0]}" /mnt
+
+echo "[ ## ] Copy over next kernel and initrd for kexec reboot later"
+BOOT_PATH="/mnt/boot"
+if [ -n "${BOOT_PART[0]}" ]; then
+    mkdir -p /nextboot
+    mount "${BOOT_PART[1]}" /nextboot
+    BOOT_PATH="/nextboot"
+fi
+VMLINUZ=$(find "$BOOT_PATH" -maxdepth 1 -name 'vmlinuz*' | sort -Vru | head -n1)
+INITRD=$(find "$BOOT_PATH" -maxdepth 1 \( \( -name 'initramfs*' -a ! -name '*fallback*' -a ! -name '*pxe*' \) -o -name 'initrd*' \) | sort -Vru | head -n1)
+cp "$VMLINUZ" "$INITRD" /boot/
+ls -lh /boot
+if [ -d /nextboot ] && mountpoint -q /nextboot; then
+    umount -l /nextboot
+fi
 
 # prefill package cache
 if [ -f /mnt/bin/apt ]; then

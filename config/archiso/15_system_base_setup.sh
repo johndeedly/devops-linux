@@ -59,7 +59,7 @@ pacman -Sy --noconfirm
 if [ -d "/iso/archiso/pkg" ] && [ -n "$(find /iso/archiso/pkg -type f)" ]; then
     rsync -av /iso/archiso/pkg/ /var/cache/pacman/pkg/
 else
-    pacman -Swp --logfile "/dev/null" --cachedir "/dev/null" wget libguestfs qemu-base jq yq libisoburn | while read -r line; do
+    pacman -Swp --logfile "/dev/null" --cachedir "/dev/null" wget libguestfs qemu-base jq yq libisoburn kexec-tools | while read -r line; do
         echo "$line"
         echo "$line".sig
     done | while read -r line; do
@@ -69,7 +69,7 @@ else
 fi
 timedatectl set-ntp false
 timedatectl set-time "$FAKED_DAY_PAC"
-LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm wget libguestfs qemu-base jq yq libisoburn
+LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm wget libguestfs qemu-base jq yq libisoburn kexec-tools
 timedatectl set-time "$CURRENT_DAY"
 timedatectl set-ntp true
 
