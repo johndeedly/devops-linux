@@ -25,11 +25,15 @@ echo "[ ## ] Wait for cloud-init to finish"
       for gpumod in amdgpu radeon nouveau i915 virtio-gpu vmwgfx; do
         modprobe -r "$gpumod" || true
       done
-      echo "[ OK ] kexec now"
-      systemctl kexec
+      echo "[ -> ] kexec now"
+      # double fork trick to prevent the subprocess from exiting
+      ( ( systemctl kexec ) & )
+      echo "[ OK ] wait for kexec"
     else
-      echo "[ OK ] default reboot now"
-      reboot now
+      echo "[ -> ] default reboot now"
+      # double fork trick to prevent the subprocess from exiting
+      ( ( reboot now ) & )
+      echo "[ OK ] wait for reboot"
     fi
   else
     echo "[FAIL] Unrecoverable error in provision steps"
