@@ -295,8 +295,6 @@ for cfg in "${GRUB_CFGS[@]}"; do
   sed -i 's/^GRUB_DISABLE_LINUX_UUID=/#GRUB_DISABLE_LINUX_UUID=/' "$cfg" || true
   sed -i 's/^GRUB_DISABLE_LINUX_PARTUUID=/#GRUB_DISABLE_LINUX_PARTUUID=/' "$cfg" || true
   sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "$cfg" || true
-  sed -i 's/^GRUB_TERMINAL_INPUT=/#GRUB_TERMINAL_INPUT=/' "$cfg" || true
-  sed -i 's/^GRUB_TERMINAL_OUTPUT=/#GRUB_TERMINAL_OUTPUT=/' "$cfg" || true
   sed -i 's/^GRUB_SERIAL_COMMAND=/#GRUB_SERIAL_COMMAND=/' "$cfg" || true
   sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "$cfg" || true
   sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "$cfg" || true
@@ -313,9 +311,7 @@ GRUB_CMDLINE_LINUX="${GRUB_GLOBAL_CMDLINE}"
 GRUB_DEVICE_UUID="${GRUB_ROOT_UUID}"
 GRUB_DISABLE_LINUX_UUID=""
 GRUB_DISABLE_LINUX_PARTUUID="true"
-GRUB_TERMINAL=gfxterm
-GRUB_TERMINAL_INPUT="console serial"
-GRUB_TERMINAL_OUTPUT="gfxterm serial"
+GRUB_TERMINAL="console serial"
 GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"
 GRUB_GFXMODE=auto
 GRUB_GFXPAYLOAD_LINUX=keep
