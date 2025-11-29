@@ -389,6 +389,22 @@ fi
 # print the current partition layout of the target device
 lsblk -o NAME,PARTN,SIZE,TYPE,LABEL,PARTLABEL,FSTYPE,PARTTYPENAME,UUID "${TARGET_DEVICE}"
 
+# mount encrypted filesystem and prefill it with the tarball under /iso/tar/*.tar.gz
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+  mkdir -p /nextroot
+  mount /dev/mapper/nextroot /nextroot
+  if [ -d /iso/tar ] && [ -f "/iso/tar/${ENCRYPT_IMAGE}" ]; then
+    echo ":: Extract tarball /iso/tar/${ENCRYPT_IMAGE}"
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xf "/iso/tar/${ENCRYPT_IMAGE}" -C /nextroot
+  fi
+
+  # finalize /nextroot
+  sync
+  umount -l /nextroot
+  cryptsetup luksClose nextroot
+  sync
+fi
+
 # finalize /mnt
 sleep 2
 sync
@@ -396,23 +412,6 @@ cp /cidata_log /mnt/cidata_stage0_log || true
 chmod 0600 /mnt/cidata_stage0_log || true
 sync
 umount -l /mnt
-
-# mount encrypted filesystem and prefill it with the tarball under /iso/tar/*.tar.gz
-if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
-  mount /dev/mapper/nextroot /mnt
-  if [ -d /iso/tar ] && [ -f "/iso/tar/${ENCRYPT_IMAGE}" ]; then
-    echo ":: Extract tarball /iso/tar/${ENCRYPT_IMAGE}"
-    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xf "/iso/tar/${ENCRYPT_IMAGE}" -C /mnt
-  fi
-
-  # finalize /mnt again
-  cp /cidata_log /mnt/cidata_stage0_log || true
-  chmod 0600 /mnt/cidata_stage0_log || true
-  sync
-  umount -l /mnt
-  cryptsetup luksClose nextroot
-  sync
-fi
 
 # sync everything to disk
 sync
