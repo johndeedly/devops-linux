@@ -139,7 +139,12 @@ partx -u "${TARGET_DEVICE}"
 sleep 1
 
 # resize main ext4/btrfs partition
-ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/root\|linux filesystem/I!d' | head -n1) )
+ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPE "${TARGET_DEVICE}" | sed -e '/4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/I!d' | head -n1) )
+if [ -z "${ROOT_PART[1]}" ]; then
+    # ubuntu/alma
+    ROOT_PART=( $(lsblk -no PATH,PARTN,FSTYPE,LABEL,PARTLABEL,PARTTYPE "${TARGET_DEVICE}" | sed -e '/21686148-6449-6E6F-744E-656564454649/Id' \
+        -e '/C12A7328-F81F-11D2-BA4B-00A0C93EC93B/Id' -e '/[^a-z]root/I!d' | head -n1) )
+fi
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
 ENCRYPT_ENABLED="$(yq -r '.setup.encrypt.enabled' /var/lib/cloud/instance/config/setup.yml)"
 ENCRYPT_PASSWD="$(yq -r '.setup.encrypt.password' /var/lib/cloud/instance/config/setup.yml)"
@@ -147,11 +152,13 @@ ENCRYPT_IMAGE="$(yq -r '.setup.encrypt.image' /var/lib/cloud/instance/config/set
 if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${ROOT_PART[1]}" root \
+    type "${ROOT_PART[1]}" 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
     resizepart "${ROOT_PART[1]}" 16GiB \
     mkpart nextroot ext4 16GiB 100%
 else
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${ROOT_PART[1]}" root \
+    type "${ROOT_PART[1]}" 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
     resizepart "${ROOT_PART[1]}" 100%
 fi
 
@@ -161,8 +168,12 @@ sleep 1
 
 # encrypt and open the provided system root
 if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
-  NEWROOT_PART=( $(lsblk -no PATH,PARTN,PARTLABEL "${TARGET_DEVICE}" | sed -e '/nextroot/I!d' | head -n1) )
+  NEWROOT_PART=( $(lsblk -no PATH,PARTN,PARTLABEL,PARTTYPE "${TARGET_DEVICE}" | sed -e '/21686148-6449-6E6F-744E-656564454649/Id' \
+      -e '/C12A7328-F81F-11D2-BA4B-00A0C93EC93B/Id' -e '/4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/Id' \
+      -e '/[^a-z]nextroot/I!d' | head -n1) )
   echo "NEWROOT: ${TARGET_DEVICE}, partition ${NEWROOT_PART[1]}"
+  LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
+    type "${NEWROOT_PART[1]}" CA7D7CCB-63ED-4C53-861C-1742536059CC
   echo "Encrypt device ${NEWROOT_PART[0]}"
   printf "%s" "${ENCRYPT_PASSWD}" | (cryptsetup luksFormat --verbose -d - "${NEWROOT_PART[0]}")
   printf "%s" "${ENCRYPT_PASSWD}" | (cryptsetup luksOpen -d - "${NEWROOT_PART[0]}" nextroot)
@@ -197,29 +208,39 @@ if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
 fi
 
 # bootable system
-BIOS_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/BIOS/I!d' | head -n1) )
-EFI_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/EFI/I!d' | head -n1) )
-BOOT_PART=( $(lsblk -no PARTN,PATH,PARTTYPENAME "${TARGET_DEVICE}" | sed -e '/^ *[1-9]/!d' -e '/linux extended boot/I!d' | head -n1) )
+BIOS_PART=( $(lsblk -no PARTN,PATH,PARTTYPE "${TARGET_DEVICE}" | sed -e '/21686148-6449-6E6F-744E-656564454649/I!d' | head -n1) )
+EFI_PART=( $(lsblk -no PARTN,PATH,PARTTYPE "${TARGET_DEVICE}" | sed -e '/C12A7328-F81F-11D2-BA4B-00A0C93EC93B/I!d' | head -n1) )
+BOOT_PART=( $(lsblk -no PARTN,PATH,PARTTYPE "${TARGET_DEVICE}" | sed -e '/BC13C2FF-59E6-4262-A352-B275FD6F7172/I!d' | head -n1) )
+if [ -z "${BOOT_PART[0]}" ]; then
+    # alma linux
+    BOOT_PART=( $(lsblk -no PARTN,PATH,LABEL,PARTLABEL,PARTTYPE "${TARGET_DEVICE}" | sed -e '/21686148-6449-6E6F-744E-656564454649/Id' \
+      -e '/C12A7328-F81F-11D2-BA4B-00A0C93EC93B/Id' -e '/4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/Id' -e '/[^a-z]boot/I!d' | head -n1) )
+fi
 echo "BIOS: ${TARGET_DEVICE}, partition ${BIOS_PART[0]}"
 echo "EFI: ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
 echo "BOOT: ${TARGET_DEVICE}, partition ${BOOT_PART[0]}"
 if [ -n "${BIOS_PART[0]}" ] && [ -n "${EFI_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     name "${BIOS_PART[0]}" bios \
-    name "${EFI_PART[0]}" efi
+    type "${BIOS_PART[0]}" 21686148-6449-6E6F-744E-656564454649 \
+    name "${EFI_PART[0]}" efi \
+    type "${EFI_PART[0]}" C12A7328-F81F-11D2-BA4B-00A0C93EC93B
 elif [ -n "${EFI_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${EFI_PART[0]}" efi
+    name "${EFI_PART[0]}" efi \
+    type "${EFI_PART[0]}" C12A7328-F81F-11D2-BA4B-00A0C93EC93B
 elif [ -n "${BIOS_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${BIOS_PART[0]}" bios
+    name "${BIOS_PART[0]}" bios \
+    type "${BIOS_PART[0]}" 21686148-6449-6E6F-744E-656564454649
 else
   echo "!! neither efi nor bios partitions found"
   exit 1
 fi
 if [ -n "${BOOT_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${BOOT_PART[0]}" boot
+    name "${BOOT_PART[0]}" boot \
+    type "${BOOT_PART[0]}" BC13C2FF-59E6-4262-A352-B275FD6F7172
 fi
 if [ -n "${EFI_PART[0]}" ] && [ -e /sys/firmware/efi/efivars ]; then
     # mount detected efi filesystem
