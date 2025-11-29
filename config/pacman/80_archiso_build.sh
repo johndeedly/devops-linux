@@ -98,133 +98,54 @@ mkdir -p /var/tmp/archlive/baseline/grub
 tee -a /var/tmp/archlive/baseline/grub/grub.cfg /var/tmp/archlive/baseline/grub/loopback.cfg <<'EOF'
 
 insmod echo
-insmod test
 insmod read
-
 insmod smbios
-smbios --type 1 --get-string 0x04 --set smbios_system_vendor
-set is_vm=false
-if [ "$smbios_system_vendor" = "QEMU" ] || [ "$smbios_system_vendor" = "SeaBIOS" ]; then
-    set is_vm=true
-fi
-if [ "$smbios_system_vendor" = "innotek GmbH" ] || [ "$smbios_system_vendor" = "Oracle Corporation" ]; then
-    set is_vm=true
-fi
+set smbios_str=""
 
-submenu "Hardware Info" {
-    ### SMBIOS Type 0 – BIOS Information
-    menuentry "SMBIOS Type 0: BIOS Info" {
-        echo "=== SMBIOS Type 0: BIOS Information ==="
-        echo -n "Vendor: "
-        smbios --type 0 --get-string 0x04
-        echo -n "BIOS Version: "
-        smbios --type 0 --get-string 0x05
-        echo -n "BIOS Release Date: "
-        smbios --type 0 --get-string 0x08
-        echo "=== End of SMBIOS Type 0 ==="
-        echo "Press any key to return..."
-        read
-    }
-    
-    if [ "$is_vm" = "false" ]; then
-        ### SMBIOS Type 1 – System Information
-        menuentry "SMBIOS Type 1: System Info" {
-            echo "=== SMBIOS Type 1: System Information ==="
-            echo -n "Manufacturer: "
-            smbios --type 1 --get-string 0x04
-            echo -n "Product Name: "
-            smbios --type 1 --get-string 0x05
-            echo -n "Version: "
-            smbios --type 1 --get-string 0x06
-            echo -n "Serial Number: "
-            smbios --type 1 --get-string 0x07
-            echo -n "UUID: "
-            smbios --type 1 --get-string 0x08
-            echo -n "SKU Number: "
-            smbios --type 1 --get-string 0x19
-            echo -n "Family: "
-            smbios --type 1 --get-string 0x1A
-            echo "=== End of SMBIOS Type 1 ==="
-            echo "Press any key to return..."
-            read
-        }
-        
-        ### SMBIOS Type 2 – Baseboard
-        menuentry "SMBIOS Type 2: Baseboard Info" {
-            echo "=== SMBIOS Type 2: Baseboard Information ==="
-            echo -n "Manufacturer: "
-            smbios --type 2 --get-string 0x04
-            echo -n "Product Name: "
-            smbios --type 2 --get-string 0x05
-            echo -n "Version: "
-            smbios --type 2 --get-string 0x06
-            echo -n "Serial Number: "
-            smbios --type 2 --get-string 0x07
-            echo -n "Asset Tag: "
-            smbios --type 2 --get-string 0x08
-            echo -n "Location in Chassis: "
-            smbios --type 2 --get-string 0x0A
-            echo "=== End of SMBIOS Type 2 ==="
-            echo "Press any key to return..."
-            read
-        }
-        
-        ### SMBIOS Type 3 – Chassis
-        menuentry "SMBIOS Type 3: Chassis Info" {
-            echo "=== SMBIOS Type 3: Chassis Information ==="
-            echo -n "Manufacturer: "
-            smbios --type 3 --get-string 0x04
-            echo -n "Version: "
-            smbios --type 3 --get-string 0x06
-            echo -n "Serial Number: "
-            smbios --type 3 --get-string 0x07
-            echo -n "Asset Tag: "
-            smbios --type 3 --get-string 0x08
-            echo "=== End of SMBIOS Type 3 ==="
-            echo "Press any key to return..."
-            read
-        }
-        
-        ### SMBIOS Type 4 – Processor
-        menuentry "SMBIOS Type 4: Processor Info" {
-            echo "=== SMBIOS Type 4: Processor Information ==="
-            echo -n "Socket Designation: "
-            smbios --type 4 --get-string 0x04
-            echo -n "Processor Manufacturer: "
-            smbios --type 4 --get-string 0x07
-            echo -n "Processor Version: "
-            smbios --type 4 --get-string 0x10
-            echo -n "Serial Number: "
-            smbios --type 4 --get-string 0x20
-            echo -n "Asset Tag: "
-            smbios --type 4 --get-string 0x21
-            echo -n "Part Number: "
-            smbios --type 4 --get-string 0x22
-            echo "=== End of SMBIOS Type 4 ==="
-            echo "Press any key to return..."
-            read
-        }
-        
-        ### SMBIOS Type 17 – Memory Device
-        menuentry "SMBIOS Type 17: Memory Device Info" {
-            echo "=== SMBIOS Type 17: Memory Device Information ==="
-            echo -n "Device Locator: "
-            smbios --type 17 --get-string 0x10
-            echo -n "Bank Locator: "
-            smbios --type 17 --get-string 0x11
-            echo -n "Manufacturer: "
-            smbios --type 17 --get-string 0x17
-            echo -n "Serial Number: "
-            smbios --type 17 --get-string 0x18
-            echo -n "Asset Tag: "
-            smbios --type 17 --get-string 0x19
-            echo -n "Part Number: "
-            smbios --type 17 --get-string 0x1A
-            echo "=== End of SMBIOS Type 17 ==="
-            echo "Press any key to return..."
-            read
-        }
-    fi
+smbios --type 0 --get-string 0x04 --set smbios_bios_vendor
+smbios --type 0 --get-string 0x05 --set smbios_bios_version
+smbios --type 0 --get-string 0x08 --set smbios_bios_release
+set smbios_str="${smbios_str}=== BIOS Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_bios_vendor}\n"
+set smbios_str="${smbios_str}Version: ${smbios_bios_version}\n"
+set smbios_str="${smbios_str}Release: ${smbios_bios_release}\n"
+
+smbios --type 1 --get-string 0x04 --set smbios_system_vendor
+smbios --type 1 --get-string 0x05 --set smbios_system_product
+smbios --type 1 --get-string 0x06 --set smbios_system_version
+smbios --type 1 --get-string 0x07 --set smbios_system_serial
+smbios --type 1 --get-string 0x19 --set smbios_system_sku
+set smbios_str="${smbios_str}=== System Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_system_vendor}\n"
+set smbios_str="${smbios_str}Product: ${smbios_system_product}\n"
+set smbios_str="${smbios_str}Version: ${smbios_system_version}\n"
+set smbios_str="${smbios_str}Serial: ${smbios_system_serial}\n"
+set smbios_str="${smbios_str}SKU: ${smbios_system_sku}\n"
+
+smbios --type 3 --get-string 0x04 --set smbios_chassis_vendor
+smbios --type 3 --get-string 0x06 --set smbios_chassis_version
+smbios --type 3 --get-string 0x07 --set smbios_chassis_serial
+smbios --type 3 --get-string 0x08 --set smbios_chassis_asset
+set smbios_str="${smbios_str}=== Chassis Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_chassis_vendor}\n"
+set smbios_str="${smbios_str}Version: ${smbios_chassis_version}\n"
+set smbios_str="${smbios_str}Serial: ${smbios_chassis_serial}\n"
+set smbios_str="${smbios_str}Asset Tag: ${smbios_chassis_asset}\n"
+
+smbios --type 4 --get-string 0x07 --set smbios_cpu_vendor
+smbios --type 4 --get-string 0x10 --set smbios_cpu_version
+smbios --type 4 --get-string 0x20 --set smbios_cpu_serial
+smbios --type 4 --get-string 0x21 --set smbios_cpu_asset
+set smbios_str="${smbios_str}=== CPU Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_cpu_vendor}\n"
+set smbios_str="${smbios_str}Version: ${smbios_cpu_version}\n"
+set smbios_str="${smbios_str}Serial: ${smbios_cpu_serial}\n"
+set smbios_str="${smbios_str}Asset Tag: ${smbios_cpu_asset}\n"
+
+menuentry "[i] System Information" --hotkey=i {
+    echo -e -n "$smbios_str"
+    echo "Press any key to return..."
+    read
 }
 EOF
 
