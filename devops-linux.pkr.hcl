@@ -293,6 +293,7 @@ EOS
   provisioner "shell" {
     expect_disconnect = true
     script            = "config/99_packer_reboot.sh"
+    skip_clean        = true
     pause_after       = "20s"
   }
   

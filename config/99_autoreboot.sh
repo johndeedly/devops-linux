@@ -27,12 +27,12 @@ echo "[ ## ] Wait for cloud-init to finish"
       done
       echo "[ -> ] kexec now"
       # double fork trick to prevent the subprocess from exiting
-      ( ( systemctl kexec ) & )
+      ( ( sleep 2; systemctl kexec ) & )
       echo "[ OK ] wait for kexec"
     else
       echo "[ -> ] default reboot now"
       # double fork trick to prevent the subprocess from exiting
-      ( ( reboot now ) & )
+      ( ( sleep 2; reboot now ) & )
       echo "[ OK ] wait for reboot"
     fi
   else
