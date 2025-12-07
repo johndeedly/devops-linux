@@ -151,13 +151,11 @@ ENCRYPT_PASSWD="$(yq -r '.setup.encrypt.password' /var/lib/cloud/instance/config
 ENCRYPT_IMAGE="$(yq -r '.setup.encrypt.image' /var/lib/cloud/instance/config/setup.yml)"
 if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${ROOT_PART[1]}" root \
     type "${ROOT_PART[1]}" 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
     resizepart "${ROOT_PART[1]}" 16GiB \
     mkpart nextroot ext4 16GiB 100%
 else
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${ROOT_PART[1]}" root \
     type "${ROOT_PART[1]}" 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
     resizepart "${ROOT_PART[1]}" 100%
 fi
@@ -221,17 +219,13 @@ echo "EFI: ${TARGET_DEVICE}, partition ${EFI_PART[0]}"
 echo "BOOT: ${TARGET_DEVICE}, partition ${BOOT_PART[0]}"
 if [ -n "${BIOS_PART[0]}" ] && [ -n "${EFI_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${BIOS_PART[0]}" bios \
     type "${BIOS_PART[0]}" 21686148-6449-6E6F-744E-656564454649 \
-    name "${EFI_PART[0]}" efi \
     type "${EFI_PART[0]}" C12A7328-F81F-11D2-BA4B-00A0C93EC93B
 elif [ -n "${EFI_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${EFI_PART[0]}" efi \
     type "${EFI_PART[0]}" C12A7328-F81F-11D2-BA4B-00A0C93EC93B
 elif [ -n "${BIOS_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${BIOS_PART[0]}" bios \
     type "${BIOS_PART[0]}" 21686148-6449-6E6F-744E-656564454649
 else
   echo "!! neither efi nor bios partitions found"
@@ -239,7 +233,6 @@ else
 fi
 if [ -n "${BOOT_PART[0]}" ]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
-    name "${BOOT_PART[0]}" boot \
     type "${BOOT_PART[0]}" BC13C2FF-59E6-4262-A352-B275FD6F7172
 fi
 if [ -n "${EFI_PART[0]}" ] && [ -e /sys/firmware/efi/efivars ]; then
@@ -295,7 +288,140 @@ if [ -n "${EFI_PART[0]}" ] && [ -e /sys/firmware/efi/efivars ]; then
     efibootmgr -c -d "${TARGET_DEVICE}" -p "${EFI_PART[0]}" -L "${DISTRO_NAME}" -l "${NEXTX64EFI}" | \
         sed -e '/'"BootOrder\|${DISTRO_NAME}"'/I!d;s/\\/\\\\/g'
     # unmount detected efi filesystem
+    sync
     umount -l /mnt
+fi
+
+# when raid targets are defined, copy the partition layout to the specified disks and convert to btrfs
+RAID_DEVICES=()
+while read -r line; do
+    if [ -n "$line" ] && [ "x$line" != "xnull" ]; then
+        RAID_DEVICES+=( "$line" )
+    fi
+done <<<"$(yq -r '.setup.raid_targets[]' /var/lib/cloud/instance/config/setup.yml)"
+if [ ${#RAID_DEVICES[@]} -gt 0 ]; then
+    # use first raid device for filesystem conversion
+    mount "${ROOT_PART[0]}" /mnt
+    echo "[ .. ] filesystem backup"
+    tar --zstd -cf "${RAID_DEVICES[0]}" -C /mnt .
+    umount -l /mnt
+    echo "[ .. ] filesystem switch to btrfs"
+    dd if=/dev/zero "of=${ROOT_PART[0]}" bs=1M count=16
+    mkfs.btrfs "${ROOT_PART[0]}"
+    mount -o rw,compress-force=zstd:4 "${ROOT_PART[0]}" /mnt
+    echo "[ .. ] filesystem restore"
+    tar --zstd -xf "${RAID_DEVICES[0]}" -C /mnt
+    # make debian/ubuntu support btrfs root filesystems
+    if [ -f /mnt/bin/apt ]; then
+        echo "[ .. ] prepare debian/ubuntu to support btrfs root"
+        mount --rbind --make-rslave /dev /mnt/dev
+        mount --rbind --make-rslave /sys /mnt/sys
+        mount --rbind --make-rslave /proc /mnt/proc
+        mount --rbind --make-rslave /run /mnt/run
+        mount --rbind --make-rslave /tmp /mnt/tmp
+        if [ -n "${BOOT_PART[0]}" ]; then
+            mount "${BOOT_PART[1]}" /mnt/boot
+        fi
+        if [ -n "${EFI_PART[0]}" ]; then
+            mount "${EFI_PART[1]}" /mnt/boot/efi
+        fi
+        GRUB_DEFAULT_CMDLINE="loglevel=3"
+        GRUB_GLOBAL_CMDLINE="rootflags=compress-force=zstd:4 console=ttyS0,115200 console=tty1 acpi=force acpi_osi=Linux"
+        GRUB_ROOT_UUID="$(lsblk -no MOUNTPOINT,UUID | sed -e '/^\/mnt /!d' | head -n 1 | awk '{ print $2 }')"
+        chroot /mnt /bin/bash <<EOS
+PATH="\$PATH:/usr/sbin:/sbin"
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y update
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install btrfs-progs
+# is executed by btrfs-progs
+# LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
+GRUB_CFGS=( /etc/default/grub \$(find /etc/default/grub.d -type f -printf '%p ') )
+for cfg in "\${GRUB_CFGS[@]}"; do
+  sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/' "\$cfg" || true
+  sed -i 's/^GRUB_CMDLINE_LINUX=/#GRUB_CMDLINE_LINUX=/' "\$cfg" || true
+  sed -i 's/^GRUB_DEVICE_UUID=/#GRUB_DEVICE_UUID=/' "\$cfg" || true
+  sed -i 's/^GRUB_DISABLE_LINUX_UUID=/#GRUB_DISABLE_LINUX_UUID=/' "\$cfg" || true
+  sed -i 's/^GRUB_DISABLE_LINUX_PARTUUID=/#GRUB_DISABLE_LINUX_PARTUUID=/' "\$cfg" || true
+  sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "\$cfg" || true
+  sed -i 's/^GRUB_SERIAL_COMMAND=/#GRUB_SERIAL_COMMAND=/' "\$cfg" || true
+  sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "\$cfg" || true
+  sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "\$cfg" || true
+  sed -i 's/^GRUB_TIMEOUT_STYLE=/#GRUB_TIMEOUT_STYLE=/' "\$cfg" || true
+  sed -i 's/^GRUB_TIMEOUT=/#GRUB_TIMEOUT=/' "\$cfg" || true
+  sed -i 's/^GRUB_COLOR_NORMAL=/#GRUB_COLOR_NORMAL=/' "\$cfg" || true
+  sed -i 's/^GRUB_COLOR_HIGHLIGHT=/#GRUB_COLOR_HIGHLIGHT=/' "\$cfg" || true
+done
+tee -a /etc/default/grub <<EOF
+
+# provisioned
+GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_DEFAULT_CMDLINE}"
+GRUB_CMDLINE_LINUX="${GRUB_GLOBAL_CMDLINE}"
+GRUB_DEVICE_UUID="${GRUB_ROOT_UUID}"
+GRUB_DISABLE_LINUX_UUID=""
+GRUB_DISABLE_LINUX_PARTUUID="true"
+GRUB_TERMINAL="console serial"
+GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"
+GRUB_GFXMODE=auto
+GRUB_GFXPAYLOAD_LINUX=keep
+GRUB_TIMEOUT_STYLE=menu
+GRUB_TIMEOUT=2
+GRUB_COLOR_NORMAL="light-gray/black"
+GRUB_COLOR_HIGHLIGHT="white/red"
+EOF
+tee /etc/grub.d/06_override <<EOF
+#!/usr/bin/env bash
+cat <<'EOX'
+set menu_color_normal="light-gray/black"
+set menu_color_highlight="white/red"
+EOX
+EOF
+chmod +x /etc/grub.d/06_override
+grub-mkconfig -o /boot/grub/grub.cfg
+find /boot/efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+    grub-mkconfig -o "\$line/grub.cfg"
+done
+sed -e 's|.*[[:space:]]/[[:space:]].*|UUID=${GRUB_ROOT_UUID} / btrfs rw,compress-force=zstd:4 0 0|g' -i /etc/fstab
+cat /etc/fstab
+EOS
+        sync
+    fi
+    # recreate partitions on all raid disks
+    echo "[ .. ] copy partition table on all disks"
+    for i in "${RAID_DEVICES[@]}"; do
+        sgdisk "${TARGET_DEVICE}" -R "${i}"
+        echo "[ .. ] update partitions in kernel for ${i}"
+        partx -u "${i}"
+        sleep 1
+        BIOS_RAID_PART=( $(lsblk -no PARTN,PATH,PARTTYPE "${i}" | sed -e '/21686148-6449-6E6F-744E-656564454649/I!d' | head -n1) )
+        if [ -n "${BIOS_RAID_PART[0]}" ]; then
+            echo "[ .. ] copy bios partition ${BIOS_PART[1]} to ${BIOS_RAID_PART[1]}"
+            dd if="${BIOS_PART[1]}" of="${BIOS_RAID_PART[1]}" bs=4096 iflag=fullblock
+        fi
+        EFI_RAID_PART=( $(lsblk -no PARTN,PATH,PARTTYPE "${i}" | sed -e '/C12A7328-F81F-11D2-BA4B-00A0C93EC93B/I!d' | head -n1) )
+        if [ -n "${EFI_RAID_PART[0]}" ]; then
+            echo "[ .. ] copy efi partition ${EFI_PART[1]} to ${EFI_RAID_PART[1]}"
+            dd if="${EFI_PART[1]}" of="${EFI_RAID_PART[1]}" bs=4096 iflag=fullblock
+        fi
+        BOOT_RAID_PART=( $(lsblk -no PARTN,PATH,PARTTYPE "${i}" | sed -e '/BC13C2FF-59E6-4262-A352-B275FD6F7172/I!d' | head -n1) )
+        if [ -n "${BOOT_RAID_PART[0]}" ]; then
+            echo "[ .. ] copy boot partition ${BOOT_PART[1]} to ${BOOT_RAID_PART[1]}"
+            dd if="${BOOT_PART[1]}" of="${BOOT_RAID_PART[1]}" bs=4096 iflag=fullblock
+        fi
+        ROOT_RAID_PART=( $(lsblk -no PATH,PARTN,FSTYPE,PARTTYPE "${i}" | sed -e '/4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/I!d' | head -n1) )
+        if [ -n "${ROOT_RAID_PART[1]}" ]; then
+            echo "[ .. ] add root partition ${ROOT_RAID_PART[0]} to array ${ROOT_PART[0]}"
+            btrfs device add "${ROOT_RAID_PART[0]}" /mnt
+        fi
+    done
+    echo "[ .. ] rebalance as raid10"
+    btrfs balance start -mconvert=raid10 /mnt
+    btrfs balance start -dconvert=raid10 /mnt
+    btrfs filesystem show /mnt
+    df -h /mnt
+    echo "[ .. ] sync to disk(s)"
+    sync
+    umount -R /mnt
+    sync
+    echo "[ OK ] done"
 fi
 
 # mount detected root filesystem
@@ -337,21 +463,30 @@ elif [ -f /mnt/bin/yum ]; then
     fi
 fi
 
-# create a 2GiB swap file
-# https://btrfs.readthedocs.io/en/latest/Swapfile.html
 if [ -d /mnt/swap ]; then
-  rm -r /mnt/swap
+    rm -r /mnt/swap
 fi
-install -d -m 0700 -o root -g root /mnt/swap
-truncate -s 0 /mnt/swap/swapfile
-chattr +C /mnt/swap/swapfile || true
-fallocate -l 2G /mnt/swap/swapfile
-chmod 0600 /mnt/swap/swapfile
-mkswap /mnt/swap/swapfile
-if ! grep -q '/swap/swapfile' /mnt/etc/fstab; then
-  tee -a /mnt/etc/fstab <<EOF
+if [ ${#RAID_DEVICES[@]} -gt 0 ]; then
+    # swapfile on a raid is prohibited
+    sed -i '/ swap /d' /mnt/etc/fstab
+    find /etc/systemd -name "*.swap" | while read -r line; do
+        echo "[ OK ] remove swap config $line"
+        rm "$line"
+    done
+else
+    # create a 2GiB swap file
+    # https://btrfs.readthedocs.io/en/latest/Swapfile.html
+    install -d -m 0700 -o root -g root /mnt/swap
+    truncate -s 0 /mnt/swap/swapfile
+    chattr +C /mnt/swap/swapfile || true
+    fallocate -l 2G /mnt/swap/swapfile
+    chmod 0600 /mnt/swap/swapfile
+    mkswap /mnt/swap/swapfile
+    if ! grep -q '/swap/swapfile' /mnt/etc/fstab; then
+      tee -a /mnt/etc/fstab <<EOF
 /swap/swapfile none swap defaults 0 0
 EOF
+    fi
 fi
 
 # write the stage user-data to the cidata directory on disk (only if the image isn't an out-of-the-box ready image)

@@ -2,6 +2,7 @@ setup:
   distro: archlinux
   options: []
   target: auto
+  raid_targets: []
   hostname: ""
   encrypt:
     enabled: false

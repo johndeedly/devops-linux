@@ -27,6 +27,17 @@ variable "headless" {
   default = true
 }
 
+variable "disk_sizes_mib" {
+  type    = list(string)
+  default = [
+    "65536"
+  ]
+  validation {
+    condition     = length(var.disk_sizes_mib) > 0
+    error_message = "The list of disk sizes must at least contain one disk."
+  }
+}
+
 variable "package_manager" {
   type    = string
   default = "pacman"
@@ -81,6 +92,9 @@ EOF
   qemu_qcow2            = <<EOF
 QEMUPARAMS+=(
   "-drive" "file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2"
+%{ for index in range(1, length(var.disk_sizes_mib)) ~}
+  "-drive" "file=${local.build_name_qemu}-${index},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2"
+%{ endfor ~}
 )
 EOF
   qemu_no_display       = <<EOF
@@ -185,7 +199,8 @@ EOF
 source "qemu" "default" {
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
-  disk_size            = "65536M"
+  disk_size            = format("%sM", var.disk_sizes_mib[0])
+  disk_additional_size = formatlist("%sM", slice(var.disk_sizes_mib, 1, length(var.disk_sizes_mib)))
   memory               = var.memory
   format               = "qcow2"
   accelerator          = "kvm"
@@ -227,7 +242,8 @@ source "virtualbox-iso" "default" {
   acpi_shutdown            = true
   boot_wait                = "3s"
   boot_command             = ["<enter>"]
-  disk_size                = 65536
+  disk_size                = var.disk_sizes_mib[0]
+  disk_additional_size     = slice(var.disk_sizes_mib, 1, length(var.disk_sizes_mib))
   memory                   = var.memory
   format                   = "ova"
   guest_additions_mode     = "disable"
