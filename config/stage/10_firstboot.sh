@@ -98,7 +98,7 @@ elif [ -e /bin/yum ]; then
   echo -n "Kernel modules backup ($(uname -r)): "
   stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
   # upgrade now
-  LC_ALL=C yes | LC_ALL=C dnf install -y epel-release
+  #LC_ALL=C yes | LC_ALL=C dnf install -y epel-release
   LC_ALL=C yes | LC_ALL=C dnf config-manager --enable crb
   LC_ALL=C yes | LC_ALL=C dnf upgrade -y
   LC_ALL=C yes | LC_ALL=C yum check-update
