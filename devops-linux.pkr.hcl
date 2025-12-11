@@ -12,45 +12,18 @@ packer {
 }
 
 
-variable "cpu_cores" {
-  type    = number
-  default = 4
-}
-
-variable "memory" {
-  type    = number
-  default = 4096
-}
-
-variable "headless" {
-  type    = bool
-  default = true
-}
-
-variable "disk_sizes_mib" {
-  type    = list(string)
-  default = [
-    "65536"
-  ]
-  validation {
-    condition     = length(var.disk_sizes_mib) > 0
-    error_message = "The list of disk sizes must at least contain one disk."
-  }
-}
-
-variable "package_manager" {
+variable "config_path" {
   type    = string
-  default = "pacman"
-}
-
-variable "package_cache" {
-  type    = bool
-  default = false
+  default = "config/setup.yml"
 }
 
 locals {
-  build_name_qemu       = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉"), "qcow2"]) # unicode replacement char for colon
-  build_name_virtualbox = join(".", ["devops-linux-x86_64", replace(timestamp(), ":", "꞉")]) # unicode replacement char for colon
+  config                = yamldecode(file(var.config_path))
+  package_manager       = local.config.distros[local.config.setup.distro]
+  package_cache         = local.config.packer.create_package_cache
+  build_name_qemu       = join(".", ["${local.config.setup.distro}-x86_64", replace(timestamp(), ":", "-"), "qcow2"])
+  build_name_virtualbox = join(".", ["${local.config.setup.distro}-x86_64", replace(timestamp(), ":", "-")])
+  open_ports_virtualbox = concat(["modifyvm", "{{ .Name }}", "--natpf1", "delete", "packercomm"], flatten(setproduct(["--natpf1"], [ for elem in local.config.packer.open_ports : format("%s-%d,%s,,%d,,%d", elem.protocol, elem.host, elem.protocol, elem.host, elem.vm) ])))
   ovmf_code_arch        = "/usr/share/OVMF/x64/OVMF_CODE.secboot.4m.fd"
   ovmf_code_debian      = "/usr/share/OVMF/OVMF_CODE_4M.secboot.fd"
   ovmf_vars_arch        = "/usr/share/OVMF/x64/OVMF_VARS.4m.fd"
@@ -92,7 +65,7 @@ EOF
   qemu_qcow2            = <<EOF
 QEMUPARAMS+=(
   "-drive" "file=${local.build_name_qemu},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2"
-%{ for index in range(1, length(var.disk_sizes_mib)) ~}
+%{ for index in range(1, length(local.config.packer.disk_sizes_mib)) ~}
   "-drive" "file=${local.build_name_qemu}-${index},if=virtio,cache=writeback,discard=unmap,detect-zeroes=unmap,format=qcow2"
 %{ endfor ~}
 )
@@ -157,13 +130,13 @@ fi
 EOF
   qemu_net_user         = <<EOF
 QEMUPARAMS+=(
-  "-netdev" "user,id=user.0,hostfwd=tcp::9091-:9090" "-device" "virtio-net,netdev=user.0"
+  "-netdev" "user,id=user.0%{ for elem in local.config.packer.open_ports ~},hostfwd=${elem.protocol}::${elem.host}-:${elem.vm}%{ endfor ~}" "-device" "virtio-net,netdev=user.0"
 )
 EOF
   qemu_net_router       = <<EOF
 QEMUPARAMS+=(
-  "-netdev" "user,id=user.0,hostfwd=tcp::9091-:9090" "-device" "virtio-net,netdev=user.0"
-  "-netdev" "socket,id=user.1,listen=:23568" "-device" "virtio-net,netdev=user.1"
+  "-netdev" "user,id=user.0%{ for elem in local.config.packer.open_ports ~},hostfwd=${elem.protocol}::${elem.host}-:${elem.vm}%{ endfor ~}" "-device" "virtio-net,netdev=user.0"
+  "-netdev" "socket,id=user.1,listen=:${local.config.packer.router_socket_listen_port}" "-device" "virtio-net,netdev=user.1"
 )
 EOF
   qemu_net_pxe          = <<EOF
@@ -172,18 +145,13 @@ EOF
 # https://forum.proxmox.com/threads/proxmox-ve-8-4-0-unable-to-pxe-boot-under-ovmf.168220/
 # https://pve.proxmox.com/wiki/Roadmap#8.4-known-issues
 QEMUPARAMS+=(
-  "-netdev" "socket,id=user.0,connect=:23568" "-device" "virtio-net,netdev=user.0,bootindex=1"
+  "-netdev" "socket,id=user.0,connect=:${local.config.packer.router_socket_listen_port}" "-device" "virtio-net,netdev=user.0,bootindex=1"
   "-device" "virtio-rng"
-)
-EOF
-  qemu_net_server       = <<EOF
-QEMUPARAMS+=(
-  "-netdev" "user,id=user.0,hostfwd=tcp::8022-:22,hostfwd=tcp::9091-:9090" "-device" "virtio-net,netdev=user.0"
 )
 EOF
   qemu_outro            = <<EOF
 QEMUPARAMS+=(
-  "-smp" "${var.cpu_cores},sockets=1,cores=${var.cpu_cores},maxcpus=${var.cpu_cores}" "-m" "${var.memory}M"
+  "-smp" "${local.config.packer.cpu_cores},sockets=1,cores=${local.config.packer.cpu_cores},maxcpus=${local.config.packer.cpu_cores}" "-m" "${local.config.packer.memory_mib}M"
   "-audio" "driver=pa,model=hda,id=snd0" "-device" "hda-output,audiodev=snd0"
   "-device" "virtio-tablet" "-device" "virtio-keyboard"
   "-rtc" "base=utc,clock=host"
@@ -199,9 +167,9 @@ EOF
 source "qemu" "default" {
   boot_wait            = "3s"
   boot_command         = ["<enter>"]
-  disk_size            = format("%sM", var.disk_sizes_mib[0])
-  disk_additional_size = formatlist("%sM", slice(var.disk_sizes_mib, 1, length(var.disk_sizes_mib)))
-  memory               = var.memory
+  disk_size            = format("%sM", local.config.packer.disk_sizes_mib[0])
+  disk_additional_size = formatlist("%sM", slice(local.config.packer.disk_sizes_mib, 1, length(local.config.packer.disk_sizes_mib)))
+  memory               = local.config.packer.memory_mib
   format               = "qcow2"
   accelerator          = "kvm"
   disk_discard         = "unmap"
@@ -218,7 +186,7 @@ source "qemu" "default" {
   efi_firmware_vars    = local.efi_firmware_vars
   vtpm                 = local.can_swtpm
   sockets              = 1
-  cores                = var.cpu_cores
+  cores                = local.config.packer.cpu_cores
   threads              = 1
   qemuargs             = [
     ["-virtfs", "local,path=./database,mount_tag=database.0,security_model=mapped,id=database.0"],
@@ -226,7 +194,7 @@ source "qemu" "default" {
     ["-device", "virtio-tablet"],
     ["-device", "virtio-keyboard"]
   ]
-  headless             = var.headless
+  headless             = local.config.packer.headless
   iso_checksum         = "none"
   iso_url              = "devops-x86_64-cidata.iso"
   output_directory     = "output/devops-linux"
@@ -242,9 +210,9 @@ source "virtualbox-iso" "default" {
   acpi_shutdown            = true
   boot_wait                = "3s"
   boot_command             = ["<enter>"]
-  disk_size                = var.disk_sizes_mib[0]
-  disk_additional_size     = slice(var.disk_sizes_mib, 1, length(var.disk_sizes_mib))
-  memory                   = var.memory
+  disk_size                = local.config.packer.disk_sizes_mib[0]
+  disk_additional_size     = slice(local.config.packer.disk_sizes_mib, 1, length(local.config.packer.disk_sizes_mib))
+  memory                   = local.config.packer.memory_mib
   format                   = "ova"
   guest_additions_mode     = "disable"
   guest_os_type            = "Linux_64"
@@ -253,13 +221,13 @@ source "virtualbox-iso" "default" {
   hard_drive_nonrotational = true
   chipset                  = "ich9"
   firmware                 = "efi"
-  cpus                     = var.cpu_cores
+  cpus                     = local.config.packer.cpu_cores
   usb                      = true
   nic_type                 = "virtio"
   gfx_controller           = "vboxsvga"
   gfx_accelerate_3d        = true
   gfx_vram_size            = 64
-  headless                 = var.headless
+  headless                 = local.config.packer.headless
   iso_checksum             = "none"
   iso_interface            = "virtio"
   iso_url                  = "devops-x86_64-cidata.iso"
@@ -270,7 +238,7 @@ source "virtualbox-iso" "default" {
   ssh_private_key_file     = "./ssh_packer_key"
   ssh_timeout              = "10m"
   vboxmanage               = [["modifyvm", "{{ .Name }}", "--tpm-type", "${local.can_swtpm_vbox}", "--audio-out", "on", "--audio-enabled", "on", "--usb-xhci", "on", "--clipboard", "hosttoguest", "--draganddrop", "hosttoguest", "--acpi", "on", "--ioapic", "on", "--apic", "on", "--pae", "on", "--nested-hw-virt", "on", "--paravirtprovider", "kvm", "--hpet", "on", "--hwvirtex", "on", "--largepages", "on", "--vtxvpid", "on", "--vtxux", "on", "--biosbootmenu", "messageandmenu", "--rtcuseutc", "on", "--macaddress1", "auto"], ["sharedfolder", "add", "{{ .Name }}", "--name", "database.0", "--hostpath", "./database"]]
-  vboxmanage_post          = [["modifyvm", "{{ .Name }}", "--macaddress1", "auto"], ["sharedfolder", "remove", "{{ .Name }}", "--name", "database.0"]]
+  vboxmanage_post          = [local.open_ports_virtualbox, ["modifyvm", "{{ .Name }}", "--macaddress1", "auto"], ["sharedfolder", "remove", "{{ .Name }}", "--name", "database.0"]]
   vm_name                  = local.build_name_virtualbox
   skip_export              = true
   keep_registered          = true
@@ -330,13 +298,13 @@ EOS
   }
 
   provisioner "file" {
-    source      = var.package_cache ? "/var/cache/${var.package_manager}/" : ""
+    source      = local.package_cache ? "/var/cache/${local.package_manager}/" : ""
     destination = "database/stage"
     direction   = "download"
   }
 
   provisioner "file" {
-    source      = var.package_cache ? "/usr/share/keyrings/" : ""
+    source      = local.package_cache ? "/usr/share/keyrings/" : ""
     destination = "database/stage"
     direction   = "download"
   }
@@ -431,7 +399,7 @@ tee output/devops-linux/devops-linux-x86_64.srv.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_qcow2}
 ${local.qemu_no_display}
-${local.qemu_net_server}
+${local.qemu_net_user}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF

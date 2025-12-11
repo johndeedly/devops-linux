@@ -1,3 +1,18 @@
+packer:
+  disk_sizes_mib:
+    - 65536
+  cpu_cores: 4
+  memory_mib: 4096
+  open_ports:
+    - protocol: tcp
+      vm: 22
+      host: 18022
+    - protocol: tcp
+      vm: 9090
+      host: 9091
+  router_socket_listen_port: 23568
+  headless: true
+  create_package_cache: false
 setup:
   distro: archlinux
   options: []
