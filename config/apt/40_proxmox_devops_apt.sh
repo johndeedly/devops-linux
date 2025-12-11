@@ -48,7 +48,13 @@ for line in "${QMS[@]}"; do
   if [ -n "$QM_CPU" ]; then
     qm set "$QM_ID" --cpu "$QM_CPU"
   else
-    qm set "$QM_ID" --cpu "x86-64-v3"
+    if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
+      qm set "$QM_ID" --cpu "x86-64-v3,flags=+vmx"
+    elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
+      qm set "$QM_ID" --cpu "x86-64-v3,flags=+svm"
+    else
+      qm set "$QM_ID" --cpu "x86-64-v3"
+    fi
   fi
   # lvm -> raw, otherwise qcow2
   if pvs --rows | grep -E "VG.*$QM_STORAGE"; then
