@@ -13,7 +13,7 @@ echo "[ ## ] Wait for cloud-init to finish"
     VMLINUZ=$(find /boot -maxdepth 1 -name 'vmlinuz*' | sort -Vru | head -n1)
     INITRD=$(find /boot -maxdepth 1 \( \( -name 'initramfs*' -a ! -name '*fallback*' -a ! -name '*pxe*' \) -o -name 'initrd*' \) | sort -Vru | head -n1)
     GRUB_CMDLINE="console=ttyS0,115200 console=tty1 acpi=force acpi_osi=Linux loglevel=3"
-    GRUB_ROOT=( $(lsblk -no PARTTYPE,UUID,FSTYPE | sed -e '/^4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/I!d' | head -n 1 | awk '{ print $2" "$3 }') )
+    GRUB_ROOT=( $(lsblk -no PARTTYPE,UUID,FSTYPE | sed -e '/^4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/I!d' | awk 'NR==1{ print $2" "$3 }') )
     if [ "x${GRUB_ROOT[1]}" == "xbtrfs" ]; then
       echo "[ OK ] Detected btrfs root, enable zstd compression"
       GRUB_CMDLINE="$GRUB_CMDLINE rootflags=compress-force=zstd:4"
