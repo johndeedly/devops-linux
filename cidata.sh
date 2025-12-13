@@ -208,7 +208,7 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
     [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
     [ -f "${DEVOPSISOMODDED}" ] && rm "${DEVOPSISOMODDED}"
     if [ $_ram -eq 1 ]; then
-        DEVOPSISOMODDED="$(mktemp -d)/devops-x86_64-cidata.iso"
+        DEVOPSISOMODDED="$(mktemp /tmp/devops-linux.XXXXXXXXXX.iso)"
         ln -s "${DEVOPSISOMODDED}" devops-x86_64-cidata.iso
     fi
     xorriso -indev "${DEVOPSISO}" \
@@ -281,7 +281,7 @@ elif [ $_iso -eq 1 ]; then
     [ -L "${CIDATAISO}" ] && rm "$(readlink -f "${CIDATAISO}")" && rm "${CIDATAISO}"
     [ -f "${CIDATAISO}" ] && rm "${CIDATAISO}"
     if [ $_ram -eq 1 ]; then
-        CIDATAISO="$(mktemp -d)/cidata.iso"
+        CIDATAISO="$(mktemp /tmp/devops-linux.XXXXXXXXXX.iso)"
         ln -s "${CIDATAISO}" cidata.iso
     fi
     xorriso -outdev "${CIDATAISO}" \
