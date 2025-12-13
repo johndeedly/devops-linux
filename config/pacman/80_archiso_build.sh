@@ -52,6 +52,7 @@ qemu-base
 rsync
 systemd-resolvconf
 terminus-font
+tmux
 udftools
 vim
 wget

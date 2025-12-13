@@ -33,7 +33,7 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt-get -y inst
   bcache-tools btrfs-progs dosfstools e2fsprogs efibootmgr exfatprogs f2fs-tools gpart gdisk \
   jfsutils jq libguestfs-tools xorriso lvm2 mtools nano nbd-client nfs-common nilfs-tools open-iscsi \
   open-vm-tools partclone parted partimage qemu-system-common qemu-user rsync fonts-terminus udftools \
-  vim wget yq xfsprogs kexec-tools elinks
+  vim wget yq xfsprogs kexec-tools elinks tmux
 systemctl disable network-manager
 systemctl enable systemd-networkd
 systemctl enable systemd-resolved
