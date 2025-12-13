@@ -23,6 +23,7 @@ btrfs-progs
 dosfstools
 e2fsprogs
 efibootmgr
+elinks
 exfatprogs
 f2fs-tools
 gpart

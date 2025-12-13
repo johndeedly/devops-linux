@@ -369,7 +369,7 @@ if [ -e /bin/apt ]; then
     jq openssh-server openssh-client systemd-container unattended-upgrades ufw xkcdpass cryptsetup \
     syslog-ng logrotate libxml2 man manpages-de wireguard-tools python3-pip python3-venv \
     gvfs gvfs-backends cifs-utils tmux \
-    build-essential npm fd-find neovim qemu-guest-agent kexec-tools
+    build-essential npm fd-find neovim qemu-guest-agent kexec-tools elinks
   if apt-cache show yq >/dev/null 2>&1; then
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install yq
   else
@@ -395,7 +395,7 @@ elif [ -e /bin/pacman ]; then
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
     pacman-contrib syslog-ng logrotate libxml2 core/man man-pages-de wireguard-tools python-pip \
     gvfs gvfs-smb cifs-utils tmux \
-    base-devel npm fd neovim qemu-guest-agent kexec-tools
+    base-devel npm fd neovim qemu-guest-agent kexec-tools elinks
   systemctl enable systemd-networkd systemd-resolved systemd-homed syslog-ng@default logrotate.timer
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
@@ -408,7 +408,7 @@ elif [ -e /bin/yum ]; then
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper \
     syslog-ng logrotate libxml2 man-db wireguard-toolsgvfs python3-pip \
     gvfs-smb cifs-utils tmux \
-    cmake make automake gcc gcc-c++ kernel-devel npm fd-find neovim qemu-guest-agent kexec-tools
+    cmake make automake gcc gcc-c++ kernel-devel npm fd-find neovim qemu-guest-agent kexec-tools elinks
   systemctl enable systemd-networkd systemd-resolved syslog-ng logrotate.timer
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
