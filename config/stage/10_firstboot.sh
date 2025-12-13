@@ -379,6 +379,9 @@ if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
     bash-completion ncdu pv mc ranger fzf moreutils htop btop git \
     lshw zstd unzip p7zip rsync xdg-user-dirs xdg-utils util-linux snapper
+  if apt-cache show lazygit >/dev/null 2>&1; then
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install lazygit
+  fi
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive dpkg-reconfigure --frontend=noninteractive unattended-upgrades
   systemctl enable systemd-networkd systemd-resolved
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
@@ -409,6 +412,9 @@ elif [ -e /bin/yum ]; then
     syslog-ng logrotate libxml2 man-db wireguard-toolsgvfs python3-pip \
     gvfs-smb cifs-utils tmux \
     cmake make automake gcc gcc-c++ kernel-devel npm fd-find neovim qemu-guest-agent kexec-tools elinks
+  if yum --cacheonly info lazygit >/dev/null 2>&1; then
+    LC_ALL=C yes | LC_ALL=C yum install -y lazygit
+  fi
   systemctl enable systemd-networkd systemd-resolved syslog-ng logrotate.timer
   systemctl disable NetworkManager NetworkManager-wait-online NetworkManager-dispatcher || true
   systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
