@@ -18,6 +18,9 @@ users:
   - name: user
     groups: users
     shell: /bin/bash
+  - name: admin
+    groups: users
+    shell: /bin/bash
     sudo: ALL=(ALL) ALL
   - name: root
     groups: root
@@ -30,5 +33,20 @@ chpasswd:
   users:
     - name: user
       password: $6$abcxyz$SbH927uoC4lzRtFfY0VVySMbwPylQWrA64dOsKciS4vD.N.QhnwtdzQz9SxzR0/yvnd2dvATA3gh5bNDHaNCB.
+    - name: admin
+      password: $6$abcxyz$.DYkn67Zb5i/n6mh5u3fdutXFIBdPnVIuBZd1XW9acINec3OZWfOGYEuCsBELsW0oTaR/OS1iiHRZgqDzfd3p.
     - name: root
       type: RANDOM
+
+write_files:
+  - path: /etc/sudoers.d/users-pkg-install
+    owner: root:root
+    permissions: "0440"
+    content: |
+      Cmnd_Alias PAC_CACHE   = /usr/bin/pacman -Sy
+      Cmnd_Alias PAC_SEARCH  = /usr/bin/pacman -Ss *
+      Cmnd_Alias PAC_INSTALL = /usr/bin/pacman -S *
+      Cmnd_Alias APT_CACHE   = /usr/bin/apt update
+      Cmnd_Alias APT_SEARCH  = /usr/bin/apt-cache search *
+      Cmnd_Alias APT_INSTALL = /usr/bin/apt install *, /usr/bin/apt-get install *
+      %users ALL=(root) PAC_CACHE, PAC_SEARCH, PAC_INSTALL, APT_CACHE, APT_SEARCH, APT_INSTALL
