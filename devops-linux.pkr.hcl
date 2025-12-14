@@ -149,14 +149,23 @@ QEMUPARAMS+=(
   "-device" "virtio-rng"
 )
 EOF
+  qemu_server           = <<EOF
+QEMUPARAMS+=(
+  "-daemonize"
+)
+EOF
   qemu_outro            = <<EOF
 QEMUPARAMS+=(
   "-smp" "${local.config.packer.cpu_cores},sockets=1,cores=${local.config.packer.cpu_cores},maxcpus=${local.config.packer.cpu_cores}" "-m" "${local.config.packer.memory_mib}M"
   "-audio" "driver=pa,model=hda,id=snd0" "-device" "hda-output,audiodev=snd0"
   "-device" "virtio-tablet" "-device" "virtio-keyboard"
   "-rtc" "base=utc,clock=host"
-  "-virtfs" "local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0"
 )
+if [ -d "../artifacts" ]; then
+  QEMUPARAMS+=(
+    "-virtfs" "local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0"
+  )
+fi
 EOF
   qemu_exec             = <<EOF
 /usr/bin/qemu-system-x86_64 "\$${QEMUPARAMS[@]}"
@@ -400,6 +409,7 @@ ${local.qemu_intro}
 ${local.qemu_qcow2}
 ${local.qemu_no_display}
 ${local.qemu_net_user}
+${local.qemu_server}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
