@@ -22,6 +22,20 @@ linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)-setup.internal
 EOF
 hostnamectl hostname "$(</etc/hostname)"
 
+# generate udev rule to symlink by partition table types and retrigger udev
+tee /etc/udev/rules.d/61-persistent-storage-parttype.rules >/dev/null <<'EOF'
+ACTION=="remove", GOTO="parttype_end"
+ENV{UDEV_DISABLE_PERSISTENT_STORAGE_RULES_FLAG}=="1", GOTO="parttype_end"
+ENV{ID_PART_ENTRY_SCHEME}!="gpt", GOTO="parttype_end"
+ENV{ID_PART_ENTRY_TYPE}!="?*", GOTO="parttype_end"
+
+ENV{ID_IGNORE_DISKSEQ}!="1", ENV{DISKSEQ}=="?*", SYMLINK+="disk/by-parttype/$env{ID_PART_ENTRY_TYPE}/by-diskseq/$env{DISKSEQ}$env{.PART_SUFFIX}"
+ENV{ID_IGNORE_DISKSEQ}=="1", ENV{ID_PATH}=="?*", SYMLINK+="disk/by-parttype/$env{ID_PART_ENTRY_TYPE}/by-path/$env{ID_PATH}$env{.PART_SUFFIX}"
+
+LABEL="parttype_end"
+EOF
+udevadm control --reload-rules && udevadm trigger
+
 # enable ssh provision login -> disable root, allow provisioning account, password auth, use pam
 sed -i 's/^#\? \?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 sed -i 's/^#\? \?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
