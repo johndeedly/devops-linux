@@ -165,6 +165,11 @@ while read -r line; do
         fi
     fi
 done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' config/setup.yml)"
+# additional custom scripts for stage 1
+write_mime_params=( "${write_mime_params[@]}" $( find config/stage/custom-1 -maxdepth 1 -type f -name "*.sh" -printf "config/stage/custom-1/%P:text/x-shellscript " ) )
+# additional custom scripts for stage 2
+write_mime_params=( "${write_mime_params[@]}" $( find config/stage/custom-2 -maxdepth 1 -type f -name "*.sh" -printf "config/stage/custom-2/%P:application/x-second-stage " ) )
+# create multipart archive
 write-mime-multipart --output=build/stage/user-data "${write_mime_params[@]}"
 
 if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
