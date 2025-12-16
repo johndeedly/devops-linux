@@ -303,14 +303,14 @@ if [ ${#RAID_DEVICES[@]} -gt 0 ]; then
     # use first raid device for filesystem conversion
     mount "${ROOT_PART[0]}" /mnt
     echo "[ .. ] filesystem backup"
-    tar --zstd -cf "${RAID_DEVICES[0]}" -C /mnt .
+    ZSTD_CLEVEL=4 tar -I zstd -cf "${RAID_DEVICES[0]}" -C /mnt .
     umount -l /mnt
     echo "[ .. ] filesystem switch to btrfs"
     dd if=/dev/zero "of=${ROOT_PART[0]}" bs=1M count=16
     mkfs.btrfs "${ROOT_PART[0]}"
     mount -o rw,compress-force=zstd:4 "${ROOT_PART[0]}" /mnt
     echo "[ .. ] filesystem restore"
-    tar --zstd -xf "${RAID_DEVICES[0]}" -C /mnt
+    ZSTD_CLEVEL=4 tar -I zstd -xf "${RAID_DEVICES[0]}" -C /mnt
     # make debian/ubuntu support btrfs root filesystems
     if [ -f /mnt/bin/apt ]; then
         echo "[ .. ] prepare debian/ubuntu to support btrfs root"
