@@ -524,7 +524,7 @@ fi
 # print the current partition layout of the target device
 lsblk -o NAME,PARTN,SIZE,TYPE,LABEL,PARTLABEL,FSTYPE,PARTTYPENAME,UUID "${TARGET_DEVICE}"
 
-# mount encrypted filesystem and prefill it with the tarball under /iso/tar/*.tar.gz
+# mount encrypted filesystem and prefill it with the tarball under /iso/tar/*.tar.zst
 if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
   mkdir -p /nextroot
   mount /dev/mapper/nextroot /nextroot
