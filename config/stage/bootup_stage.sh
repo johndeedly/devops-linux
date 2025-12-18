@@ -15,8 +15,8 @@ ENV{UDEV_DISABLE_PERSISTENT_STORAGE_RULES_FLAG}=="1", GOTO="parttype_end"
 ENV{ID_PART_ENTRY_SCHEME}!="gpt", GOTO="parttype_end"
 ENV{ID_PART_ENTRY_TYPE}!="?*", GOTO="parttype_end"
 
-ENV{ID_IGNORE_DISKSEQ}!="1", ENV{DISKSEQ}=="?*", SYMLINK+="disk/by-parttype/$env{ID_PART_ENTRY_TYPE}/by-diskseq/$env{DISKSEQ}$env{.PART_SUFFIX}"
-ENV{ID_IGNORE_DISKSEQ}=="1", ENV{ID_PATH}=="?*", SYMLINK+="disk/by-parttype/$env{ID_PART_ENTRY_TYPE}/by-path/$env{ID_PATH}$env{.PART_SUFFIX}"
+ENV{DISKSEQ}=="?*", SYMLINK+="disk/by-parttype/$env{ID_PART_ENTRY_TYPE}/by-diskseq/$env{DISKSEQ}$env{.PART_SUFFIX}"
+ENV{ID_PATH}=="?*", SYMLINK+="disk/by-parttype/$env{ID_PART_ENTRY_TYPE}/by-path/$env{ID_PATH}$env{.PART_SUFFIX}"
 
 LABEL="parttype_end"
 EOF
