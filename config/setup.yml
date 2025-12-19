@@ -21,6 +21,8 @@ setup:
   hostname: ""
   encrypt:
     enabled: false
+    sshuser: cryptadm
+    sshhash: $6$abcxyz$MA.ixJjx/Fs1pczI3WJL5OijAN3qJVN5gGEyptyRmLBwmHcOpctCdKlL.QfWch99D8o2mVInuCz9i5pj5Vm/R/
     password: packer-build-passwd
     image: devops-linux-archlinux.tar.zst
   ldapauth:

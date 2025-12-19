@@ -147,9 +147,12 @@ if [ -z "${ROOT_PART[1]}" ]; then
 fi
 echo "ROOT: ${TARGET_DEVICE}, partition ${ROOT_PART[1]}"
 ENCRYPT_ENABLED="$(yq -r '.setup.encrypt.enabled' /var/lib/cloud/instance/config/setup.yml)"
+ENCRYPT_SSHUSER="$(yq -r '.setup.encrypt.sshuser' /var/lib/cloud/instance/config/setup.yml)"
+ENCRYPT_SSHHASH="$(yq -r '.setup.encrypt.sshhash' /var/lib/cloud/instance/config/setup.yml)"
 ENCRYPT_PASSWD="$(yq -r '.setup.encrypt.password' /var/lib/cloud/instance/config/setup.yml)"
 ENCRYPT_IMAGE="$(yq -r '.setup.encrypt.image' /var/lib/cloud/instance/config/setup.yml)"
-if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+    || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     type "${ROOT_PART[1]}" 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
     resizepart "${ROOT_PART[1]}" 16GiB \
@@ -165,7 +168,8 @@ partx -u "${TARGET_DEVICE}"
 sleep 1
 
 # encrypt and open the provided system root
-if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+    || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
   NEWROOT_PART=( $(lsblk -no PATH,PARTN,PARTLABEL,PARTTYPE "${TARGET_DEVICE}" | sed -e '/21686148-6449-6E6F-744E-656564454649/Id' \
       -e '/C12A7328-F81F-11D2-BA4B-00A0C93EC93B/Id' -e '/4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/Id' \
       -e '/[^a-z]nextroot/I!d' | head -n1) )
@@ -201,7 +205,8 @@ elif [[ "${ROOT_PART[2]}" =~ [xX][fF][sS] ]]; then
 fi
 
 # create btrfs filesystem in encrypted partition
-if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
+if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+    || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
   mkfs.btrfs -L nextroot /dev/mapper/nextroot
 fi
 
@@ -521,13 +526,70 @@ if [ -n "$PKG_MIRROR" ] && [ "xnull" != "x$PKG_MIRROR" ]; then
     fi
 fi
 
-# print the current partition layout of the target device
-lsblk -o NAME,PARTN,SIZE,TYPE,LABEL,PARTLABEL,FSTYPE,PARTTYPENAME,UUID "${TARGET_DEVICE}"
+# prepare the system to open the luks partition remotely
+if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+    || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
+  USERID="$ENCRYPT_SSHUSER"
+  USERHASH="$ENCRYPT_SSHHASH"
+  tee -a /mnt/etc/passwd <<EOF
+$USERID:x:812:812:Remote LUKS unlock and pivot:/:/bin/bash
+EOF
+  tee -a /mnt/etc/shadow <<EOF
+$USERID:$USERHASH::0:99999:7:::
+EOF
 
-# mount encrypted filesystem and prefill it with the tarball under /iso/tar/*.tar.zst
-if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
-  mkdir -p /nextroot
-  mount /dev/mapper/nextroot /nextroot
+  mkdir -p /mnt/etc/sudoers.d
+  tee "/mnt/etc/sudoers.d/$USERID-luks-unlock" <<EOF
+$USERID ALL=(root) NOPASSWD: /usr/local/bin/luks-unlock
+EOF
+
+  tee -a /mnt/etc/ssh/sshd_config <<EOF
+
+Match User $USERID
+  PasswordAuthentication yes
+  PermitTTY yes
+  ForceCommand sudo /usr/local/bin/luks-unlock
+EOF
+
+  tee /mnt/usr/local/bin/luks-unlock <<EOF
+#!/usr/bin/env bash
+if [ \$EUID -ne 0 ]; then
+  printf "You must run this script with root privileges\n" >&2
+  exit 1
+fi
+if [ -z "\$SUDO_USER" ]; then
+  printf "This script has to run as sudo (not root itself)\n" >&2
+  exit 1
+fi
+
+i=\$((2))
+until LC_ALL=C cryptsetup luksOpen --tries 1 ${NEWROOT_PART[0]} nextroot; do
+  ret=\$?
+  # wrong password
+  if [ \$ret -eq 2 ]; then
+    printf "Wait \$i seconds...\n" >&2
+    sleep "\$i"
+    i=\$((i*2))
+  # all else means bad things happened
+  else
+    printf "Abort\n" >&2
+    exit 2
+  fi
+done
+
+mount --mkdir /dev/mapper/nextroot /run/nextroot
+sync
+if [ -d /run/nextroot/bin ] && [ -d /run/nextroot/etc ] && [ -d /run/nextroot/usr ]; then
+  systemctl soft-reboot
+else
+  printf "No linux root on ${NEWROOT_PART[0]}\n" >&2
+  exit 3
+fi
+EOF
+  chmod 0700 /mnt/usr/local/bin/luks-unlock
+
+  # mount encrypted filesystem and prefill it with the tarball under /iso/tar/*.tar.zst
+  mount --mkdir /dev/mapper/nextroot /nextroot
   if [ -d /iso/tar ] && [ -f "/iso/tar/${ENCRYPT_IMAGE}" ]; then
     echo ":: Extract tarball /iso/tar/${ENCRYPT_IMAGE}"
     ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xf "/iso/tar/${ENCRYPT_IMAGE}" -C /nextroot
@@ -539,6 +601,9 @@ if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]]; then
   cryptsetup luksClose nextroot
   sync
 fi
+
+# print the current partition layout of the target device
+lsblk -o NAME,PARTN,SIZE,TYPE,LABEL,PARTLABEL,FSTYPE,PARTTYPENAME,UUID "${TARGET_DEVICE}"
 
 # finalize /mnt
 sleep 2

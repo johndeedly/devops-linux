@@ -227,7 +227,7 @@ if [ -n "$ismsys2env" ]; then
     ./cidata.sh --archiso --no-autoreboot
 else
     # protect the RAM from overloading (2GB max)
-    DBSIZE=$(/bin/du -b database/ | cut -f1)
+    DBSIZE=$(/bin/du -b database/ | tail -n1 | cut -f1)
     if [ "$_noram" -eq 0 ] && [ "$DBSIZE" -lt 2147483648 ]; then
         ./cidata.sh --archiso --isoinram --no-autoreboot
     else
