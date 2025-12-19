@@ -2,6 +2,12 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
+fi
+
 # disable systemd-network-generator in pxe image
 systemctl mask systemd-network-generator
 
@@ -19,13 +25,12 @@ EXCLUDE_PATHS=(
   "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "srv/tar/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*"
   "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/cache/dnf/*" "var/cache/yum/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*"
   "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
-  "usr/lib/firmware/*" "root/.ssh/authorized_keys"
+  "root/.ssh/authorized_keys"
 )
-mkdir -p /srv/img
+mkdir -p "/var/tmp/sfs/mnt"
 sync
-echo "[ ## ] Create tar image"
-( ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd "${EXCLUDE_PATHS[@]/#/--exclude=}" \
-    -cf "/srv/img/rootfs.tar.zst" -C / . ) &
+echo "[ ## ] Create squashfs image of rootfs"
+( mksquashfs / "/var/tmp/sfs/rootfs.img" -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards -e "${EXCLUDE_PATHS[@]}" ) &
 pid=$!
 wait $pid
 
@@ -59,11 +64,9 @@ buildah config --entrypoint '["/usr/lib/systemd/systemd", "--log-level=info", "-
   --user "root:root" --volume "/run" --volume "/tmp" --volume "/sys/fs/cgroup" worker
 scratchmnt=$(buildah mount worker)
 
-pushd "${scratchmnt}"
-  ( ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xkf /srv/img/rootfs.tar.zst &>/dev/null ) &
-  pid=$!
-  wait $pid
-popd
+( unsquashfs -d "${scratchmnt}" /srv/img/rootfs.tar.zst ) &
+pid=$!
+wait $pid
 
 sync
 fuser -km "${scratchmnt}" || true

@@ -2,6 +2,19 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
+DISTRO_PATH=""
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
+  if grep -q Debian /proc/version; then
+    DISTRO_PATH="debian"
+  elif grep -q Ubuntu /proc/version; then
+    DISTRO_PATH="ubuntu"
+  fi
+elif [ -e /bin/pacman ]; then
+  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
+  DISTRO_PATH="arch"
+fi
+
 # disable systemd-network-generator in pxe image
 systemctl mask systemd-network-generator
 
@@ -24,21 +37,12 @@ EXCLUDE_PATHS=(
   "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
   "root/.ssh/authorized_keys"
 )
-DISTRO_PATH=""
-if [ -e /bin/apt ]; then
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
-  if grep -q Debian /proc/version; then
-    DISTRO_PATH="debian"
-  elif grep -q Ubuntu /proc/version; then
-    DISTRO_PATH="ubuntu"
-  fi
-elif [ -e /bin/pacman ]; then
-  LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed squashfs-tools
-  DISTRO_PATH="arch"
-fi
 mkdir -p "/srv/pxe/${DISTRO_PATH}/x86_64"
 sync
-mksquashfs / "/srv/pxe/${DISTRO_PATH}/x86_64/pxeboot.img" -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards -e "${EXCLUDE_PATHS[@]}"
+echo "[ ## ] Create squashfs image of rootfs"
+( mksquashfs / "/srv/pxe/${DISTRO_PATH}/x86_64/pxeboot.img" -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards -e "${EXCLUDE_PATHS[@]}" ) &
+pid=$!
+wait $pid
 
 # reenable sleep
 sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
