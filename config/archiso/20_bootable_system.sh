@@ -151,7 +151,7 @@ ENCRYPT_SSHUSER="$(yq -r '.setup.encrypt.sshuser' /var/lib/cloud/instance/config
 ENCRYPT_SSHHASH="$(yq -r '.setup.encrypt.sshhash' /var/lib/cloud/instance/config/setup.yml)"
 ENCRYPT_PASSWD="$(yq -r '.setup.encrypt.password' /var/lib/cloud/instance/config/setup.yml)"
 ENCRYPT_IMAGE="$(yq -r '.setup.encrypt.image' /var/lib/cloud/instance/config/setup.yml)"
-if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
     || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
   LC_ALL=C parted -s -a optimal --fix -- "${TARGET_DEVICE}" \
     type "${ROOT_PART[1]}" 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
@@ -168,7 +168,7 @@ partx -u "${TARGET_DEVICE}"
 sleep 1
 
 # encrypt and open the provided system root
-if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
     || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
   NEWROOT_PART=( $(lsblk -no PATH,PARTN,PARTLABEL,PARTTYPE "${TARGET_DEVICE}" | sed -e '/21686148-6449-6E6F-744E-656564454649/Id' \
       -e '/C12A7328-F81F-11D2-BA4B-00A0C93EC93B/Id' -e '/4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/Id' \
@@ -205,7 +205,7 @@ elif [[ "${ROOT_PART[2]}" =~ [xX][fF][sS] ]]; then
 fi
 
 # create btrfs filesystem in encrypted partition
-if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
     || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
   mkfs.btrfs -L nextroot /dev/mapper/nextroot
 fi
@@ -527,7 +527,7 @@ if [ -n "$PKG_MIRROR" ] && [ "xnull" != "x$PKG_MIRROR" ]; then
 fi
 
 # prepare the system to open the luks partition remotely
-if [ -n "$ENCRYPT_ENABLED" ] || [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
+if [ -n "$ENCRYPT_ENABLED" ] && [[ "$ENCRYPT_ENABLED" =~ [Yy][Ee][Ss] ]] \
     || [[ "$ENCRYPT_ENABLED" =~ [Oo][Nn] ]] || [[ "$ENCRYPT_ENABLED" =~ [Tt][Rr][Uu][Ee] ]]; then
   USERID="$ENCRYPT_SSHUSER"
   USERHASH="$ENCRYPT_SSHHASH"
