@@ -72,6 +72,8 @@ setup:
       -----END CERTIFICATE-----
     peer_verify: required-untrusted
     x509_hash: SHA1:36:2C:0C:DB:5E:BB:BB:4A:E8:42:C2:4D:A5:0C:D5:0B:3C:55:20:40
+  flatpak_mirror:
+    ref_filter: zen_browser|mozilla|chromium|google|microsoft|torproject|librewolf|waterfox|brave|ablaze|falkon|opera|bottles
   pkg_mirror:
     archiso: |
       Server = https://archive.archlinux.org/repos/##ARCHISO_DATE##/$repo/os/$arch
@@ -253,6 +255,9 @@ files:
     mirror:
       - path: apt/20_localmirror_apt.sh
         stage: 2
+    flathubmirror:
+      - path: flatpak/20_localmirror_flatpak.sh
+        stage: 2
     authserver:
       - path: apt/20_authserver_1_apt.sh
         stage: 1
@@ -370,6 +375,9 @@ files:
         stage: 1
     mirror:
       - path: pacman/20_localmirror_pacman.sh
+        stage: 2
+    flathubmirror:
+      - path: flatpak/20_localmirror_flatpak.sh
         stage: 2
     authserver:
       - path: pacman/20_authserver_1_pacman.sh
