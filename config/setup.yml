@@ -185,6 +185,45 @@ setup:
         ostype: debian
         pool: pool0
         onboot: 0
+  bootstrap_users:
+    users:
+      - name: admin
+        groups: users
+        shell: /bin/bash
+        sudo: ALL=(ALL) ALL
+      - name: root
+        groups: root
+        shell: /bin/bash
+    chpasswd:
+      expire: false
+      users:
+        - name: admin
+          password: $6$abcxyz$.DYkn67Zb5i/n6mh5u3fdutXFIBdPnVIuBZd1XW9acINec3OZWfOGYEuCsBELsW0oTaR/OS1iiHRZgqDzfd3p.
+        - name: root
+          type: RANDOM
+  stage_users:
+    users:
+      - name: user
+        groups: users
+        shell: /bin/bash
+      - name: admin
+        groups: users
+        shell: /bin/bash
+        sudo: ALL=(ALL) ALL
+      - name: root
+        groups: root
+        shell: /bin/bash
+        ssh_authorized_keys:
+          - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII24xGPGQ/qdaHySm16nKqcbVaXtiFlLKAxVbfwiFD77 packer-provisioning-key
+    chpasswd:
+      expire: false
+      users:
+        - name: user
+          password: $6$abcxyz$SbH927uoC4lzRtFfY0VVySMbwPylQWrA64dOsKciS4vD.N.QhnwtdzQz9SxzR0/yvnd2dvATA3gh5bNDHaNCB.
+        - name: admin
+          password: $6$abcxyz$.DYkn67Zb5i/n6mh5u3fdutXFIBdPnVIuBZd1XW9acINec3OZWfOGYEuCsBELsW0oTaR/OS1iiHRZgqDzfd3p.
+        - name: root
+          type: RANDOM
 distros:
   archlinux: pacman
   debian: apt

@@ -14,23 +14,6 @@ vendor_data:
 apt:
   preserve_sources_list: true
 
-users:
-  - name: admin
-    groups: users
-    shell: /bin/bash
-    sudo: ALL=(ALL) ALL
-  - name: root
-    groups: root
-    shell: /bin/bash
-
-chpasswd:
-  expire: false
-  users:
-    - name: admin
-      password: $6$abcxyz$.DYkn67Zb5i/n6mh5u3fdutXFIBdPnVIuBZd1XW9acINec3OZWfOGYEuCsBELsW0oTaR/OS1iiHRZgqDzfd3p.
-    - name: root
-      type: RANDOM
-
 growpart:
   mode: "off"
 resize_rootfs: false

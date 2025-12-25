@@ -113,11 +113,30 @@ mkdir -p build/{archiso,stage}
 tee build/archiso/meta-data build/stage/meta-data >/dev/null <<EOF
 EOF
 
+# merge stage environment.yml with setup.yml stage_users
+python - <<DOC
+import yaml
+def str_presenter(dumper, data):
+    if data.count('\n') > 0:
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+yaml.add_representer(str, str_presenter)
+yaml.representer.SafeRepresenter.add_representer(str, str_presenter)
+with open('config/stage/environment.yml') as f, open('config/setup.yml') as g:
+    data = yaml.safe_load(f)
+    update = yaml.safe_load(g)
+    data.update({
+        'users': update['setup']['stage_users']['users'],
+        'chpasswd': update['setup']['stage_users']['chpasswd']
+    })
+    with open('build/stage/environment.yml', 'w') as h:
+        yaml.safe_dump(data, h)
+DOC
 # prepare user-data for stage
 write_mime_params=(
     "config/part-handler-setup.py:text/part-handler"
     "config/stage/bootup_stage.sh:text/cloud-boothook"
-    "config/stage/environment.yml:text/cloud-config"
+    "build/stage/environment.yml:text/cloud-config"
     "config/stage/network-setup.yml:text/cloud-config"
     "config/stage/i18n.yml:text/cloud-config"
     "config/stage/user-skeleton.yml:text/cloud-config"
@@ -173,11 +192,30 @@ write_mime_params=( "${write_mime_params[@]}" $( find config/stage/custom-2 -max
 write-mime-multipart --output=build/stage/user-data "${write_mime_params[@]}"
 
 if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
+    # merge archiso environment.yml with setup.yml bootstrap_users
+    python - <<DOC
+import yaml
+def str_presenter(dumper, data):
+    if data.count('\n') > 0:
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+yaml.add_representer(str, str_presenter)
+yaml.representer.SafeRepresenter.add_representer(str, str_presenter)
+with open('config/archiso/environment.yml') as f, open('config/setup.yml') as g:
+    data = yaml.safe_load(f)
+    update = yaml.safe_load(g)
+    data.update({
+        'users': update['setup']['bootstrap_users']['users'],
+        'chpasswd': update['setup']['bootstrap_users']['chpasswd']
+    })
+    with open('build/archiso/environment.yml', 'w') as h:
+        yaml.safe_dump(data, h)
+DOC
     # prepare user-data for archiso, packed with stage
     write_mime_params=(
         "config/part-handler-setup.py:text/part-handler"
         "config/archiso/bootup.sh:text/cloud-boothook"
-        "config/archiso/environment.yml:text/cloud-config"
+        "build/archiso/environment.yml:text/cloud-config"
         "config/archiso/network-setup.yml:text/cloud-config"
         "config/archiso/i18n.yml:text/cloud-config"
         "config/archiso/10_environment.sh:text/x-shellscript"
@@ -220,7 +258,8 @@ if [ $_archiso -eq 1 ] || [ $_proxmox -eq 1 ] || [ $_pxe -eq 1 ]; then
             -outdev "${DEVOPSISOMODDED}" \
             -volid CIDATA \
             -map database/ / \
-            -map build/archiso/ / \
+            -map build/archiso/meta-data /meta-data \
+            -map build/archiso/user-data /user-data \
             -boot_image any replay
     
     if [ $_pxe -eq 1 ]; then
@@ -292,7 +331,8 @@ elif [ $_iso -eq 1 ]; then
     xorriso -outdev "${CIDATAISO}" \
             -volid CIDATA \
             -map database/ / \
-            -map build/stage/ /
+            -map build/stage/meta-data /meta-data \
+            -map build/stage/user-data /user-data
 else
     echo "no valid option, exiting"
     exit 1
