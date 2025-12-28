@@ -85,12 +85,6 @@ rm /tmp/hosts_columns
 pveum group add admins
 pveum group add users
 
-# create local admin pveadm
-USERID=pveadm
-USERHASH=$(openssl passwd -6 -salt abcxyz "${USERID}")
-useradd -m -r -s /bin/bash "$USERID"
-sed -i 's/^'"$USERID"':[^:]*:/'"$USERID"':'"${USERHASH//\//\\/}"':/' /etc/shadow
-
 # add permissions to groups and pools
 pveum acl modify / --roles Administrator -groups admins -propagate 1
 pveum acl modify /mapping --roles PVEMappingUser -groups users -propagate 1
@@ -100,19 +94,21 @@ done
 pveum acl modify /storage --roles PVEDatastoreUser -groups users -propagate 1
 
 # add local admins to group admins
-for username in root pveadm; do
+grep -E "^admins:" /etc/group | awk -F: '{gsub(",","\n",$4);print $4}' | while read -r username; do
   pveum user add "$username"@pam || true
-  pveum user modify "$username"@pam -groups admins || true
+  pveum user modify "$username"@pam -enable 1
+  echo "[ OK ] Created admin $username@pam"
+  pveum user modify "$username"@pam -append 1 -groups admins
+  echo "[ OK ] Added $username@pam to admin group"
 done
 
 # add local users to group users
-getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
-  if [ -n "$home" ] && [ -d "$home" ] && [ "${home:0:6}" == "/home/" ]; then
-    if [ "$uid" -ge 1000 ]; then
-      pveum user add "$username"@pam || true
-      pveum user modify "$username"@pam -groups users || true
-    fi
-  fi
+grep -E "^users:" /etc/group | awk -F: '{gsub(",","\n",$4);print $4}' | while read -r username; do
+  pveum user add "$username"@pam || true
+  pveum user modify "$username"@pam -enable 1
+  echo "[ OK ] Created user $username@pam"
+  pveum user modify "$username"@pam -append 1 -groups users
+  echo "[ OK ] Added $username@pam to user group"
 done
 
 # create first pool pool0
