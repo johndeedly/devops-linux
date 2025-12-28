@@ -188,7 +188,9 @@ setup:
   bootstrap_users:
     users:
       - name: admin
-        groups: users
+        groups:
+          - users
+          - admins
         shell: /bin/bash
         sudo: ALL=(ALL) ALL
       - name: root
@@ -207,7 +209,9 @@ setup:
         groups: users
         shell: /bin/bash
       - name: admin
-        groups: users
+        groups:
+          - users
+          - admins
         shell: /bin/bash
         sudo: ALL=(ALL) ALL
       - name: root
