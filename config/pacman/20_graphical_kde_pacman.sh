@@ -128,10 +128,8 @@ EOX
     wget -c -O "${profiledir}/extensions/${id}.xpi" --progress=dot:giga "https://addons.mozilla.org/firefox/downloads/latest/${name}/"
   done <<EOX
 adguard-adblocker adguardadblocker@adguard.com
-keepassxc-browser keepassxc-browser@keepassxc.org
+ghostery firefox@ghostery.com
 single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
-sponsorblock sponsorBlocker@ajay.app
-forget_me_not forget-me-not@lusito.info
 EOX
 done
 ' ) &
@@ -146,10 +144,8 @@ while read -r name id; do
   wget -c -O "${browserdir}/extensions/${id}.xpi" --progress=dot:giga "https://addons.mozilla.org/firefox/downloads/latest/${name}/"
 done <<EOX
 adguard-adblocker adguardadblocker@adguard.com
-keepassxc-browser keepassxc-browser@keepassxc.org
+ghostery firefox@ghostery.com
 single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
-sponsorblock sponsorBlocker@ajay.app
-forget_me_not forget-me-not@lusito.info
 EOX
 
 # set slick greeter as default
@@ -193,10 +189,8 @@ mkdir -p /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stab
 (
   jq -Rs '{"policies":{"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
 adguard-adblocker adguardadblocker@adguard.com
-keepassxc-browser keepassxc-browser@keepassxc.org
+ghostery firefox@ghostery.com
 single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
-sponsorblock sponsorBlocker@ajay.app
-forget_me_not forget-me-not@lusito.info
 EOF
 ) | tee /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies/policies.json
 
@@ -222,9 +216,8 @@ EOF
 (
 jq -Rs '{"ExtensionInstallForcelist":split("\n")|map(if match(".") then .+";https://clients2.google.com/service/update2/crx" else empty end)}' <<'EOF'
 bgnkhhnnamicmpeenaelnjfhikgbkllg
+mlomiejdfkolichcflejclcbmpeaniij
 mpiodijhokgodhhofbcjdecpffjipkle
-mnjggcdmjocbbbhaepdhchncahnbgone
-oboonakemofpalcgghocfoadofidjkkk
 EOF
 ) | tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/extensions-default.json
 tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/telemetry-off.json <<'EOF'
