@@ -285,7 +285,7 @@ GRUB_GLOBAL_CMDLINE="console=ttyS0,115200 console=tty1 acpi=force acpi_osi=Linux
 GRUB_ROOT_UUID="$(lsblk -no MOUNTPOINT,UUID | sed -e '/^\/ /!d' | head -n 1 | awk '{ print $2 }')"
 if findmnt -t btrfs -n /; then
   echo "[ OK ] Detected btrfs root, enable zstd compression"
-  GRUB_GLOBAL_CMDLINE="$GRUB_GLOBAL_CMDLINE rootflags=compress-force=zstd:4"
+  GRUB_GLOBAL_CMDLINE="$GRUB_GLOBAL_CMDLINE rootflags=compress-force=zstd:4,noatime"
 fi
 GRUB_CFGS=( /etc/default/grub $(find /etc/default/grub.d -type f -printf '%p ') )
 for cfg in "${GRUB_CFGS[@]}"; do

@@ -313,7 +313,7 @@ if [ ${#RAID_DEVICES[@]} -gt 0 ]; then
     echo "[ .. ] filesystem switch to btrfs"
     dd if=/dev/zero "of=${ROOT_PART[0]}" bs=1M count=16
     mkfs.btrfs "${ROOT_PART[0]}"
-    mount -o rw,compress-force=zstd:4 "${ROOT_PART[0]}" /mnt
+    mount -o rw,compress-force=zstd:4,noatime "${ROOT_PART[0]}" /mnt
     echo "[ .. ] filesystem restore"
     ZSTD_CLEVEL=4 tar -I zstd -xf "${RAID_DEVICES[0]}" -C /mnt
     # make debian/ubuntu support btrfs root filesystems
@@ -331,7 +331,7 @@ if [ ${#RAID_DEVICES[@]} -gt 0 ]; then
             mount "${EFI_PART[1]}" /mnt/boot/efi
         fi
         GRUB_DEFAULT_CMDLINE="loglevel=3"
-        GRUB_GLOBAL_CMDLINE="rootflags=compress-force=zstd:4 console=ttyS0,115200 console=tty1 acpi=force acpi_osi=Linux"
+        GRUB_GLOBAL_CMDLINE="rootflags=compress-force=zstd:4,noatime console=ttyS0,115200 console=tty1 acpi=force acpi_osi=Linux"
         GRUB_ROOT_UUID="$(lsblk -no MOUNTPOINT,UUID | sed -e '/^\/mnt /!d' | head -n 1 | awk '{ print $2 }')"
         chroot /mnt /bin/bash <<EOS
 PATH="\$PATH:/usr/sbin:/sbin"
@@ -384,7 +384,7 @@ grub-mkconfig -o /boot/grub/grub.cfg
 find /boot/efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
     grub-mkconfig -o "\$line/grub.cfg"
 done
-sed -e 's|.*[[:space:]]/[[:space:]].*|UUID=${GRUB_ROOT_UUID} / btrfs rw,compress-force=zstd:4 0 0|g' -i /etc/fstab
+sed -e 's|.*[[:space:]]/[[:space:]].*|UUID=${GRUB_ROOT_UUID} / btrfs rw,compress-force=zstd:4,noatime 0 0|g' -i /etc/fstab
 cat /etc/fstab
 EOS
         sync

@@ -16,7 +16,7 @@ echo "[ ## ] Wait for cloud-init to finish"
     GRUB_ROOT=( $(lsblk -no PARTTYPE,UUID,FSTYPE | sed -e '/^4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709/I!d' | awk 'NR==1{ print $2" "$3 }') )
     if [ "x${GRUB_ROOT[1]}" == "xbtrfs" ]; then
       echo "[ OK ] Detected btrfs root, enable zstd compression"
-      GRUB_CMDLINE="$GRUB_CMDLINE rootflags=compress-force=zstd:4"
+      GRUB_CMDLINE="$GRUB_CMDLINE rootflags=compress-force=zstd:4,noatime"
     fi
     if command -v kexec 2>&1 >/dev/null && [ -n "${GRUB_ROOT[0]}" ] && [ -n "$VMLINUZ" ] && [ -e "$VMLINUZ" ] && [ -n "$INITRD" ] && [ -e "$INITRD" ]; then
       echo "[ OK ] Found next kernel '$VMLINUZ' and initramfs '$INITRD'"
