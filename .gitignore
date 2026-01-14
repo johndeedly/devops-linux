@@ -9,4 +9,4 @@ database/*
 *.qcow2
 *.iso
 *.tar.zst
-crash.log
+*.log

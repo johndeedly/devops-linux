@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
 
-DEVOPSISOMODDED="devops-x86_64-cidata.iso"
-
-# error handling
-set -E -o functrace
-err_report() {
-    echo "errexit command '${1}' returned ${2} on line $(caller)" 1>&2
-    [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
-    exit "${2}"
-}
-trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
-
 ismsys2env=""
 if [ -f /etc/os-release ] && grep -E 'ID=msys2' /etc/os-release >/dev/null; then
   ismsys2env="YES"
@@ -229,6 +218,17 @@ packer_buildappliance() {
     fi
     return -1
 }
+
+DEVOPSISOMODDED=$(yq -r '.packer.iso_path' build/setup.yml)
+
+# error handling
+set -E -o functrace
+err_report() {
+    echo "errexit command '${1}' returned ${2} on line $(caller)" 1>&2
+    [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
+    exit "${2}"
+}
+trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
 
 if [ -n "$ismsys2env" ]; then
     ./cidata.sh --archiso --no-autoreboot --config "$_config"

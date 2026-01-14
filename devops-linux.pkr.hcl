@@ -32,6 +32,9 @@ locals {
   headless              = var.headless != null ? var.headless : local.config.packer.headless
   package_manager       = contains(keys(local.config.distros), local.config.setup.distro) ? local.config.distros[local.config.setup.distro] : null
   package_cache         = var.package_cache != null ? var.package_cache : local.package_manager != null ? local.config.packer.create_package_cache : false
+  output_path           = local.config.packer.output_path != null ? local.config.packer.output_path : "output/devops-linux"
+  artifacts_path        = "${local.output_path}/artifacts"
+  iso_path              = local.config.packer.iso_path != null ? local.config.packer.iso_path : "devops-x86_64-cidata.iso"
   build_name_qemu       = join(".", ["${local.config.setup.distro}-x86_64", replace(timestamp(), ":", "-"), "qcow2"])
   build_name_virtualbox = join(".", ["${local.config.setup.distro}-x86_64", replace(timestamp(), ":", "-")])
   open_ports_virtualbox = concat(["modifyvm", "{{ .Name }}", "--natpf1", "delete", "packercomm"], flatten(setproduct(["--natpf1"], [ for elem in local.config.packer.open_ports : format("%s-%d,%s,,%d,,%d", elem.protocol, elem.host, elem.protocol, elem.host, elem.vm) ])))
@@ -167,9 +170,9 @@ QEMUPARAMS+=(
   "-device" "virtio-tablet" "-device" "virtio-keyboard"
   "-rtc" "base=utc,clock=host"
 )
-if [ -d "../artifacts" ]; then
+if [ -d "artifacts" ]; then
   QEMUPARAMS+=(
-    "-virtfs" "local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0"
+    "-virtfs" "local,path=artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0"
   )
 fi
 EOF
@@ -180,9 +183,9 @@ QEMUPARAMS+=(
   "-rtc" "base=utc,clock=host"
   "-daemonize"
 )
-if [ -d "../artifacts" ]; then
+if [ -d "artifacts" ]; then
   QEMUPARAMS+=(
-    "-virtfs" "local,path=../artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0"
+    "-virtfs" "local,path=artifacts,mount_tag=artifacts.0,security_model=passthrough,id=artifacts.0"
   )
 fi
 EOF
@@ -224,8 +227,8 @@ source "qemu" "default" {
   ]
   headless             = local.headless
   iso_checksum         = "none"
-  iso_url              = "devops-x86_64-cidata.iso"
-  output_directory     = "output/devops-linux"
+  iso_url              = local.iso_path
+  output_directory     = local.output_path
   ssh_username         = "root"
   ssh_keypair_name     = "ssh_packer_key"
   ssh_private_key_file = "./ssh_packer_key"
@@ -258,9 +261,8 @@ source "virtualbox-iso" "default" {
   headless                 = local.headless
   iso_checksum             = "none"
   iso_interface            = "virtio"
-  iso_url                  = "devops-x86_64-cidata.iso"
-  output_directory         = "output/devops-linux"
-  output_filename          = "devops-linux-x86_64"
+  iso_url                  = local.iso_path
+  output_directory         = local.output_path
   ssh_username             = "root"
   ssh_keypair_name         = "ssh_packer_key"
   ssh_private_key_file     = "./ssh_packer_key"
@@ -282,7 +284,7 @@ build {
 
   provisioner "file" {
     source      = "/cidata_stage0_log"
-    destination = "output/devops-linux-cidata-stage0.log"
+    destination = "${local.output_path}/devops-linux-cidata-stage0.log"
     direction   = "download"
   }
 
@@ -298,7 +300,7 @@ EOS
 
   provisioner "file" {
     source      = "/cidata_log"
-    destination = "output/devops-linux-cidata.log"
+    destination = "${local.output_path}/devops-linux-cidata.log"
     direction   = "download"
   }
 
@@ -321,7 +323,7 @@ EOS
 
   provisioner "file" {
     source      = "/cidata_log"
-    destination = "output/devops-linux-cidata.log"
+    destination = "${local.output_path}/devops-linux-cidata.log"
     direction   = "download"
   }
 
@@ -343,37 +345,37 @@ EOS
 
   provisioner "file" {
     source      = "/srv/pxe/"
-    destination = "output/artifacts"
+    destination = local.artifacts_path
     direction   = "download"
   }
 
   provisioner "file" {
     source      = "/srv/docker/"
-    destination = "output/artifacts"
+    destination = local.artifacts_path
     direction   = "download"
   }
 
   provisioner "file" {
     source      = "/srv/liveiso/"
-    destination = "output/artifacts"
+    destination = local.artifacts_path
     direction   = "download"
   }
 
   provisioner "file" {
     source      = "/srv/tar/"
-    destination = "output/artifacts"
+    destination = local.artifacts_path
     direction   = "download"
   }
 
   provisioner "file" {
     source      = "/srv/audit/"
-    destination = "output/artifacts"
+    destination = local.artifacts_path
     direction   = "download"
   }
 
   provisioner "shell-local" {
     inline = [<<EOS
-tee output/devops-linux/devops-linux-x86_64.run.sh <<EOF
+tee ${local.output_path}/devops-linux-x86_64.run.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_qcow2}
 ${local.qemu_no_gl}
@@ -383,8 +385,8 @@ ${local.qemu_net_user}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
-chmod +x output/devops-linux/devops-linux-x86_64.run.sh
-tee output/devops-linux/devops-linux-x86_64.gl.sh <<EOF
+chmod +x ${local.output_path}/devops-linux-x86_64.run.sh
+tee ${local.output_path}/devops-linux-x86_64.gl.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_qcow2}
 ${local.qemu_gl}
@@ -394,16 +396,16 @@ ${local.qemu_net_user}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
-chmod +x output/devops-linux/devops-linux-x86_64.gl.sh
-tee output/devops-linux/devops-linux-x86_64.pxe.bios.sh <<EOF
+chmod +x ${local.output_path}/devops-linux-x86_64.gl.sh
+tee ${local.output_path}/devops-linux-x86_64.pxe.bios.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_no_gl}
 ${local.qemu_net_pxe}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
-chmod +x output/devops-linux/devops-linux-x86_64.pxe.bios.sh
-tee output/devops-linux/devops-linux-x86_64.pxe.uefi.sh <<EOF
+chmod +x ${local.output_path}/devops-linux-x86_64.pxe.bios.sh
+tee ${local.output_path}/devops-linux-x86_64.pxe.uefi.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_no_gl}
 ${local.qemu_efi_pxe}
@@ -411,8 +413,8 @@ ${local.qemu_net_pxe}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
-chmod +x output/devops-linux/devops-linux-x86_64.pxe.uefi.sh
-tee output/devops-linux/devops-linux-x86_64.netdev.sh <<EOF
+chmod +x ${local.output_path}/devops-linux-x86_64.pxe.uefi.sh
+tee ${local.output_path}/devops-linux-x86_64.netdev.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_qcow2}
 ${local.qemu_no_gl}
@@ -422,8 +424,8 @@ ${local.qemu_net_router}
 ${local.qemu_outro}
 ${local.qemu_exec}
 EOF
-chmod +x output/devops-linux/devops-linux-x86_64.netdev.sh
-tee output/devops-linux/devops-linux-x86_64.srv.sh <<EOF
+chmod +x ${local.output_path}/devops-linux-x86_64.netdev.sh
+tee ${local.output_path}/devops-linux-x86_64.srv.sh <<EOF
 ${local.qemu_intro}
 ${local.qemu_qcow2}
 ${local.qemu_no_display}
@@ -431,7 +433,7 @@ ${local.qemu_net_user}
 ${local.qemu_outro_server}
 ${local.qemu_exec}
 EOF
-chmod +x output/devops-linux/devops-linux-x86_64.srv.sh
+chmod +x ${local.output_path}/devops-linux-x86_64.srv.sh
 EOS
     ]
     only_on = ["linux"]

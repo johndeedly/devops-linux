@@ -13,6 +13,8 @@ packer:
   router_socket_listen_port: 23568
   headless: true
   create_package_cache: false
+  output_path: output/devops-linux
+  iso_path: devops-x86_64-cidata.iso
 setup:
   distro: archlinux
   options: []

@@ -244,6 +244,7 @@ DOC
     ARCHISO=$(yq -r '.images.archiso' build/setup.yml)
     ARCHISOURL=$(yq -r '.download.archiso' build/setup.yml)
     DEBISO=$(yq -r '.images.debiso' build/setup.yml)
+    DEVOPSISOMODDED=$(yq -r '.packer.iso_path' build/setup.yml)
     
     if [ $_pxe -eq 1 ] || ! [ -e "${DEBISO}" ]; then
         if ! [ -e "${ARCHISO}" ]; then
@@ -259,12 +260,12 @@ DOC
     fi
 
     echo "Append cidata to devops-iso"
-    DEVOPSISOMODDED="devops-x86_64-cidata.iso"
     [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
     [ -f "${DEVOPSISOMODDED}" ] && rm "${DEVOPSISOMODDED}"
     if [ $_ram -eq 1 ]; then
-        DEVOPSISOMODDED="$(mktemp /tmp/devops-linux.XXXXXXXXXX.iso)"
-        ln -s "${DEVOPSISOMODDED}" devops-x86_64-cidata.iso
+        DEVOPSISOTMP="$(mktemp /tmp/devops-linux.XXXXXXXXXX.iso)"
+        ln -s "${DEVOPSISOTMP}" "${DEVOPSISOMODDED}"
+        DEVOPSISOMODDED="${DEVOPSISOTMP}"
     fi
     xorriso -indev "${DEVOPSISO}" \
             -outdev "${DEVOPSISOMODDED}" \
