@@ -122,9 +122,10 @@ _headless="true"
 _vbox=0
 _cache="false"
 _noram=0
+_config="config/setup.yml"
 parse_parameters() {
-    local _longopts="show-window,force-virtualbox,create-cache,no-ram-iso"
-    local _opts="wvcn"
+    local _longopts="show-window,force-virtualbox,create-cache,no-ram-iso,config:"
+    local _opts="wvanc:"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -138,13 +139,17 @@ parse_parameters() {
                 _vbox=1
                 shift
                 ;;
-            -c|--create-cache)
+            -a|--create-cache)
                 _cache="true"
                 shift
                 ;;
             -n|--no-ram-iso)
                 _noram=1
                 shift
+                ;;
+            -c|--config)
+                _config="$2"
+                shift 2
                 ;;
             --)
                 shift
@@ -156,8 +161,13 @@ parse_parameters() {
 parse_parameters "$@"
 
 
+if ! [ -e "$_config" ]; then
+    echo 1>&2 "Fatal: configuration not found: '$_config'"
+    exit 2
+fi
+
 packer_buildappliance() {
-    local _longopts="search,filter,args"
+    local _longopts="search:,filter:,args:"
     local _opts="s:f:a:"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
@@ -202,20 +212,17 @@ packer_buildappliance() {
         done
     fi
     if [ -n "$_runit" ]; then
-        _package_manager=$(yq -r '.setup as $setup | .distros[$setup.distro]' config/setup.yml)
         case $VIRTENV in
             wsl)
                 # windows
-                env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
-                    PKR_VAR_package_manager="${_package_manager}" PKR_VAR_package_cache="${_cache}" \
-                    PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
+                env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log PKR_VAR_package_cache="${_cache}" \
+                    PKR_VAR_config_path="build/setup.yml" PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
                 return $?
                 ;;
             *)
                 # others, including linux
-                env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log \
-                    PKR_VAR_package_manager="${_package_manager}" PKR_VAR_package_cache="${_cache}" \
-                    PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
+                env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log PKR_VAR_package_cache="${_cache}" \
+                    PKR_VAR_config_path="build/setup.yml" PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
                 return $?
                 ;;
         esac
@@ -224,15 +231,21 @@ packer_buildappliance() {
 }
 
 if [ -n "$ismsys2env" ]; then
-    ./cidata.sh --archiso --no-autoreboot
+    ./cidata.sh --archiso --no-autoreboot --config "$_config"
 else
     # protect the RAM from overloading (2GB max)
     DBSIZE=$(/bin/du -b database/ | tail -n1 | cut -f1)
     if [ "$_noram" -eq 0 ] && [ "$DBSIZE" -lt 2147483648 ]; then
-        ./cidata.sh --archiso --isoinram --no-autoreboot
+        ./cidata.sh --archiso --isoinram --no-autoreboot --config "$_config"
     else
-        ./cidata.sh --archiso --no-autoreboot
+        ./cidata.sh --archiso --no-autoreboot --config "$_config"
     fi
+fi
+
+# after this point the yaml config path should be "build/setup.yml"
+if ! [ -e "build/setup.yml" ]; then
+    echo 1>&2 "Fatal: build configuration not found: 'build/setup.yml'"
+    exit 2
 fi
 
 mkdir -p output

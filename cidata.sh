@@ -62,9 +62,10 @@ _ram=0
 _autoreboot=1
 _proxmox=0
 _pxe=0
+_config="config/setup.yml"
 parse_parameters() {
-    local _longopts="iso,archiso,isoinram,no-autoreboot,proxmox,pxe"
-    local _opts="iarnpe"
+    local _longopts="iso,archiso,isoinram,no-autoreboot,proxmox,pxe,config:"
+    local _opts="iarnpec:"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -96,6 +97,10 @@ parse_parameters() {
                 _pxe=1
                 shift
                 ;;
+            -c|--config)
+                _config="$2"
+                shift 2
+                ;;
             --)
                 shift
                 break
@@ -113,6 +118,13 @@ mkdir -p build/{archiso,stage}
 tee build/archiso/meta-data build/stage/meta-data >/dev/null <<EOF
 EOF
 
+if ! [ -e "$_config" ]; then
+    echo 1>&2 "Fatal: configuration not found: '$_config'"
+    exit 1
+fi
+echo "Configuration used for build: '$_config'"
+cp "$_config" build/setup.yml
+
 # merge stage environment.yml with setup.yml stage_users
 python - <<DOC
 import yaml
@@ -122,7 +134,7 @@ def str_presenter(dumper, data):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 yaml.add_representer(str, str_presenter)
 yaml.representer.SafeRepresenter.add_representer(str, str_presenter)
-with open('config/stage/environment.yml') as f, open('config/setup.yml') as g:
+with open('config/stage/environment.yml') as f, open('build/setup.yml') as g:
     data = yaml.safe_load(f)
     update = yaml.safe_load(g)
     data.update({
@@ -145,7 +157,7 @@ write_mime_params=(
     "config/stage/18_syslog.sh:text/x-shellscript"
     "config/stage/90_second_stage.sh:text/x-shellscript"
     "config/stage/90_final_stage.sh:application/x-second-stage"
-    "config/setup.yml:application/x-setup-config"
+    "build/setup.yml:application/x-setup-config"
     "config/00_waitonline.sh:text/x-shellscript"
     "config/00_waitonline.sh:application/x-second-stage"
 )
@@ -161,7 +173,7 @@ EOF
             write_mime_params=( "${write_mime_params[@]}" "build/$line:application/x-provision-file" )
         fi
     fi
-done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.config) | .path' config/setup.yml)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.config) | .path' build/setup.yml)"
 # deployment scripts stage 1
 if [ $_autoreboot -eq 1 ]; then
     write_mime_params=( "${write_mime_params[@]}" "config/99_autoreboot.sh:text/x-shellscript" )
@@ -172,7 +184,7 @@ while read -r line; do
             write_mime_params=( "${write_mime_params[@]}" "config/$line:text/x-shellscript" )
         fi
     fi
-done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' config/setup.yml)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' build/setup.yml)"
 # deployment scripts stage 2
 if [ $_autoreboot -eq 1 ]; then
     write_mime_params=( "${write_mime_params[@]}" "config/98_lockdown.sh:application/x-second-stage" "config/99_autoreboot.sh:application/x-second-stage" )
@@ -183,7 +195,7 @@ while read -r line; do
             write_mime_params=( "${write_mime_params[@]}" "config/$line:application/x-second-stage" )
         fi
     fi
-done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' config/setup.yml)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' build/setup.yml)"
 # additional custom scripts for stage 1
 write_mime_params=( "${write_mime_params[@]}" $( find config/stage/custom-1 -maxdepth 1 -type f -name "*.sh" -printf "config/stage/custom-1/%P:text/x-shellscript " ) )
 # additional custom scripts for stage 2
@@ -201,7 +213,7 @@ def str_presenter(dumper, data):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 yaml.add_representer(str, str_presenter)
 yaml.representer.SafeRepresenter.add_representer(str, str_presenter)
-with open('config/archiso/environment.yml') as f, open('config/setup.yml') as g:
+with open('config/archiso/environment.yml') as f, open('build/setup.yml') as g:
     data = yaml.safe_load(f)
     update = yaml.safe_load(g)
     data.update({
@@ -221,7 +233,7 @@ DOC
         "config/archiso/10_environment.sh:text/x-shellscript"
         "config/archiso/15_system_base_setup.sh:text/x-shellscript"
         "config/archiso/20_bootable_system.sh:text/x-shellscript"
-        "config/setup.yml:application/x-setup-config"
+        "build/setup.yml:application/x-setup-config"
         "config/00_waitonline.sh:text/x-shellscript"
         "config/99_autoreboot.sh:text/x-shellscript"
         "build/stage/user-data:application/x-provision-config"
@@ -229,9 +241,9 @@ DOC
     )
     write-mime-multipart --output=build/archiso/user-data "${write_mime_params[@]}"
 
-    ARCHISO=$(yq -r '.images.archiso' config/setup.yml)
-    ARCHISOURL=$(yq -r '.download.archiso' config/setup.yml)
-    DEBISO=$(yq -r '.images.debiso' config/setup.yml)
+    ARCHISO=$(yq -r '.images.archiso' build/setup.yml)
+    ARCHISOURL=$(yq -r '.download.archiso' build/setup.yml)
+    DEBISO=$(yq -r '.images.debiso' build/setup.yml)
     
     if [ $_pxe -eq 1 ] || ! [ -e "${DEBISO}" ]; then
         if ! [ -e "${ARCHISO}" ]; then
