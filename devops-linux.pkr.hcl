@@ -19,8 +19,8 @@ variable "config_path" {
 
 locals {
   config                = yamldecode(file(var.config_path))
-  package_manager       = local.config.distros[local.config.setup.distro]
-  package_cache         = local.config.packer.create_package_cache
+  package_manager       = contains(keys(local.config.distros), local.config.setup.distro) ? local.config.distros[local.config.setup.distro] : null
+  package_cache         = local.package_manager != null ? local.config.packer.create_package_cache : false
   build_name_qemu       = join(".", ["${local.config.setup.distro}-x86_64", replace(timestamp(), ":", "-"), "qcow2"])
   build_name_virtualbox = join(".", ["${local.config.setup.distro}-x86_64", replace(timestamp(), ":", "-")])
   open_ports_virtualbox = concat(["modifyvm", "{{ .Name }}", "--natpf1", "delete", "packercomm"], flatten(setproduct(["--natpf1"], [ for elem in local.config.packer.open_ports : format("%s-%d,%s,,%d,,%d", elem.protocol, elem.host, elem.protocol, elem.host, elem.vm) ])))
