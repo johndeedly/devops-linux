@@ -7,7 +7,7 @@ if [ -e /bin/apt ]; then
   if grep -q Debian /proc/version; then
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
       firmware-linux-nonfree \
-      xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
+      xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-va-drivers mesa-opencl-icd nvtop \
       xserver-xorg-video-nouveau \
       xserver-xorg-video-intel \
       xserver-xorg-video-vmware \
@@ -15,7 +15,7 @@ if [ -e /bin/apt ]; then
   elif grep -q Ubuntu /proc/version; then
     LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install \
       linux-firmware \
-      xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-vdpau-drivers nvtop \
+      xserver-xorg-video-ati xserver-xorg-video-amdgpu mesa-vulkan-drivers mesa-va-drivers mesa-opencl-icd nvtop \
       xserver-xorg-video-nouveau \
       xserver-xorg-video-intel \
       xserver-xorg-video-vmware \
@@ -51,10 +51,10 @@ EOF
   update-grub
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed \
-    xf86-video-ati xf86-video-amdgpu mesa vulkan-radeon libva-mesa-driver mesa-vdpau libva-utils nvtop \
+    xf86-video-ati xf86-video-amdgpu mesa vulkan-radeon libva-mesa-driver libva-utils opencl-mesa nvtop \
     xf86-video-nouveau vulkan-nouveau \
     xf86-video-intel vulkan-intel libva-intel-driver \
-    xf86-video-qxl
+    xf86-video-qxl vulkan-virtio
   tee /etc/modules-load.d/kms.conf <<EOF
 $( for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do echo "$x"; done )
 EOF
