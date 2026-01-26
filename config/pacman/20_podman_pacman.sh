@@ -3,7 +3,7 @@
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed podman-docker podman-compose docker-compose fuse-overlayfs \
-    btrfs-progs cockpit-podman
+    btrfs-progs cockpit-podman cargo-binstall
 
 mkdir -p /etc/containers/registries.conf.d
 tee /etc/containers/registries.conf.d/10-unqualified-search-registries.conf <<EOF
@@ -15,6 +15,9 @@ EOF
 
 # Enable all configured services
 systemctl enable podman.service podman.socket
+
+# install podlet
+cargo binstall podlet
 
 # allow forwarding to all private networks
 ufw disable

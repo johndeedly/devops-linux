@@ -38,6 +38,8 @@ services:
     image: nextcloud
     ports:
       - 8080:80
+    depends-on:
+      - db
     links:
       - db
     networks:
@@ -53,15 +55,12 @@ services:
 EOF
 pushd "${BUILDTMP}"
   podman-compose up --no-start
+  mkdir -p /etc/containers/systemd
+  /root/.cargo/bin/podlet --install --unit-directory generate container "${PROJECTNAME}_main_1"
+  ls -la /etc/containers/systemd
 popd
-pushd /etc/systemd/system
-  podman generate systemd --new --name "${PROJECTNAME}_db_1" -f
-  podman generate systemd --new --name "${PROJECTNAME}_main_1" \
-    "--after=container-${PROJECTNAME}_db_1.service" \
-    "--requires=container-${PROJECTNAME}_db_1.service" -f
-popd
-systemctl enable "container-${PROJECTNAME}_db_1"
-systemctl enable "container-${PROJECTNAME}_main_1"
+systemctl daemon-reload
+systemctl preset "${PROJECTNAME}_main_1.service"
 
 ufw disable
 ufw allow log 8080/tcp comment 'allow nextcloud'

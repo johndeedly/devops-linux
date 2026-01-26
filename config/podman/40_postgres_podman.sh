@@ -47,7 +47,7 @@ services:
     ports:
       - '5432:5432'
     security_opt:
-      - 'no-new-privileges:true'
+      - no-new-privileges
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: resu
@@ -61,6 +61,10 @@ services:
       - lan
     ports:
       - '15432:80'
+    depends-on:
+      - postgres
+    links:
+      - postgres
     environment:
       PGADMIN_DEFAULT_EMAIL: user@lan.internal
       PGADMIN_DEFAULT_PASSWORD: resu
@@ -69,15 +73,12 @@ services:
 EOF
 pushd "${BUILDTMP}"
   podman-compose up --no-start
+  mkdir -p /etc/containers/systemd
+  /root/.cargo/bin/podlet --install --unit-directory generate container "${PROJECTNAME}_main_1"
+  ls -la /etc/containers/systemd
 popd
-pushd /etc/systemd/system
-  podman generate systemd --new --name "${PROJECTNAME}_postgres_1" -f
-  podman generate systemd --new --name "${PROJECTNAME}_pgadmin_1" \
-    "--after=container-${PROJECTNAME}_postgres_1.service" \
-    "--requires=container-${PROJECTNAME}_postgres_1.service" -f
-popd
-systemctl enable "container-${PROJECTNAME}_postgres_1"
-systemctl enable "container-${PROJECTNAME}_pgadmin_1"
+systemctl daemon-reload
+systemctl preset "${PROJECTNAME}_pgadmin_1.service"
 
 ufw disable
 ufw allow log 5432/tcp comment 'allow postgres'

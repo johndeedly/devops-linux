@@ -23,18 +23,19 @@ services:
     ports:
       - '8123:8123'
     security_opt:
-      - 'no-new-privileges:true'
+      - no-new-privileges
     volumes:
       - config:/config
       - /etc/localtime:/etc/localtime:ro
 EOF
 pushd "${BUILDTMP}"
   podman-compose up --no-start
+  mkdir -p /etc/containers/systemd
+  /root/.cargo/bin/podlet --install --unit-directory generate container "${PROJECTNAME}_main_1"
+  ls -la /etc/containers/systemd
 popd
-pushd /etc/systemd/system
-  podman generate systemd --new --name "${PROJECTNAME}_main_1" -f
-popd
-systemctl enable "container-${PROJECTNAME}_main_1"
+systemctl daemon-reload
+systemctl preset "${PROJECTNAME}_main_1.service"
 
 ufw disable
 ufw allow log 8123/tcp comment 'allow homeassistant'
