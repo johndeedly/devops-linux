@@ -8,6 +8,10 @@ packer {
       source  = "github.com/hashicorp/virtualbox"
       version = "~> 1"
     }
+    ansible = {
+      source  = "github.com/hashicorp/ansible"
+      version = "~> 1"
+    }
   }
 }
 
@@ -55,6 +59,7 @@ locals {
   has_swtpm_bin         = fileexists(local.swtpm_bin)
   can_swtpm             = local.has_swtpm_sbin ? true : local.has_swtpm_bin ? true : false
   can_swtpm_vbox        = local.has_swtpm_sbin ? "2.0" : local.has_swtpm_bin ? "2.0" : "none"
+  enable_ansible        = local.config.packer.enable_ansible ? ["qemu.default", "virtualbox-iso.default"] : ["none"]
   qemu_intro            = <<EOF
 #!/usr/bin/env bash
 trap "trap - SIGTERM && kill -- -\$\$" SIGINT SIGTERM EXIT
@@ -298,6 +303,21 @@ EOS
     valid_exit_codes = [0, 2]
   }
 
+  provisioner "ansible" {
+    command                 = pathexpand("~/.local/bin/ansible-playbook")
+    playbook_file           = "config/ansible/stage-1.yml"
+    use_proxy               = false
+    ansible_env_vars        = [
+      "ANSIBLE_VERBOSITY=0",
+      "ANSIBLE_PIPELINING=True",
+      "ANSIBLE_PYTHON_INTERPRETER=/usr/bin/python3",
+      "ANSIBLE_CALLBACKS_ENABLED=timer,profile_tasks,profile_roles",
+      "ANSIBLE_USE_PERSISTENT_CONNECTIONS=True",
+      "ANSIBLE_DEPRECATION_WARNINGS=False"
+    ]
+    only                    = local.enable_ansible
+  }
+
   provisioner "file" {
     source      = "/cidata_log"
     destination = "${local.output_path}/devops-linux-cidata.log"
@@ -319,6 +339,21 @@ tail --pid=$pid -f /cidata_log
 EOS
     ]
     valid_exit_codes = [0, 2]
+  }
+
+  provisioner "ansible" {
+    command                 = pathexpand("~/.local/bin/ansible-playbook")
+    playbook_file           = "config/ansible/stage-2.yml"
+    use_proxy               = false
+    ansible_env_vars        = [
+      "ANSIBLE_VERBOSITY=0",
+      "ANSIBLE_PIPELINING=True",
+      "ANSIBLE_PYTHON_INTERPRETER=/usr/bin/python3",
+      "ANSIBLE_CALLBACKS_ENABLED=timer,profile_tasks,profile_roles",
+      "ANSIBLE_USE_PERSISTENT_CONNECTIONS=True",
+      "ANSIBLE_DEPRECATION_WARNINGS=False"
+    ]
+    only                    = local.enable_ansible
   }
 
   provisioner "file" {

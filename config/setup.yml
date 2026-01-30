@@ -15,6 +15,7 @@ packer:
   create_package_cache: false
   output_path: output/devops-linux
   iso_path: devops-x86_64-cidata.iso
+  enable_ansible: false
 setup:
   distro: archlinux
   options: []

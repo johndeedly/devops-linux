@@ -106,6 +106,21 @@ if [ -z "$ismsys2env" ]; then
     fi
 fi
 
+if ! python3 -m pip -V 2>&1 >/dev/null; then
+  echo 1>&2 Please install the Python package manager pip through your system package manager.
+  echo 1>&2 Typically the package is called "python3-pip" or simply "python-pip".
+  exit 1
+fi
+
+# install ansible-core in userspace
+if ! python3 -m pip inspect --user ansible-core | grep -q '"installed":'; then
+  python3 -m pip install --user --break-system-packages ansible-core
+fi
+
+# the ssh private packer key has to be read-writable for the current user only
+if [ $(stat -c %a ssh_packer_key) != 600 ] || [ $(stat -c %a ssh_packer_key.pub) != 600 ]; then
+  chmod 600 ssh_packer_key ssh_packer_key.pub
+fi
 
 _headless="true"
 _vbox=0

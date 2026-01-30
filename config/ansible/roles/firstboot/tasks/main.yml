@@ -1,0 +1,65 @@
+# ---------- #
+
+- name: Load the keyboard layout for the current session
+  shell: |
+    if [ -f /usr/lib/systemd/systemd-vconsole-setup ]; then
+      /usr/lib/systemd/systemd-vconsole-setup
+    fi
+
+- name: Import cloud-init logs
+  shell: |
+    tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
+    sed -e '/DEBUG/d' /var/log/cloud-init.log | tee -a /cidata_log >/dev/null
+
+- name: Download up to 5 pacman packages in parallel
+  lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#\?ParallelDownloads'
+    line: ParallelDownloads = 5
+  when: ansible_facts["distribution"] == 'Archlinux'
+
+- name: Initialize pacman keyring
+  community.general.pacman:
+    update_cache: true
+    name:
+      - archlinux-keyring
+    state: present
+  when: ansible_facts["distribution"] == 'Archlinux'
+
+- name: Enable multilib
+  shell: |
+    sed -i '/^#\[multilib\]/,/^$/ s/^#//g' /etc/pacman.conf
+  when: ansible_facts["distribution"] == 'Archlinux'
+
+- name: Disable archlinux fallback initcpio
+  shell: |
+    find /etc/mkinitcpio.d -name "*.preset" | while read -r line; do
+      sed -i "s/[ ]*'fallback'//g" "$line"
+    done
+    find /boot -maxdepth 1 -name "*fallback*.img" | while read -r line; do
+      rm "$line"
+    done
+  when: ansible_facts["distribution"] == 'Archlinux'
+
+- name: Speedup apt on ubuntu and debian
+  shell: |
+    APT_CFGS=( /etc/apt/apt.conf.d/* )
+    for cfg in "${APT_CFGS[@]}"; do
+      sed -i 's/Acquire::Queue-Mode.*/Acquire::Queue-Mode "host";/g' "$cfg" || true
+      sed -i 's/Acquire::Retries.*/Acquire::Retries "3";/g' "$cfg" || true
+      sed -i 's/Acquire::http::Dl-Limit.*/Acquire::http::Dl-Limit "0";/g' "$cfg" || true
+      sed -i 's/Acquire::http::Timeout.*/Acquire::http::Timeout "10";/g' "$cfg" || true
+      sed -i 's/Acquire::https::Dl-Limit.*/Acquire::https::Dl-Limit "0";/g' "$cfg" || true
+      sed -i 's/Acquire::https::Timeout.*/Acquire::https::Timeout "10";/g' "$cfg" || true
+    done
+    tee /etc/apt/apt.conf.d/85provision <<EOF
+    Acquire::Queue-Mode "host";
+    Acquire::Retries "3";
+    Acquire::http::Dl-Limit "0";
+    Acquire::http::Timeout "10";
+    Acquire::https::Dl-Limit "0";
+    Acquire::https::Timeout "10";
+    EOF
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
+  when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
