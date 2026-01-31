@@ -338,3 +338,151 @@ write_files:
         "#{?window_zoomed_flag,Unzoom,Zoom}"                            z   "resize-pane -Z"
     owner: "root:root"
     permissions: "0644"
+  - path: /etc/skel/.config/nvim/init.lua
+    content: |
+      -- =========================
+      -- Basic Options
+      -- =========================
+      
+      -- Mouse control the same as in graphical editors
+      vim.opt.mouse = "a"
+      
+      -- System-Clipboard
+      vim.opt.clipboard = "unnamedplus"
+      
+      -- Line numbers
+      vim.opt.number = true
+      vim.opt.relativenumber = false
+      
+      -- Syntax-Highlighting
+      vim.cmd("syntax on")
+      
+      -- Colors
+      vim.opt.termguicolors = true
+      
+      -- Tabs / Indentation (neutral, not forced)
+      vim.opt.expandtab = true
+      vim.opt.shiftwidth = 2
+      vim.opt.tabstop = 2
+      
+      -- =========================
+      -- Navigation without hjkl
+      -- =========================
+      -- Allow arrow keys
+      vim.keymap.set({ "n", "i", "v" }, "<Up>", "<Up>")
+      vim.keymap.set({ "n", "i", "v" }, "<Down>", "<Down>")
+      vim.keymap.set({ "n", "i", "v" }, "<Left>", "<Left>")
+      vim.keymap.set({ "n", "i", "v" }, "<Right>", "<Right>")
+      
+      -- Mousewheel scrolling
+      vim.keymap.set("", "<ScrollWheelUp>", "<C-Y>")
+      vim.keymap.set("", "<ScrollWheelDown>", "<C-E>")
+      
+      -- =========================
+      -- Plugin Setup
+      -- =========================
+      require("plugins")
+    owner: "root:root"
+    permissions: "0644"
+  - path: /etc/skel/.config/nvim/lua/plugins.lua
+    content: |
+      -- lazy.nvim Bootstrap
+      local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+      if not vim.loop.fs_stat(lazypath) then
+        vim.fn.system({
+          "git", "clone", "--filter=blob:none",
+          "https://github.com/folke/lazy.nvim.git",
+          "--branch=stable",
+          lazypath,
+        })
+      end
+      vim.opt.rtp:prepend(lazypath)
+      
+      -- Running inside a terminal emulator or a system tty?
+      local is_linux_terminal = vim.fn.has("unix") == 1 and vim.fn.has("gui_running") == 0
+      
+      require("lazy").setup({
+      
+        -- =========================
+        -- Bufferline
+        -- =========================
+        {
+          "akinsho/bufferline.nvim",
+          dependencies = { "nvim-tree/nvim-web-devicons" },
+          config = function()
+            require("bufferline").setup({
+              options = {
+                show_buffer_icons = not is_linux_terminal,
+                show_buffer_close_icons = not is_linux_terminal,
+                show_close_icon = not is_linux_terminal,
+                separator_style = "thin",
+                enforce_regular_tabs = false,
+              },
+            })
+      
+            -- Switch buffers
+            vim.keymap.set("n", "<Tab>", ":BufferLineCycleNext<CR>")
+            vim.keymap.set("n", "<S-Tab>", ":BufferLineCyclePrev<CR>")
+          end,
+        },
+        
+        -- =========================
+        -- Directory Tree (VS-Code compatible)
+        -- =========================
+        {
+          "nvim-tree/nvim-tree.lua",
+          dependencies = { "nvim-tree/nvim-web-devicons" },
+          config = function()
+            require("nvim-tree").setup({
+              view = {
+                width = 30,
+                side = "left",
+              },
+              renderer = {
+                highlight_git = true,
+                icons = {
+                  show = {
+                    git = not is_linux_terminal,
+                    folder = not is_linux_terminal,
+                    file = not is_linux_terminal,
+                  },
+                },
+              },
+            })
+
+            -- Show directory tree
+            vim.keymap.set("n", "<F2>", ":NvimTreeToggle<CR>")
+          end,
+        },
+      
+        -- =========================
+        -- Syntax-Highlighting (modern)
+        -- =========================
+        {
+          "nvim-treesitter/nvim-treesitter",
+          build = ":TSUpdate",
+          config = function()
+            require("nvim-treesitter.config").setup({
+              ensure_installed = {
+                "bash",
+                "c",
+                "cpp",
+                "lua",
+                "python",
+                "json",
+                "yaml",
+                "toml",
+                "html",
+                "css",
+                "javascript",
+                "typescript",
+                "markdown",
+              },
+              highlight = { enable = true },
+            })
+          end,
+        },
+      
+      })
+    owner: "root:root"
+    permissions: "0644"
