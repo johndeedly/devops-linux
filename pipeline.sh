@@ -234,17 +234,6 @@ packer_buildappliance() {
     return -1
 }
 
-DEVOPSISOMODDED=$(yq -r '.packer.iso_path' build/setup.yml)
-
-# error handling
-set -E -o functrace
-err_report() {
-    echo "errexit command '${1}' returned ${2} on line $(caller)" 1>&2
-    [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
-    exit "${2}"
-}
-trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
-
 if [ -n "$ismsys2env" ]; then
     ./cidata.sh --archiso --no-autoreboot --config "$_config"
 else
@@ -262,6 +251,17 @@ if ! [ -e "build/setup.yml" ]; then
     echo 1>&2 "Fatal: build configuration not found: 'build/setup.yml'"
     exit 2
 fi
+
+DEVOPSISOMODDED=$(yq -r '.packer.iso_path' build/setup.yml)
+
+# error handling
+set -E -o functrace
+err_report() {
+    echo "errexit command '${1}' returned ${2} on line $(caller)" 1>&2
+    [ -L "${DEVOPSISOMODDED}" ] && rm "$(readlink -f "${DEVOPSISOMODDED}")" && rm "${DEVOPSISOMODDED}"
+    exit "${2}"
+}
+trap 'err_report "${BASH_COMMAND}" "${?}"' ERR
 
 mkdir -p output
 if [ -n "$ismsys2env" ]; then
