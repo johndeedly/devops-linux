@@ -189,14 +189,19 @@ setup:
         pool: pool0
         onboot: 0
   bootstrap_users:
+    groups:
+      - users
+      - admins
     users:
       - name: admin
+        primary_group: admins
         groups:
           - users
           - admins
         shell: /bin/bash
         sudo: ALL=(ALL) ALL
       - name: root
+        primary_group: root
         groups: root
         shell: /bin/bash
     chpasswd:
@@ -207,17 +212,23 @@ setup:
         - name: root
           type: RANDOM
   stage_users:
+    groups:
+      - users
+      - admins
     users:
       - name: user
+        primary_group: users
         groups: users
         shell: /bin/bash
       - name: admin
+        primary_group: admins
         groups:
           - users
           - admins
         shell: /bin/bash
         sudo: ALL=(ALL) ALL
       - name: root
+        primary_group: root
         groups: root
         shell: /bin/bash
         ssh_authorized_keys:

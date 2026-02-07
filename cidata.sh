@@ -138,6 +138,7 @@ with open('config/stage/environment.yml') as f, open('build/setup.yml') as g:
     data = yaml.safe_load(f)
     update = yaml.safe_load(g)
     data.update({
+        'groups': update['setup']['stage_users']['groups'],
         'users': update['setup']['stage_users']['users'],
         'chpasswd': update['setup']['stage_users']['chpasswd']
     })
@@ -217,6 +218,7 @@ with open('config/archiso/environment.yml') as f, open('build/setup.yml') as g:
     data = yaml.safe_load(f)
     update = yaml.safe_load(g)
     data.update({
+        'groups': update['setup']['bootstrap_users']['groups'],
         'users': update['setup']['bootstrap_users']['users'],
         'chpasswd': update['setup']['bootstrap_users']['chpasswd']
     })
