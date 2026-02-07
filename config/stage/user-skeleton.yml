@@ -486,3 +486,20 @@ write_files:
       })
     owner: "root:root"
     permissions: "0644"
+  - path: /etc/skel/.config/powermanagementprofilesrc
+    content: |
+      [Migration]
+      MigratedProfilesToPlasma6=powerdevilrc
+    owner: "root:root"
+    permissions: "0644"
+  - path: /etc/skel/.config/powerdevilrc
+    content: |
+      [AC][SuspendAndShutdown]
+      AutoSuspendAction=0
+      AutoSuspendIdleTimeoutSec=86400
+      
+      [Battery][SuspendAndShutdown]
+      AutoSuspendAction=1
+      AutoSuspendIdleTimeoutSec=1800
+    owner: "root:root"
+    permissions: "0644"
