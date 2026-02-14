@@ -125,6 +125,12 @@ setup:
       Suites: noble noble-updates noble-backports noble-security
       Components: main universe restricted multiverse
       Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+    ubuntu-26: |
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: resolute resolute-updates resolute-backports resolute-security
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
     ubuntu-24: |
       Types: deb
       URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
@@ -251,7 +257,7 @@ distros:
   debian-12: apt
   ubuntu: apt
   ubuntu-edge: apt
-  ubuntu-25: apt
+  ubuntu-26: apt
   ubuntu-24: apt
   ubuntu-22: apt
   alma: yum
@@ -271,8 +277,8 @@ download:
   debian-13: https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2
   debian-12: https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
   ubuntu: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
-  ubuntu-edge: https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img
-  ubuntu-25: https://cloud-images.ubuntu.com/questing/current/questing-server-cloudimg-amd64.img
+  ubuntu-edge: https://cloud-images.ubuntu.com/resolute/current/resolute-server-cloudimg-amd64.img
+  ubuntu-26: https://cloud-images.ubuntu.com/resolute/current/resolute-server-cloudimg-amd64.img
   ubuntu-24: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img
   ubuntu-22: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
   alma: https://repo.almalinux.org/almalinux/10/cloud/x86_64/images/AlmaLinux-10-GenericCloud-latest.x86_64.qcow2
@@ -293,8 +299,8 @@ images:
   debian-13: debian-13-generic-amd64.qcow2
   debian-12: debian-12-generic-amd64.qcow2
   ubuntu: noble-server-cloudimg-amd64.img
-  ubuntu-edge: questing-server-cloudimg-amd64.img
-  ubuntu-25: questing-server-cloudimg-amd64.img
+  ubuntu-edge: resolute-server-cloudimg-amd64.img
+  ubuntu-26: resolute-server-cloudimg-amd64.img
   ubuntu-24: noble-server-cloudimg-amd64.img
   ubuntu-22: jammy-server-cloudimg-amd64.img
   alma: AlmaLinux-10-GenericCloud-latest.x86_64.qcow2
