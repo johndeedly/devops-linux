@@ -18,10 +18,12 @@ run_hook() {
 
 pxe_nvmeof_mount_handler() {
     newroot="${1}"
+    [ -z "${pxe_nvmeof_cli}" ] && pxe_nvmeof_cli="iqn.2018-12.internal.pxe:client"
+    [ -z "${pxe_nvmeof_srv}" ] && pxe_nvmeof_srv="iqn.2018-12.internal.pxe:target"
     
     msg ":: Boot PXE over NVMeoF"
     tee /etc/nvme/hostnqn <<EOF
-nqn.2014-08.org.nvmexpress:uuid:$( uuidgen )
+${pxe_nvmeof_cli}:$( uuidgen )
 EOF
     tee /etc/nvme/hostid <<EOF
 $( uuidgen )

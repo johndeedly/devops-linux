@@ -354,20 +354,14 @@ EOF
 mkdir -p /etc/nvmet
 tee /etc/nvmet/config.json <<'EOF'
 {
-  "hosts": [
-    {
-      "nqn": "hostnqn"
-    }
-  ],
+  "hosts": [],
   "ports": [
     {
       "addr": {
         "adrfam": "ipv6",
         "traddr": "::",
-        "treq": "not specified",
         "trsvcid": "8009",
-        "trtype": "tcp",
-        "tsas": "none"
+        "trtype": "tcp"
       },
       "ana_groups": [
         {
@@ -377,14 +371,10 @@ tee /etc/nvmet/config.json <<'EOF'
           "grpid": 1
         }
       ],
-      "param": {
-        "inline_data_size": "16384",
-        "pi_enable": "0"
-      },
       "portid": 1,
       "referrals": [],
       "subsystems": [
-        "testnqn"
+        "iqn.2018-12.internal.pxe:target"
       ]
     }
   ],
@@ -392,16 +382,7 @@ tee /etc/nvmet/config.json <<'EOF'
     {
       "allowed_hosts": [],
       "attr": {
-        "allow_any_host": "1",
-        "cntlid_max": "65519",
-        "cntlid_min": "1",
-        "firmware": "6.7.9-ar",
-        "ieee_oui": "0x000000",
-        "model": "Linux",
-        "pi_enable": "0",
-        "qid_max": "128",
-        "serial": "d958dba9aa7f964f3163",
-        "version": "1.3"
+        "allow_any_host": "1"
       },
       "namespaces": [
         {
@@ -410,15 +391,13 @@ tee /etc/nvmet/config.json <<'EOF'
           },
           "ana_grpid": 1,
           "device": {
-            "nguid": "00000000-0000-0000-0000-000000000000",
-            "path": "/srv/pxe/arch/x86_64/pxeboot.img",
-            "uuid": "43c4260a-826b-475d-9b42-883b4258f53f"
+            "path": "/srv/pxe/arch/x86_64/pxeboot.img"
           },
           "enable": 1,
           "nsid": 1
         }
       ],
-      "nqn": "testnqn"
+      "nqn": "iqn.2018-12.internal.pxe:target"
     }
   ]
 }

@@ -21,7 +21,7 @@ pxe_iscsi_mount_handler() {
     mkdir -p /etc/iscsi /var/lib/iscsi /run/lock/iscsi
     iscsiuio
     tee /etc/iscsi/initiatorname.iscsi <<EOF
-InitiatorName=${pxe_iscsi_cli}
+InitiatorName=${pxe_iscsi_cli}:$( uuidgen )
 EOF
     iscsid
     msg ":: Discover targets on '${pxe_iscsi_srv}'"
