@@ -516,7 +516,7 @@ filter f_prov_kern {
 };
 
 filter f_prov_user {
-  facility(user) and filter(f_prov_not_info);
+  facility(user, daemon) and filter(f_prov_not_info);
 };
 
 log {
