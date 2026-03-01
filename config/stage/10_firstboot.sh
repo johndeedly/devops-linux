@@ -499,24 +499,24 @@ destination d_prov_user {
   file("/var/log/user.log");
 };
 
-filter f_prov_not_debug {
-  not level(debug);
+filter f_prov_not_info {
+  not level(debug..info);
 };
 
 filter f_prov_system {
-  filter(f_prov_not_debug);
+  filter(f_prov_not_info);
 };
 
 filter f_prov_auth {
-  facility(auth, authpriv) and filter(f_prov_not_debug);
+  facility(auth, authpriv) and filter(f_prov_not_info);
 };
 
 filter f_prov_kern {
-  facility(kern) and filter(f_prov_not_debug);
+  facility(kern) and filter(f_prov_not_info);
 };
 
 filter f_prov_user {
-  facility(user) and filter(f_prov_not_debug);
+  facility(user) and filter(f_prov_not_info);
 };
 
 log {
