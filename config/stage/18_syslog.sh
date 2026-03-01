@@ -44,7 +44,19 @@ destination d_prov_net {
 
 log {
   source(s_prov_system);
-  filter(f_prov_system);
+  filter(f_prov_auth);
+  destination(d_prov_net);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_kern);
+  destination(d_prov_net);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_user);
   destination(d_prov_net);
 };
 EOF
@@ -57,7 +69,19 @@ destination d_prov_net {
 
 log {
   source(s_prov_system);
-  filter(f_prov_system);
+  filter(f_prov_auth);
+  destination(d_prov_net);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_kern);
+  destination(d_prov_net);
+};
+
+log {
+  source(s_prov_system);
+  filter(f_prov_user);
   destination(d_prov_net);
 };
 EOF
