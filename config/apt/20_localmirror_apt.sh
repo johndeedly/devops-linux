@@ -2,7 +2,7 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
-LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install nginx
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install nginx aria2
 
 mkdir -p /var/cache/apt/mirror /var/empty
 
@@ -78,6 +78,10 @@ EOX
 python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
   sed -e 's|^https\?://|/var/cache/apt/mirror/|g' > /var/tmp/mirror_file_list.txt
 
+# convert the filelist to a aria2c parameterized list
+python3 -c 'import sys, re, urllib.parse as p; [ print(l.rstrip() + "\n out=" + re.sub("^http[s]?[:/]+", "", p.unquote(l.rstrip()))) for l in sys.stdin ]' \
+  </var/tmp/mirror_url_list.txt >/var/tmp/mirror_aria2c_list.txt
+
 # remove unneeded files first, then download the new ones
 # grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
 # invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
@@ -89,17 +93,11 @@ done
 rm /var/tmp/mirror_file_list.txt
 
 # download the file list
-split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
-i=0
-for part in /var/tmp/mirror_url_part_*; do
-  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
-  ((i++))
-done
-wait
+aria2c --continue=true --conditional-get=true --remote-time=true --auto-file-renaming=false --allow-overwrite=true \
+  --dir=/var/cache/apt/mirror --input-file=/var/tmp/mirror_aria2c_list.txt \
+  --max-concurrent-downloads=4 --max-connection-per-server=4 --use-head=true --enable-http-keep-alive=true
 
-rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_aria2c_list.txt
 EOF
 else
 # restore default mirror
@@ -173,6 +171,10 @@ EOX
 python3 -c 'import sys, urllib.parse as p; [ print(p.unquote(l.rstrip())) for l in sys.stdin ]' </var/tmp/mirror_url_list.txt | \
   sed -e 's|^https\?://|/var/cache/apt/mirror/|g' > /var/tmp/mirror_file_list.txt
 
+# convert the filelist to a aria2c parameterized list
+python3 -c 'import sys, re, urllib.parse as p; [ print(l.rstrip() + "\n out=" + re.sub("^http[s]?[:/]+", "", p.unquote(l.rstrip()))) for l in sys.stdin ]' \
+  </var/tmp/mirror_url_list.txt >/var/tmp/mirror_aria2c_list.txt
+
 # remove unneeded files first, then download the new ones
 # grep: interpret pattern as a list of fixed strings, separated by newlines, select only those matches that exactly match the whole line,
 # invert the sense of matching, to select non-matching lines, obtain patterns from file, one per line
@@ -184,18 +186,11 @@ done
 rm /var/tmp/mirror_file_list.txt
 
 # download the file list
-split -n l/4 /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_
-i=0
-for part in /var/tmp/mirror_url_part_*; do
-  # force paths on downloaded files, continue unfinished downloads and skip already downloaded ones, use timestamps,
-  # download to target path, load download list from file, force progress bar when executed in tty and skip otherwise
-  systemd-cat -t "wget_part_$i" wget -x -c -N -P /var/cache/apt/mirror -i "$part" --progress=bar:force:noscroll &
-  ((i++))
-done
-wait
+aria2c --continue=true --conditional-get=true --remote-time=true --auto-file-renaming=false --allow-overwrite=true \
+  --dir=/var/cache/apt/mirror --input-file=/var/tmp/mirror_aria2c_list.txt \
+  --max-concurrent-downloads=4 --max-connection-per-server=4 --use-head=true --enable-http-keep-alive=true
 
-rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_url_part_*
-
+rm /var/tmp/mirror_url_list.txt /var/tmp/mirror_aria2c_list.txt
 EOF
 # install the proxmox repository key
 echo ":: download proxmox repository certificate"
