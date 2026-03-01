@@ -553,11 +553,11 @@ tee -a /etc/logrotate.conf <<'EOF'
     missingok
     notifempty
     daily
-    rotate 7
+    rotate 5
     compress
     delaycompress
-    maxage 30
-    size 100M
+    maxage 21
+    size 50M
     sharedscripts
     postrotate
         /bin/kill -HUP $(cat /run/syslog-ng.pid 2>/dev/null) 2>/dev/null || true
