@@ -55,7 +55,7 @@ setup:
     x509_hash: ""
   logserver:
     # openssl req -x509 -newkey ed25519 -days 36500 -noenc -keyout internal.key -out internal.crt -subj "/CN=internal" -addext "subjectAltName=DNS:internal,DNS:*.internal"
-    logfile: /var/log/remote.log
+    logfile: /var/log/${FULLHOST_FROM}.log
     bind_ip: 0.0.0.0
     bind_port: 6514
     x509_key: |
