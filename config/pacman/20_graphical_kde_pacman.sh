@@ -353,8 +353,8 @@ code --install-extension muhammad-sammy.csharp --force
 code --install-extension dotjoshjohnson.xml --force
 # better comments
 code --install-extension aaron-bond.better-comments --force
-# git graph
-code --install-extension mhutchie.git-graph --force
+# lazygit integration
+code --install-extension chaitanyashahare.lazygit --force
 # git blame
 code --install-extension waderyan.gitblame --force
 # yara
