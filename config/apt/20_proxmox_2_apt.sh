@@ -93,36 +93,36 @@ ip -j link show | jq -r '.[] | select(.link_type != "loopback" and (.ifname | st
 done
 pveum acl modify /storage --roles PVEDatastoreUser -groups users -propagate 1
 
-# add local admins to group admins
-grep -E "^admins:" /etc/group | awk -F: '{gsub(",","\n",$4);print $4}' | while read -r username; do
-  pveum user add "$username"@pam || true
-  pveum user modify "$username"@pam -enable 1
-  echo "[ OK ] Created admin $username@pam"
-  pveum user modify "$username"@pam -append 1 -groups admins
-  echo "[ OK ] Added $username@pam to admin group"
-done
-
-# add local users to group users
-grep -E "^users:" /etc/group | awk -F: '{gsub(",","\n",$4);print $4}' | while read -r username; do
-  pveum user add "$username"@pam || true
-  pveum user modify "$username"@pam -enable 1
-  echo "[ OK ] Created user $username@pam"
-  pveum user modify "$username"@pam -append 1 -groups users
-  echo "[ OK ] Added $username@pam to user group"
-done
-
 # create first pool pool0
 pveum pool add pool0 || true
 pveum acl modify /pool/pool0 --roles PVEPoolUser,PVETemplateUser -groups users -propagate 1 || true
 
-# create user pools and vlans
-pveum user list -full | grep " users " | cut -d' ' -f2 | while read -r username; do
-  poolname=$(echo -en "pool-$username" | cut -d'@' -f1)
-  pveum pool add "$poolname" || true
-  pveum acl modify "/pool/$poolname" --roles PVEAdmin -users "$username" -propagate 1 || true
-  brname=$(echo -en "br$username" | cut -d'@' -f1)
-  if ! grep -qE "$brname" /etc/network/interfaces; then
-    tee -a /etc/network/interfaces <<EOF
+# update all admins and users in @pam
+getent group | while IFS=: read -r groupname x gid usernames; do
+  case "$groupname" in
+    admins)
+      for username in ${usernames//,/ }; do
+        # add pam admin to group admins
+        pveum user add "$username"@pam || true
+        echo "[ OK ] Created admin $username@pam"
+        pveum user modify "$username"@pam -append 1 -groups admins
+        echo "[ OK ] Added $username@pam to admin group"
+      done
+      ;;
+    users)
+      for username in ${usernames//,/ }; do
+        # add pam user to group users
+        pveum user add "$username"@pam || true
+        echo "[ OK ] Created user $username@pam"
+        pveum user modify "$username"@pam -append 1 -groups users
+        echo "[ OK ] Added $username@pam to user group"
+        # create user pool and interface
+        poolname="pool-$username"
+        pveum pool add "$poolname" || true
+        pveum acl modify "/pool/$poolname" --roles PVEAdmin -users "$username@pam" -propagate 1 || true
+        brname="br$username"
+        if ! grep -qE "$brname" /etc/network/interfaces; then
+          tee -a /etc/network/interfaces >/dev/null <<EOF
 
 auto $brname
 iface $brname inet static
@@ -133,33 +133,43 @@ iface $brname inet static
     bridge-vids 2-4094
     post-up resolvectl mdns $brname yes
 EOF
-  fi
-  pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username" -propagate 1 || true
+        fi
+        pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username@pam" -propagate 1 || true
+      done
+      ;;
+  esac
 done
 
-# Scheduled task to update all users and pools on a daily basis
+# Scheduled task to update all users, admins, pools and interfaces on a daily basis
 tee /usr/local/bin/update-all-users.sh <<'EOF'
 #!/usr/bin/env bash
-# update all users in @pam
 
-# add local users to group users
-getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
-  if [ -n "$home" ] && [ -d "$home" ] && [ "${home:0:6}" == "/home/" ]; then
-    if [ "$uid" -ge 1000 ]; then
-      pveum user add "$username"@pam || true
-      pveum user modify "$username"@pam -groups users || true
-    fi
-  fi
-done
-
-# create one pool per user
-pveum user list -full | grep " users " | cut -d' ' -f2 | while read -r username; do
-  poolname=$(echo -en "pool-$username" | cut -d'@' -f1)
-  pveum pool add "$poolname" || true
-  pveum acl modify "/pool/$poolname" --roles PVEAdmin -users "$username" -propagate 1 || true
-  brname=$(echo -en "br$username" | cut -d'@' -f1)
-  if ! grep -qE "$brname" /etc/network/interfaces; then
-    tee -a /etc/network/interfaces <<EOX
+# update all admins and users in @pam
+getent group | while IFS=: read -r groupname x gid usernames; do
+  case "$groupname" in
+    admins)
+      for username in ${usernames//,/ }; do
+        # add pam admin to group admins
+        pveum user add "$username"@pam || true
+        echo "[ OK ] Created admin $username@pam"
+        pveum user modify "$username"@pam -append 1 -groups admins
+        echo "[ OK ] Added $username@pam to admin group"
+      done
+      ;;
+    users)
+      for username in ${usernames//,/ }; do
+        # add pam user to group users
+        pveum user add "$username"@pam || true
+        echo "[ OK ] Created user $username@pam"
+        pveum user modify "$username"@pam -append 1 -groups users
+        echo "[ OK ] Added $username@pam to user group"
+        # create user pool and vlan
+        poolname="pool-$username"
+        pveum pool add "$poolname" || true
+        pveum acl modify "/pool/$poolname" --roles PVEAdmin -users "$username@pam" -propagate 1 || true
+        brname="br$username"
+        if ! grep -qE "$brname" /etc/network/interfaces; then
+          tee -a /etc/network/interfaces >/dev/null <<EOX
 
 auto $brname
 iface $brname inet static
@@ -170,8 +180,11 @@ iface $brname inet static
     bridge-vids 2-4094
     post-up resolvectl mdns $brname yes
 EOX
-  fi
-  pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username" -propagate 1 || true
+        fi
+        pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username@pam" -propagate 1 || true
+      done
+      ;;
+  esac
 done
 EOF
 chmod +x /usr/local/bin/update-all-users.sh
