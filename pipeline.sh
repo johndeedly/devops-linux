@@ -270,7 +270,8 @@ else
     VIRTENV=$(systemd-detect-virt || true)
 fi
 if ! [ -d ~/.config/packer/plugins/github.com/hashicorp/qemu ] ||
-   ! [ -d ~/.config/packer/plugins/github.com/hashicorp/virtualbox ]; then
+   ! [ -d ~/.config/packer/plugins/github.com/hashicorp/virtualbox ] ||
+   ! [ -d ~/.config/packer/plugins/github.com/hashicorp/ansible ]; then
     env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log /bin/packer init devops-linux.pkr.hcl
 fi
 case $VIRTENV in
