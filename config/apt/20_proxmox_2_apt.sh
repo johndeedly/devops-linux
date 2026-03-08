@@ -30,7 +30,7 @@ iface $line inet manual
 
 auto vmbr$cnt
 iface vmbr$cnt inet $(if [ $cnt -eq 0 ]; then echo "dhcp"; else echo "manual"; fi)
-    bridge-ports $line
+    bridge-ports $line $(if [ $cnt -eq 0 ]; then echo "veth_wan"; fi)
     bridge-stp off
     bridge-fd 0
     bridge-vlan-aware yes
@@ -44,12 +44,20 @@ tee -a /etc/network/interfaces <<EOF
 
 auto vmbrlan0
 iface vmbrlan0 inet manual
-    bridge-ports none
+    bridge-ports veth_vmbrlan0
     bridge-stp off
     bridge-fd 0
-    bridge-vlan-aware yes
-    bridge-vids 2-4094
     post-up resolvectl mdns vmbrlan0 yes
+
+auto veth_wan
+iface veth_wan inet manual
+    link-type veth
+    veth-peer-name veth_vmbrlan0
+
+auto veth_vmbrlan0
+iface veth_vmbrlan0 inet manual
+    link-type veth
+    veth-peer-name veth_wan
 EOF
 
 # switch from networkd to ifupdown2
@@ -88,9 +96,7 @@ pveum group add users
 # add permissions to groups and pools
 pveum acl modify / --roles Administrator -groups admins -propagate 1
 pveum acl modify /mapping --roles PVEMappingUser -groups users -propagate 1
-ip -j link show | jq -r '.[] | select(.link_type != "loopback" and (.ifname | startswith("vmbr"))) | .ifname' | while read -r line; do
-  pveum acl modify /sdn/zones/localnetwork/$line --roles PVESDNUser -groups users -propagate 1
-done
+pveum acl modify /sdn/zones/localnetwork/vmbrlan0 --roles PVESDNUser -groups users -propagate 1
 pveum acl modify /storage --roles PVEDatastoreUser -groups users -propagate 1
 
 # create first pool pool0
