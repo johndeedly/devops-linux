@@ -150,6 +150,8 @@ with open('config/stage/environment.yml') as f, open('${_build}/setup.yml') as g
     with open('${_build}/stage/environment.yml', 'w') as h:
         yaml.safe_dump(data, h)
 DOC
+# prepare ansible directory for stage
+tar czf "${_build}/stage/playbook.tar.gz" -C "config/ansible" .
 # prepare user-data for stage
 write_mime_params=(
     "config/part-handler-setup.py:text/part-handler"
@@ -166,6 +168,7 @@ write_mime_params=(
     "${_build}/setup.yml:application/x-setup-config"
     "config/00_waitonline.sh:text/x-shellscript"
     "config/00_waitonline.sh:application/x-second-stage"
+    "${_build}/stage/playbook.tar.gz:application/x-ansible-playbook"
 )
 # deployment scripts stage 'config'
 while read -r line; do

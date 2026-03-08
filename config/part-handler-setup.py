@@ -8,18 +8,22 @@ from typing import Any
 
 from cloudinit.cloud import Cloud
 
+import tarfile
+
 def list_types():
-    return(["application/x-setup-config", "application/x-provision-config", "application/x-second-stage", "application/x-provision-file"])
+    return(["application/x-setup-config", "application/x-provision-config", "application/x-second-stage", "application/x-provision-file", "application/x-ansible-playbook"])
 
 def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
     configdir = pathlib.Path("/var/lib/cloud/instance/config")
     provisiondir = pathlib.Path("/var/lib/cloud/instance/provision")
     secondstagedir = pathlib.Path("/var/lib/cloud/instance/second-stage")
+    playbookdir = pathlib.Path("/var/lib/cloud/instance/playbook")
 
     if ctype == "__begin__":
         configdir.mkdir(parents=True, exist_ok=True)
         provisiondir.mkdir(parents=True, exist_ok=True)
         secondstagedir.mkdir(parents=True, exist_ok=True)
+        playbookdir.mkdir(parents=True, exist_ok=True)
         return
 
     if ctype == "__end__":
@@ -47,8 +51,17 @@ def handle_part(data: Cloud, ctype: str, filename: str, payload: Any):
             pathobj.mkdir(parents=True, exist_ok=True)
             file = pathobj.joinpath(filename.strip())
             content = base64.b64decode(bio.readline())
+    
+    if ctype == "application/x-ansible-playbook":
+        file = playbookdir.joinpath(filename.strip())
+        content = payload
 
     file.touch()
     file.chmod(0o600)
     with file.open("wb") as f:
         f.write(content)
+
+    if ctype == "application/x-ansible-playbook":
+        with file.open("rb") as f:
+            with tarfile.open(fileobj=f) as tar:
+                tar.extractall(path=playbookdir)
