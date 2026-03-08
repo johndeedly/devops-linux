@@ -17,13 +17,11 @@ for task in "${BUILD[@]}"; do
       --arg newdistro "$task" \
       '.packer.output_path = $newoutput | .packer.iso_path = $newiso | .setup.distro = $newdistro' "config/$task.yml"
     if (( first )); then
-        tmux new-session -d -s "$SESSION" './pipeline.sh -c "config/'"$task"'.yml"'
+        tmux new-session -d -s "$SESSION" './pipeline.sh -b "build/'"$task"'" -c "config/'"$task"'.yml"'
         first=0
     else
-        tmux split-window -h -t "$SESSION":1 './pipeline.sh -c "config/'"$task"'.yml"'
+        tmux split-window -h -t "$SESSION":1 './pipeline.sh -b "build/'"$task"'" -c "config/'"$task"'.yml"'
     fi
-    echo "wait 10s after $task..."
-    sleep 10
 done
 
 tmux select-layout -t "$SESSION":1 even-horizontal

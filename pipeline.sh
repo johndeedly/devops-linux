@@ -126,10 +126,11 @@ _headless="true"
 _vbox=0
 _cache="false"
 _noram=0
+_build="build"
 _config="config/setup.yml"
 parse_parameters() {
-    local _longopts="show-window,force-virtualbox,create-cache,no-ram-iso,config:"
-    local _opts="wvanc:"
+    local _longopts="show-window,force-virtualbox,create-cache,no-ram-iso,build-dir:,config:"
+    local _opts="wvanb:c:"
     local _parsed=$(getopt --options=$_opts --longoptions=$_longopts --name "$0" -- "$@")
     # read getopt’s output this way to handle the quoting right:
     eval set -- "$_parsed"
@@ -150,6 +151,10 @@ parse_parameters() {
             -n|--no-ram-iso)
                 _noram=1
                 shift
+                ;;
+            -b|--build-dir)
+                _build="$2"
+                shift 2
                 ;;
             -c|--config)
                 _config="$2"
@@ -220,13 +225,13 @@ packer_buildappliance() {
             wsl)
                 # windows
                 env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log PKR_VAR_package_cache="${_cache}" \
-                    PKR_VAR_config_path="build/setup.yml" PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
+                    PKR_VAR_config_path="${_build}/setup.yml" PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
                 return $?
                 ;;
             *)
                 # others, including linux
                 env PACKER_LOG=1 PACKER_LOG_PATH=output/devops-linux.log PKR_VAR_package_cache="${_cache}" \
-                    PKR_VAR_config_path="build/setup.yml" PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
+                    PKR_VAR_config_path="${_build}/setup.yml" PKR_VAR_headless="${_headless}" /bin/packer "${_args[@]}"
                 return $?
                 ;;
         esac
@@ -235,24 +240,24 @@ packer_buildappliance() {
 }
 
 if [ -n "$ismsys2env" ]; then
-    ./cidata.sh --archiso --no-autoreboot --config "$_config"
+    ./cidata.sh --archiso --no-autoreboot --build-dir="${_build}" --config "$_config"
 else
     # protect the RAM from overloading (2GB max)
     DBSIZE=$(/bin/du -b database/ | tail -n1 | cut -f1)
     if [ "$_noram" -eq 0 ] && [ "$DBSIZE" -lt 2147483648 ]; then
-        ./cidata.sh --archiso --isoinram --no-autoreboot --config "$_config"
+        ./cidata.sh --archiso --isoinram --no-autoreboot --build-dir="${_build}" --config "$_config"
     else
-        ./cidata.sh --archiso --no-autoreboot --config "$_config"
+        ./cidata.sh --archiso --no-autoreboot --build-dir="${_build}" --config "$_config"
     fi
 fi
 
-# after this point the yaml config path should be "build/setup.yml"
-if ! [ -e "build/setup.yml" ]; then
-    echo 1>&2 "Fatal: build configuration not found: 'build/setup.yml'"
+# after this point the yaml config path should be "${_build}/setup.yml"
+if ! [ -e "${_build}/setup.yml" ]; then
+    echo 1>&2 "Fatal: build configuration not found: '${_build}/setup.yml'"
     exit 2
 fi
 
-DEVOPSISOMODDED=$(yq -r '.packer.iso_path' build/setup.yml)
+DEVOPSISOMODDED=$(yq -r '.packer.iso_path' "${_build}"/setup.yml)
 
 # error handling
 set -E -o functrace
