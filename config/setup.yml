@@ -31,6 +31,8 @@ setup:
   ldapauth:
     enabled: false
     authserver: ldap://127.0.0.1/
+    starttls: true
+    trycertificate: false
     base: dc=lan,dc=internal
     group: ou=Groups,dc=lan,dc=internal
     passwd: ou=People,dc=lan,dc=internal

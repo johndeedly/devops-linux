@@ -4,6 +4,8 @@ exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); 
 
 LDAP_ENABLED="$(yq -r '.setup.ldapauth.enabled' /var/lib/cloud/instance/config/setup.yml)"
 LDAP_AUTHSERVER="$(yq -r '.setup.ldapauth.authserver' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_STARTTLS="$(yq -r '.setup.ldapauth.starttls' /var/lib/cloud/instance/config/setup.yml)"
+LDAP_TRYCERT="$(yq -r '.setup.ldapauth.trycertificate' /var/lib/cloud/instance/config/setup.yml)"
 LDAP_BASE="$(yq -r '.setup.ldapauth.base' /var/lib/cloud/instance/config/setup.yml)"
 LDAP_GROUP="$(yq -r '.setup.ldapauth.group' /var/lib/cloud/instance/config/setup.yml)"
 LDAP_PASSWD="$(yq -r '.setup.ldapauth.passwd' /var/lib/cloud/instance/config/setup.yml)"
@@ -14,6 +16,18 @@ then
   sync
   [ -f "${0}" ] && rm -- "${0}"
   exit 0
+fi
+
+_nslcd_ssl="off"
+if [[ "$LDAP_STARTTLS" =~ [Yy][Ee][Ss] ]] || [[ "$LDAP_STARTTLS" =~ [Oo][Nn] ]] || [[ "$LDAP_STARTTLS" =~ [Tt][Rr][Uu][Ee] ]]
+then
+  _nslcd_ssl="start_tls"
+fi
+
+_nslcd_tlsreqcert="try"
+if [[ "$LDAP_TRYCERT" =~ [Nn][Oo] ]] || [[ "$LDAP_TRYCERT" =~ [Oo][Ff][Ff] ]] || [[ "$LDAP_TRYCERT" =~ [Ff][Aa][Ll][Ss][Ee] ]]
+then
+  _nslcd_tlsreqcert="never"
 fi
 
 # install basic packages
@@ -58,7 +72,7 @@ fi
 # link passwd and group lists with ldap
 if [ -f /etc/nslcd.conf ]; then
   chmod 0600 /etc/nslcd.conf
-  sed -i "s|^\(uri .*\)|#\1\nuri ${LDAP_AUTHSERVER}|" /etc/nslcd.conf
+  sed -i "s|^\(uri .*\)|#\1\nuri ${LDAP_AUTHSERVER}\nssl ${_nslcd_ssl}\ntls_reqcert ${_nslcd_tlsreqcert}|" /etc/nslcd.conf
   sed -i "s|^\(base .*\)|#\1\nbase   ${LDAP_BASE}\nbase   group  ${LDAP_GROUP}\nbase   passwd ${LDAP_PASSWD}\nbase   shadow ${LDAP_SHADOW}|" /etc/nslcd.conf
   sed -i "s/^ldap_version/#ldap_version/" /etc/nslcd.conf
 fi
@@ -66,8 +80,9 @@ fi
 # thanks, ubuntu, for the inconsistency you provide every time
 # debian uses default confs, ubuntu doesn't
 if [ -f /etc/ldap.conf ]; then
-  sed -i "s|^\(uri .*\)|#\1\nuri ${LDAP_AUTHSERVER}|" /etc/ldap.conf
+  sed -i "s|^\(uri .*\)|#\1\nuri ${LDAP_AUTHSERVER}\nssl ${_nslcd_ssl}\ntls_reqcert ${_nslcd_tlsreqcert}|" /etc/ldap.conf
   sed -i "s|^\(base .*\)|#\1\nbase   ${LDAP_BASE}|" /etc/ldap.conf
+  sed -i "s/^ldap_version/#ldap_version/" /etc/ldap.conf
 fi
 
 # prioritize ldap to be after everything else
