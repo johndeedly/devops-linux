@@ -119,7 +119,7 @@ getent group | while IFS=: read -r groupname x gid usernames; do
         # create user pool and interface
         poolname="pool-$username"
         pveum pool add "$poolname" || true
-        pveum acl modify "/pool/$poolname" --roles PVEAdmin -users "$username@pam" -propagate 1 || true
+        pveum acl modify "/pool/$poolname" --roles PVEMappingUser,PVEPoolUser,PVETemplateUser,PVEVMAdmin -users "$username@pam" -propagate 1 || true
         brname="br$username"
         if ! grep -qE "$brname" /etc/network/interfaces; then
           tee -a /etc/network/interfaces >/dev/null <<EOF
