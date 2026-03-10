@@ -16,12 +16,8 @@ ostree remote add --repo=/srv/ostree/flathub flathub "${FLATPAK_HUB_URL%/}"
 wget -O /srv/ostree/flathub/flathub.gpg "${FLATPAK_HUB_URL%/}"/flathub.gpg
 ostree remote gpg-import --repo=/srv/ostree/flathub flathub -k /srv/ostree/flathub/flathub.gpg
 
-tee /srv/ostree/flathub/flathub.flatpakrepo <<EOF
-[Flatpak Repo]
-Name=Local Flathub Mirror
-Url=http://$(head -n1 /etc/hostname):8080/flathub
-GPGKey=http://$(head -n1 /etc/hostname):8080/flathub/flathub.gpg
-EOF
+curl -sL https://flathub.org/repo/flathub.flatpakrepo > /srv/ostree/flathub/flathub.flatpakrepo
+sed -i "s|^URL=.*|URL=http://$(head -n1 /etc/hostname):8080/flathub/|g" /srv/ostree/flathub/flathub.flatpakrepo
 
 FLATPAK_REF_FILTER="$(yq -r '.setup.flatpak_mirror.ref_filter' /var/lib/cloud/instance/config/setup.yml)"
 if [ -z "$FLATPAK_REF_FILTER" ] || [ "x$FLATPAK_REF_FILTER" == "xnull" ]; then
@@ -35,10 +31,10 @@ tee /usr/local/bin/flatsync.sh <<'EOF'
 #!/usr/bin/env bash
 
 echo "[ ## ] pull commit metadata"
-ostree pull --repo=/srv/ostree/flathub --disable-fsync --depth=1 --commit-metadata-only --mirror flathub
+ostree pull --repo=/srv/ostree/flathub --disable-fsync --depth=0 --commit-metadata-only --mirror flathub
 sync
 echo "[ ## ] mirror filtered ref list from flathub"
-xargs ostree pull --repo=/srv/ostree/flathub --disable-fsync --depth=1 --mirror flathub </srv/ostree/flathub/x86_64.refs
+xargs ostree pull --repo=/srv/ostree/flathub --disable-fsync --depth=0 --mirror flathub </srv/ostree/flathub/x86_64.refs
 sync
 
 echo "[ ## ] prune refs only"
