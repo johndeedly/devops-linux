@@ -18,10 +18,10 @@ LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install 
   flatpak virt-manager qpdf \
   texlive-latex-base texlive-latex-extra texlive-plain-generic \
   ghostscript gsfonts foomatic-db-engine foomatic-db printer-driver-gutenprint hplip \
-  kde-standard libpam-kwallet5 system-config-printer konsole
+  kde-standard plasma-workspace-wallpapers libpam-kwallet5 kdegraphics kdeadmin kdeutils system-config-printer konsole
 
-# Ubuntu wayland session fix
-if grep -q Ubuntu /proc/version; then
+# Ubuntu 24.04 wayland session fix
+if apt-cache show plasma-workspace-wayland >/dev/null 2>&1; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install plasma-workspace-wayland
 fi
 
