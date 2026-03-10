@@ -24,5 +24,5 @@ for task in "${BUILD[@]}"; do
     fi
 done
 
-tmux select-layout -t "$SESSION":1 even-horizontal
+tmux select-layout -t "$SESSION":1 tiled
 tmux attach -t "$SESSION"
