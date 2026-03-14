@@ -128,6 +128,7 @@ user_pref("zen.welcome-screen.seen", true);
 user_pref("startup.homepage_welcome_url", "about:restartrequired");
 user_pref("startup.homepage_welcome_url.additional", "about:newtab");
 user_pref("extensions.autoDisableScopes", 14);
+user_pref("browser.shell.checkDefaultBrowser", false);
 EOX
   mkdir -p "${profiledir}/extensions"
   while read -r name id; do
@@ -193,7 +194,7 @@ EOF
 # configure firefox
 mkdir -p /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies
 (
-  jq -Rs '{"policies":{"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
+  jq -Rs '{"policies":{"CheckDefaultBrowser":false,"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
 adguard-adblocker adguardadblocker@adguard.com
 ghostery firefox@ghostery.com
 single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
