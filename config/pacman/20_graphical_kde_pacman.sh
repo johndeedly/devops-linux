@@ -371,6 +371,9 @@ code --install-extension naumovs.color-highlight --force
 pid=$!
 wait $pid
 
+# configure cups to allow admin group
+sed -i 's|\(SystemGroup .*\)|\1 admins|' /etc/cups/cups-files.conf
+
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then
