@@ -43,30 +43,36 @@ elif [ -e /bin/yum ]; then
 fi
 
 # optional ldap pam and nss authentication
-if [ -f /etc/pam.d/system-auth ]; then
-    sed -i '0,/^\(auth.*pam_unix.so.*\)/s//auth       sufficient                  pam_ldap.so   minimum_uid=1000\n\1/' /etc/pam.d/system-auth
-    sed -i '0,/^\(account.*pam_unix.so.*\)/s//account    sufficient                  pam_ldap.so   minimum_uid=1000\n\1/' /etc/pam.d/system-auth
-    sed -i '0,/^\(password.*pam_unix.so.*\)/s//password   sufficient                  pam_ldap.so   minimum_uid=1000\n\1/' /etc/pam.d/system-auth
-    sed -i '0,/^\(session.*pam_unix.so.*\)/s//\1\nsession    optional                    pam_ldap.so   minimum_uid=1000/' /etc/pam.d/system-auth
-fi
-if [ -f /etc/pam.d/system-login ]; then
-    sed -i '0,/^\(session.*pam_env.so.*\)/s||\1\nsession    required   pam_mkhomedir.so   skel=/etc/skel umask=0077|' /etc/pam.d/system-login
-fi
-if [ -f /etc/pam.d/su ]; then
-    sed -i '0,/^\(.*pam_rootok.so.*\)/s//\1\nauth            sufficient      pam_ldap.so/' /etc/pam.d/su
-    sed -i 's/^\(auth.*pam_unix.so\)/\1   use_first_pass/' /etc/pam.d/su
-    sed -i '0,/^\(account.*pam_unix.so.*\)/s//account         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su
-    sed -i '0,/^\(session.*pam_unix.so.*\)/s//session         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su
-fi
-if [ -f /etc/pam.d/su-l ]; then
-    sed -i '0,/^\(.*pam_rootok.so.*\)/s//\1\nauth            sufficient      pam_ldap.so/' /etc/pam.d/su-l
-    sed -i 's/^\(auth.*pam_unix.so\)/\1   use_first_pass/' /etc/pam.d/su-l
-    sed -i '0,/^\(account.*pam_unix.so.*\)/s//account         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su-l
-    sed -i '0,/^\(session.*pam_unix.so.*\)/s//session         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su-l
-    sed -i '0,/^\(session.*pam_ldap.so.*\)/s||session         required        pam_mkhomedir.so   skel=/etc/skel umask=0077\n\1|' /etc/pam.d/su-l
-fi
-if [ -f /etc/pam.d/sudo ]; then
-    sed -i 's/^\(auth.*pam_unix.so\)/auth      sufficient    pam_ldap.so\n\1 try_first_pass/' /etc/pam.d/sudo
+if [ -e /bin/apt ]; then
+    sed -i 's/^Default:.*/Default: yes/' /usr/share/pam-configs/ldap
+    sed -i 's/^Default:.*/Default: yes/' /usr/share/pam-configs/systemd-homed
+    DEBIAN_FRONTEND=noninteractive pam-auth-update --force
+elif [ -e /bin/pacman ]; then
+    if [ -f /etc/pam.d/system-auth ]; then
+        sed -i '0,/^\(auth.*pam_unix.so.*\)/s//auth       sufficient                  pam_ldap.so   minimum_uid=1000\n\1/' /etc/pam.d/system-auth
+        sed -i '0,/^\(account.*pam_unix.so.*\)/s//account    sufficient                  pam_ldap.so   minimum_uid=1000\n\1/' /etc/pam.d/system-auth
+        sed -i '0,/^\(password.*pam_unix.so.*\)/s//password   sufficient                  pam_ldap.so   minimum_uid=1000\n\1/' /etc/pam.d/system-auth
+        sed -i '0,/^\(session.*pam_unix.so.*\)/s//\1\nsession    optional                    pam_ldap.so   minimum_uid=1000/' /etc/pam.d/system-auth
+    fi
+    if [ -f /etc/pam.d/system-login ]; then
+        sed -i '0,/^\(session.*pam_env.so.*\)/s||\1\nsession    required   pam_mkhomedir.so   skel=/etc/skel umask=0077|' /etc/pam.d/system-login
+    fi
+    if [ -f /etc/pam.d/su ]; then
+        sed -i '0,/^\(.*pam_rootok.so.*\)/s//\1\nauth            sufficient      pam_ldap.so/' /etc/pam.d/su
+        sed -i 's/^\(auth.*pam_unix.so\)/\1   use_first_pass/' /etc/pam.d/su
+        sed -i '0,/^\(account.*pam_unix.so.*\)/s//account         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su
+        sed -i '0,/^\(session.*pam_unix.so.*\)/s//session         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su
+    fi
+    if [ -f /etc/pam.d/su-l ]; then
+        sed -i '0,/^\(.*pam_rootok.so.*\)/s//\1\nauth            sufficient      pam_ldap.so/' /etc/pam.d/su-l
+        sed -i 's/^\(auth.*pam_unix.so\)/\1   use_first_pass/' /etc/pam.d/su-l
+        sed -i '0,/^\(account.*pam_unix.so.*\)/s//account         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su-l
+        sed -i '0,/^\(session.*pam_unix.so.*\)/s//session         sufficient      pam_ldap.so\n\1/' /etc/pam.d/su-l
+        sed -i '0,/^\(session.*pam_ldap.so.*\)/s||session         required        pam_mkhomedir.so   skel=/etc/skel umask=0077\n\1|' /etc/pam.d/su-l
+    fi
+    if [ -f /etc/pam.d/sudo ]; then
+        sed -i 's/^\(auth.*pam_unix.so\)/auth      sufficient    pam_ldap.so\n\1 try_first_pass/' /etc/pam.d/sudo
+    fi
 fi
 
 # link passwd and group lists with ldap
