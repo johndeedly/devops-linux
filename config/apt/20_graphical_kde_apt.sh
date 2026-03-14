@@ -355,6 +355,20 @@ EOF
 # configure cups to allow admin group
 sed -i 's|\(SystemGroup .*\)|\1 admins|' /etc/cups/cups-files.conf
 
+# pam kwallet configuration
+tee /usr/share/pam-configs/kwallet <<EOF
+Name: KDE Keyring Daemon - Login keyring management
+Default: yes
+Priority: 0
+Auth-Type: Additional
+Auth-Final:
+        optional        pam_kwallet5.so
+Session-Type: Additional
+Session-Final:
+        optional        pam_kwallet5.so auto_start kwalletd=/usr/bin/ksecretd
+EOF
+DEBIAN_FRONTEND=noninteractive pam-auth-update --force
+
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then

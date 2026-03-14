@@ -376,6 +376,15 @@ wait $pid
 # configure cups to allow admin group
 sed -i 's|\(SystemGroup .*\)|\1 admins|' /etc/cups/cups-files.conf
 
+# pam kwallet configuration
+if [ -f /etc/pam.d/system-login ]; then
+  tee -a /etc/pam.d/system-login <<EOF
+
+# unlock kwallet on login
+auth       optional        pam_kwallet5.so
+session    optional        pam_kwallet5.so auto_start kwalletd=/usr/bin/ksecretd
+EOF
+
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then
