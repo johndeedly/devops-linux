@@ -17,7 +17,7 @@ wget -O /srv/ostree/flathub/flathub.gpg "${FLATPAK_HUB_URL%/}"/flathub.gpg
 ostree remote gpg-import --repo=/srv/ostree/flathub flathub -k /srv/ostree/flathub/flathub.gpg
 
 curl -sL https://flathub.org/repo/flathub.flatpakrepo > /srv/ostree/flathub/flathub.flatpakrepo
-sed -i "s|^URL=.*|URL=http://$(head -n1 /etc/hostname):8080/flathub/|g" /srv/ostree/flathub/flathub.flatpakrepo
+sed -i "s|^Url=.*|Url=http://$(head -n1 /etc/hostname):8080/flathub/|g" /srv/ostree/flathub/flathub.flatpakrepo
 
 FLATPAK_REF_FILTER="$(yq -r '.setup.flatpak_mirror.ref_filter' /var/lib/cloud/instance/config/setup.yml)"
 if [ -z "$FLATPAK_REF_FILTER" ] || [ "x$FLATPAK_REF_FILTER" == "xnull" ]; then

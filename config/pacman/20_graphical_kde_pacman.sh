@@ -98,7 +98,7 @@ done
 # add flathub repo to system when not present
 FLATPAK_HUB_URL="$(yq -r '.setup.flatpak_mirror.hub_url' /var/lib/cloud/instance/config/setup.yml)"
 curl -sL https://flathub.org/repo/flathub.flatpakrepo > /tmp/flathub.flatpakrepo
-sed -i "s|^URL=.*|URL=${FLATPAK_HUB_URL%/}/|g" /tmp/flathub.flatpakrepo
+sed -i "s|^Url=.*|Url=${FLATPAK_HUB_URL%/}/|g" /tmp/flathub.flatpakrepo
 flatpak remote-add --system --if-not-exists flathub /tmp/flathub.flatpakrepo
 
 # install zen browser as flatpak
