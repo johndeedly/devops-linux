@@ -11,7 +11,8 @@ mkdir -p /srv/flathub/.ostree/repo
 
 # initialize flatpak
 FLATPAK_HUB_URL="$(yq -r '.setup.flatpak_mirror.hub_url' /var/lib/cloud/instance/config/setup.yml)"
-curl -sL https://flathub.org/repo/flathub.flatpakrepo > /tmp/flathub.flatpakrepo
+FLATPAK_REPO_URL="$(yq -r '.setup.flatpak_mirror.flatpakrepo_url' /var/lib/cloud/instance/config/setup.yml)"
+curl -sL "${FLATPAK_REPO_URL}" > /tmp/flathub.flatpakrepo
 sed -i "s|^Url=.*|Url=${FLATPAK_HUB_URL%/}/|g" /tmp/flathub.flatpakrepo
 flatpak remote-add --system --if-not-exists flathub /tmp/flathub.flatpakrepo
 flatpak remote-modify --collection-id=org.flathub.Stable flathub
@@ -44,7 +45,7 @@ gpg --batch --generate-key /tmp/gpgkey.txt
 rm /tmp/gpgkey.txt
 
 # import flathub gpg key
-curl -sL https://flathub.org/repo/flathub.flatpakrepo | grep GPGKey | cut -d= -f2 | base64 -d | gpg --import -
+curl -sL "${FLATPAK_REPO_URL}" | grep GPGKey | cut -d= -f2 | base64 -d | gpg --import -
 
 # fix gpg IOCTL error
 echo use-agent >> ~/.gnupg/gpg.conf
@@ -53,7 +54,7 @@ echo allow-loopback-pinentry >> ~/.gnupg/gpg-agent.conf
 
 # export all gpg public keys and create flatpakrepo file
 gpg --export "flathub@flathub.org" "flatpak-mirror@internal.invalid" > /srv/flathub/.ostree/repo/flathub-mirror.gpg
-curl -sL https://flathub.org/repo/flathub.flatpakrepo > /srv/flathub/.ostree/repo/flathub.flatpakrepo
+curl -sL "${FLATPAK_REPO_URL}" > /srv/flathub/.ostree/repo/flathub.flatpakrepo
 sed -i "s|^Url=.*|Url=http://$(head -n1 /etc/hostname):8080/repo/|g" /srv/flathub/.ostree/repo/flathub.flatpakrepo
 sed -i "s|^GPGKey=.*|GPGKey=$(base64 -w0 /srv/flathub/.ostree/repo/flathub-mirror.gpg)|g" /srv/flathub/.ostree/repo/flathub.flatpakrepo
 
