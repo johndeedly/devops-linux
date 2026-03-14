@@ -433,6 +433,7 @@ fi
 mount "${ROOT_PART[0]}" /mnt
 
 echo "[ ## ] Copy over next kernel and initrd for kexec reboot later"
+mkdir -p /boot
 BOOT_PATH="/mnt/boot"
 if [ -n "${BOOT_PART[0]}" ]; then
     mkdir -p /nextboot
