@@ -7,44 +7,83 @@ if [ -e /bin/apt ]; then
 elif [ -e /bin/pacman ]; then
   LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed nginx flatpak
 fi
-mkdir -p /srv/ostree/flathub
+mkdir -p /srv/flathub/.ostree/repo
 
+# initialize flatpak
 FLATPAK_HUB_URL="$(yq -r '.setup.flatpak_mirror.hub_url' /var/lib/cloud/instance/config/setup.yml)"
-ostree init --repo=/srv/ostree/flathub --mode=archive --collection-id=org.flathub.Stable
-ostree remote add --repo=/srv/ostree/flathub flathub "${FLATPAK_HUB_URL%/}"
+curl -sL https://flathub.org/repo/flathub.flatpakrepo > /tmp/flathub.flatpakrepo
+sed -i "s|^Url=.*|Url=${FLATPAK_HUB_URL%/}/|g" /tmp/flathub.flatpakrepo
+flatpak remote-add --system --if-not-exists flathub /tmp/flathub.flatpakrepo
+flatpak remote-modify --collection-id=org.flathub.Stable flathub
 
-wget -O /srv/ostree/flathub/flathub.gpg "${FLATPAK_HUB_URL%/}"/flathub.gpg
-ostree remote gpg-import --repo=/srv/ostree/flathub flathub -k /srv/ostree/flathub/flathub.gpg
+# prepare flatpak applications
+while read -r line; do
+  if [ -n "$line" ]; then
+    echo "[ ## ] install $line"
+    flatpak install --reinstall --system --noninteractive --assumeyes flathub "$line"
+  fi
+done <<<"$(yq -r '.setup.flatpak_mirror.mirror_refs[]' /var/lib/cloud/instance/config/setup.yml)"
 
-curl -sL https://flathub.org/repo/flathub.flatpakrepo > /srv/ostree/flathub/flathub.flatpakrepo
-sed -i "s|^Url=.*|Url=http://$(head -n1 /etc/hostname):8080/flathub/|g" /srv/ostree/flathub/flathub.flatpakrepo
+# create gpg key for signed summary files
+# [!] flathub does not support password protected gpg keys
+cat >/tmp/gpgkey.txt <<EOF
+%no-protection
+%echo Generating basic OpenPGP signing key
+Key-Type: RSA
+Key-Length: 4096
+Subkey-Type: RSA
+Subkey-Length: 4096
+Name-Real: Flatpak Mirror Signing Key
+Name-Comment: Flatpak Mirror Signing Key
+Name-Email: flatpak-mirror@internal.invalid
+Expire-Date: 0
+%commit
+%echo done
+EOF
+gpg --batch --generate-key /tmp/gpgkey.txt
+rm /tmp/gpgkey.txt
 
-FLATPAK_REF_FILTER="$(yq -r '.setup.flatpak_mirror.ref_filter' /var/lib/cloud/instance/config/setup.yml)"
-if [ -z "$FLATPAK_REF_FILTER" ] || [ "x$FLATPAK_REF_FILTER" == "xnull" ]; then
-  FLATPAK_REF_FILTER="."
-fi
+# import flathub gpg key
+curl -sL https://flathub.org/repo/flathub.flatpakrepo | grep GPGKey | cut -d= -f2 | base64 -d | gpg --import -
 
-ostree remote refs --repo=/srv/ostree/flathub flathub | sed -e 's/^flathub://g' | grep -E '^app/.*/x86_64/stable$' |
-  grep -E "$FLATPAK_REF_FILTER" >/srv/ostree/flathub/x86_64.refs
+# fix gpg IOCTL error
+echo use-agent >> ~/.gnupg/gpg.conf
+echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+echo allow-loopback-pinentry >> ~/.gnupg/gpg-agent.conf
+
+# export all gpg public keys and create flatpakrepo file
+gpg --export "flathub@flathub.org" "flatpak-mirror@internal.invalid" > /srv/flathub/.ostree/repo/flathub-mirror.gpg
+curl -sL https://flathub.org/repo/flathub.flatpakrepo > /srv/flathub/.ostree/repo/flathub.flatpakrepo
+sed -i "s|^Url=.*|Url=http://$(head -n1 /etc/hostname):8080/repo/|g" /srv/flathub/.ostree/repo/flathub.flatpakrepo
+sed -i "s|^GPGKey=.*|GPGKey=$(base64 -w0 /srv/flathub/.ostree/repo/flathub-mirror.gpg)|g" /srv/flathub/.ostree/repo/flathub.flatpakrepo
 
 tee /usr/local/bin/flatsync.sh <<'EOF'
 #!/usr/bin/env bash
 
-echo "[ ## ] pull commit metadata"
-ostree pull --repo=/srv/ostree/flathub --disable-fsync --depth=0 --commit-metadata-only --mirror flathub
-sync
-echo "[ ## ] mirror filtered ref list from flathub"
-xargs ostree pull --repo=/srv/ostree/flathub --disable-fsync --depth=0 --mirror flathub </srv/ostree/flathub/x86_64.refs
-sync
+echo "[ ## ] update all flatpaks"
+flatpak update --noninteractive --assumeyes
 
-echo "[ ## ] prune refs only"
-ostree prune --repo=/srv/ostree/flathub --refs-only
+# fix partially installed runtimes and extensions
+for i in $(flatpak list --all --columns=ref,origin | grep flathub | cut -d$'\t' -f1); do
+  echo "[ ## ] reinstall $i"
+  flatpak install --reinstall --system --noninteractive --assumeyes flathub "$i"
+done
 
-echo "[ ## ] write summary file"
-ostree summary --repo=/srv/ostree/flathub -u
+# export everything to disk
+for i in $(flatpak list --all --columns=ref,origin | grep flathub | cut -d$'\t' -f1); do
+  echo "[ ## ] export $i"
+  flatpak create-usb --allow-partial /srv/flathub "$i"
+done
 
-echo "[ ## ] check local filesystem"
-ostree fsck --repo=/srv/ostree/flathub
+# convert usb-setup to an actual repository
+if ! [ -L "/srv/flathub/.ostree/repo/refs/heads" ] && [ -d "/srv/flathub/.ostree/repo/refs/heads" ]; then
+  rm -rf "/srv/flathub/.ostree/repo/refs/heads"
+  ln -s mirrors/org.flathub.Stable "/srv/flathub/.ostree/repo/refs/heads"
+fi
+
+# generate signed summary files
+echo "[ ## ] generate signed summary"
+flatpak build-update-repo --generate-static-deltas --gpg-sign="flatpak-mirror@internal.invalid" /srv/flathub/.ostree/repo
 EOF
 chmod +x /usr/local/bin/flatsync.sh
 
@@ -61,7 +100,7 @@ StandardOutput=journal
 StandardError=journal
 Restart=on-failure
 RestartSec=2s
-WorkingDirectory=/srv/ostree
+WorkingDirectory=/srv/flathub
 ExecStart=/usr/local/bin/flatsync.sh
 EOF
 
@@ -102,7 +141,7 @@ http {
         listen 8080;
         listen [::]:8080;
         server_name $(cat /etc/hostname);
-        root /srv/ostree;
+        root /srv/flathub/.ostree;
         location / {
             try_files \$uri \$uri/ =404;
             autoindex on;
@@ -148,7 +187,7 @@ http {
         listen 8080;
         listen [::]:8080;
         server_name $(cat /etc/hostname);
-        root /srv/ostree;
+        root /srv/flathub/.ostree;
         location / {
             try_files \$uri \$uri/ =404;
             autoindex on;

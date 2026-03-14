@@ -79,7 +79,19 @@ setup:
     x509_hash: SHA1:36:2C:0C:DB:5E:BB:BB:4A:E8:42:C2:4D:A5:0C:D5:0B:3C:55:20:40
   flatpak_mirror:
     hub_url: https://dl.flathub.org/repo
-    ref_filter: zen_browser|mozilla|chromium|google|microsoft|torproject|librewolf|waterfox|brave|ablaze|falkon|opera|bottles
+    mirror_refs:
+      - app.zen_browser.zen
+      - org.mozilla.firefox
+      - org.chromium.Chromium
+      - com.google.Chrome
+      - com.microsoft.Edge
+      - org.torproject.torbrowser-launcher
+      - io.gitlab.librewolf-community
+      - net.waterfox.waterfox
+      - com.brave.Browser
+      - one.ablaze.floorp
+      - org.kde.falkon
+      - com.opera.Opera
   pkg_mirror:
     archiso: |
       Server = https://archive.archlinux.org/repos/##ARCHISO_DATE##/$repo/os/$arch
