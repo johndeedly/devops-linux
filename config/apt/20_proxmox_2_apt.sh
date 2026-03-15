@@ -99,6 +99,9 @@ pveum acl modify /mapping --roles PVEMappingUser -groups users -propagate 1
 pveum acl modify /sdn/zones/localnetwork/vmbrlan0 --roles PVESDNUser -groups users -propagate 1
 pveum acl modify /storage --roles PVEDatastoreUser -groups users -propagate 1
 
+# see node debug infos and let users choose predefined custom cpu types
+pveum acl modify /nodes --roles PVEAuditor -groups users -propagate 1
+
 # create first pool pool0
 pveum pool add pool0 || true
 pveum acl modify /pool/pool0 --roles PVEPoolUser,PVETemplateUser -groups users -propagate 1 || true

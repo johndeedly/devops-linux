@@ -335,9 +335,9 @@ DOC
             fi
         fi
         if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
-            qm set "${_proxmox_vm}" --cpu "x86-64-v3,flags=+vmx"
+            qm set "${_proxmox_vm}" --cpu "custom-x86-64-v3-nested-intel" || qm set "${_proxmox_vm}" --cpu "x86-64-v3"
         elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
-            qm set "${_proxmox_vm}" --cpu "x86-64-v3,flags=+svm"
+            qm set "${_proxmox_vm}" --cpu "custom-x86-64-v3-nested-amd" || qm set "${_proxmox_vm}" --cpu "x86-64-v3"
         else
             qm set "${_proxmox_vm}" --cpu "x86-64-v3"
         fi
