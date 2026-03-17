@@ -98,12 +98,11 @@ getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
   fi
 done
 
-# add flathub repo to system when not present
-FLATPAK_HUB_URL="$(yq -r '.setup.flatpak_mirror.hub_url' /var/lib/cloud/instance/config/setup.yml)"
+# add flathub repo to system
 FLATPAK_REPO_URL="$(yq -r '.setup.flatpak_mirror.flatpakrepo_url' /var/lib/cloud/instance/config/setup.yml)"
-curl -sL "${FLATPAK_REPO_URL}" > /tmp/flathub.flatpakrepo
-sed -i "s|^Url=.*|Url=${FLATPAK_HUB_URL%/}/|g" /tmp/flathub.flatpakrepo
-flatpak remote-add --system --if-not-exists flathub /tmp/flathub.flatpakrepo
+LC_ALL=C yes | flatpak remote-delete --system flathub
+flatpak remote-add --system flathub "${FLATPAK_REPO_URL}"
+flatpak remotes --columns=name,url
 
 # install zen browser as flatpak
 flatpak install -y --noninteractive --system flathub app.zen_browser.zen

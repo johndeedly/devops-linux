@@ -10,12 +10,11 @@ fi
 mkdir -p /srv/flathub/.ostree/repo
 
 # initialize flatpak
-FLATPAK_HUB_URL="$(yq -r '.setup.flatpak_mirror.hub_url' /var/lib/cloud/instance/config/setup.yml)"
 FLATPAK_REPO_URL="$(yq -r '.setup.flatpak_mirror.flatpakrepo_url' /var/lib/cloud/instance/config/setup.yml)"
-curl -sL "${FLATPAK_REPO_URL}" > /tmp/flathub.flatpakrepo
-sed -i "s|^Url=.*|Url=${FLATPAK_HUB_URL%/}/|g" /tmp/flathub.flatpakrepo
-flatpak remote-add --system --if-not-exists flathub /tmp/flathub.flatpakrepo
+LC_ALL=C yes | flatpak remote-delete --system flathub
+flatpak remote-add --system flathub "${FLATPAK_REPO_URL}"
 flatpak remote-modify --collection-id=org.flathub.Stable flathub
+flatpak remotes --columns=name,url
 
 # prepare flatpak applications
 while read -r line; do
