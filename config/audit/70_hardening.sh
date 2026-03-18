@@ -159,7 +159,7 @@ EOF
 [ -e "/usr/bin/g++" ] && chmod 0700 "/usr/bin/g++"
 
 # set umask best practice AUTH-9328 (https://github.com/CISOfy/lynis/issues/110)
-tee /etc/profile.d/umask.sh <<EOF
+tee /etc/profile.d/umask.sh <<'EOF'
 # By default, we want umask to get set. This sets it for login shell
 # Current threshold for system reserved uid/gids is 200
 # You could check uidgid reservation validity in
