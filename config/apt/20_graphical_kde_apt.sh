@@ -104,9 +104,6 @@ LC_ALL=C yes | flatpak remote-delete --system flathub
 flatpak remote-add --system flathub "${FLATPAK_REPO_URL}"
 flatpak remotes --columns=name,url
 
-# install zen browser as flatpak
-flatpak install -y --noninteractive --system flathub app.zen_browser.zen
-
 # install firefox as flatpak
 flatpak install -y --noninteractive --system flathub org.mozilla.firefox
 
@@ -115,45 +112,6 @@ flatpak install -y --noninteractive --system flathub org.chromium.Chromium
 
 # install tor browser as flatpak
 flatpak install -y --noninteractive --system flathub org.torproject.torbrowser-launcher
-
-# configure zen (small hack starting zen in headless mode, immediately closing it afterwards
-# as it cannot take a snapshot at this point)
-( HOME=/etc/skel /bin/bash -c '
-/usr/bin/flatpak run --branch=stable --arch=x86_64 --file-forwarding app.zen_browser.zen -screenshot
-find /etc/skel/.var/app/app.zen_browser.zen -type f -name "prefs.js" | while read -r line; do
-  profiledir="${line%"/prefs.js"}"
-  echo "[ ## ] modify user config \"$line\""
-  tee -a "$line" <<EOX
-user_pref("zen.welcome-screen.seen", true);
-user_pref("startup.homepage_welcome_url", "about:restartrequired");
-user_pref("startup.homepage_welcome_url.additional", "about:newtab");
-user_pref("extensions.autoDisableScopes", 14);
-user_pref("browser.shell.checkDefaultBrowser", false);
-EOX
-  mkdir -p "${profiledir}/extensions"
-  while read -r name id; do
-    wget -c -O "${profiledir}/extensions/${id}.xpi" --progress=dot:giga "https://addons.mozilla.org/firefox/downloads/latest/${name}/"
-  done <<EOX
-adguard-adblocker adguardadblocker@adguard.com
-ghostery firefox@ghostery.com
-single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
-EOX
-done
-' ) &
-pid=$!
-wait $pid
-
-# configure tor browser
-#   extensions can be installed, but not configured to run in private mode out of the box
-browserdir="/etc/skel/.var/app/org.torproject.torbrowser-launcher/data/torbrowser/tbb/x86_64/tor-browser/Browser"
-mkdir -p "${browserdir}/distribution/extensions" "${browserdir}/TorBrowser/Data/Browser/profile.default/"
-while read -r name id; do
-  wget -c -O "${browserdir}/extensions/${id}.xpi" --progress=dot:giga "https://addons.mozilla.org/firefox/downloads/latest/${name}/"
-done <<EOX
-adguard-adblocker adguardadblocker@adguard.com
-ghostery firefox@ghostery.com
-single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
-EOX
 
 # set slick greeter as default
 tee -a /etc/lightdm/lightdm.conf <<EOF
