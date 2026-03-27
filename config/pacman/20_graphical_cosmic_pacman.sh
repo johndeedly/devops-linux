@@ -143,7 +143,7 @@ EOF
 # configure firefox
 mkdir -p /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies
 (
-  jq -Rs '{"policies":{"CheckDefaultBrowser":false,"DisableAppUpdate":true,"OverrideFirstRunPage":"","OverridePostUpdatePage":"","ShowHomeButton":true,"DisableRemoteImprovements":true,"DisableFirefoxStudies":true,"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
+  jq -Rs '{"policies":{"DontCheckDefaultBrowser":true,"SkipTermsOfUse":true,"DisableAppUpdate":true,"OverrideFirstRunPage":"","OverridePostUpdatePage":"","ShowHomeButton":true,"DisableRemoteImprovements":true,"DisableFirefoxStudies":true,"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
 adguard-adblocker adguardadblocker@adguard.com
 ghostery firefox@ghostery.com
 single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
