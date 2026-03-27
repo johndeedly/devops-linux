@@ -43,18 +43,13 @@ for line in "${QMS[@]}"; do
   fi
   # create vm
   qm create "$QM_ID" --name "$QM_NAME" --ostype "$QM_OSTYPE" --cores "$QM_CORES" --memory "$QM_MEMORY" \
-    --machine q35,viommu=virtio --kvm 1 --pool "$QM_POOL" \
+    --machine q35,viommu=virtio --cpu "$QM_CPU" --kvm 1 --pool "$QM_POOL" --bios ovmf --boot "order=virtio0" \
+    --efidisk0 "$QM_STORAGE:0,efitype=4m,format=raw,pre-enrolled-keys=0" --tpmstate0 "$QM_STORAGE:0,version=v2.0" \
     --agent enabled=1 --vga virtio --onboot "$QM_ONBOOT" --reboot "$QM_REBOOT" --serial0 socket
-  if [ -n "$QM_CPU" ]; then
-    qm set "$QM_ID" --cpu "$QM_CPU"
-  else
-    if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
-      qm set "$QM_ID" --cpu "x86-64-v3,flags=+vmx"
-    elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
-      qm set "$QM_ID" --cpu "x86-64-v3,flags=+svm"
-    else
-      qm set "$QM_ID" --cpu "x86-64-v3"
-    fi
+  if [ -d /sys/module/kvm_intel ] && grep -q "[1Y]" </sys/module/kvm_intel/parameters/nested; then
+    qm set "$QM_ID" --cpu "$QM_CPU,flags=+nested-virt"
+  elif [ -d /sys/module/kvm_amd ] && grep -q "[1Y]" </sys/module/kvm_amd/parameters/nested; then
+    qm set "$QM_ID" --cpu "$QM_CPU,flags=+nested-virt"
   fi
   # lvm -> raw, otherwise qcow2
   if pvs --rows | grep -E "VG.*$QM_STORAGE"; then

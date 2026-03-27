@@ -315,19 +315,19 @@ DOC
         if pvs --rows | grep -E "VG.*${_proxmox_storage}"
         then
             if ! qm create "${_proxmox_vm}" --net0 "virtio,bridge=${_proxmox_bridge}" --name "${_proxmox_name}" \
-            --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35 --bios ovmf \
+            --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35,viommu=virtio --cpu x86-64-v3 --kvm 1 --bios ovmf \
             --boot "order=virtio0;ide0" --virtio0 "${_proxmox_storage}:${_proxmox_size},discard=on,iothread=1,size=${_proxmox_size}" --agent enabled=1 \
             --efidisk0 "${_proxmox_storage}:0,efitype=4m,format=raw,pre-enrolled-keys=0" --tpmstate0 "${_proxmox_storage}:0,version=v2.0" \
-            --ide0 "local:iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio
+            --ide0 "local:iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio --serial0 socket
             then
                 rm "/var/lib/vz/template/iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
             fi
         else
             if ! qm create "${_proxmox_vm}" --net0 "virtio,bridge=${_proxmox_bridge}" --name "${_proxmox_name}" \
-            --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35 --bios ovmf \
+            --ostype l26 --cores "${_proxmox_cores}" --memory "${_proxmox_mem}" --machine q35,viommu=virtio --cpu x86-64-v3 --kvm 1 --bios ovmf \
             --boot "order=virtio0;ide0" --virtio0 "${_proxmox_storage}:0,format=qcow2,discard=on,iothread=1" --agent enabled=1 \
             --efidisk0 "${_proxmox_storage}:0,efitype=4m,format=raw,pre-enrolled-keys=0" --tpmstate0 "${_proxmox_storage}:0,version=v2.0" \
-            --ide0 "local:iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio
+            --ide0 "local:iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso,media=cdrom" --vga virtio --serial0 socket
             then
                 rm "/var/lib/vz/template/iso/devops-x86_64-${_proxmox_vm}-${_proxmox_name}.iso"
             else
