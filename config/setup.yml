@@ -136,25 +136,49 @@ setup:
     ubuntu: |
       Types: deb
       URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
-      Suites: noble noble-updates noble-backports noble-security
+      Suites: noble noble-updates noble-backports
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: noble-security
       Components: main universe restricted multiverse
       Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
     ubuntu-26: |
       Types: deb
       URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
-      Suites: resolute resolute-updates resolute-backports resolute-security
+      Suites: resolute resolute-updates resolute-backports
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: resolute-security
       Components: main universe restricted multiverse
       Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
     ubuntu-24: |
       Types: deb
       URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
-      Suites: noble noble-updates noble-backports noble-security
+      Suites: noble noble-updates noble-backports
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: noble-security
       Components: main universe restricted multiverse
       Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
     ubuntu-22: |
       Types: deb
       URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
-      Suites: jammy jammy-updates jammy-backports jammy-security
+      Suites: jammy jammy-updates jammy-backports
+      Components: main universe restricted multiverse
+      Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+      Types: deb
+      URIs: https://eu.mirror.ionos.com/linux/distributions/ubuntu/ubuntu
+      Suites: jammy-security
       Components: main universe restricted multiverse
       Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
   proxmox_cluster:
