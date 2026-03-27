@@ -216,7 +216,7 @@ FILELIST=(
   /usr/share/applications/libreoffice-writer.desktop
   /usr/share/applications/libreoffice-impress.desktop
   /usr/share/applications/com.system76.CosmicTerm.desktop
-  /var/lib/flatpak/app/app.zen_browser.zen/current/active/export/share/applications/app.zen_browser.zen.desktop
+  /var/lib/flatpak/app/org.mozilla.firefox/current/active/export/share/applications/org.mozilla.firefox.desktop
   /usr/share/applications/engrampa.desktop
   /usr/share/applications/com.system76.CosmicPlayer.desktop
   /usr/share/applications/com.system76.CosmicEdit.desktop
