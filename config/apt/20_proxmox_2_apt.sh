@@ -93,11 +93,24 @@ rm /tmp/hosts_columns
 pveum group add admins
 pveum group add users
 
-# add permissions to groups and pools
+# add default permissions to users and admins
 pveum acl modify / --roles Administrator -groups admins -propagate 1
 pveum acl modify /mapping --roles PVEMappingUser -groups users -propagate 1
 pveum acl modify /sdn/zones/localnetwork/vmbrlan0 --roles PVESDNUser -groups users -propagate 1
 pveum acl modify /storage --roles PVEDatastoreUser -groups users -propagate 1
+
+# create dedicated path for isos and container templates
+mkdir -p /var/cache/proxmox
+pvesm add dir local-vztmpl --path /var/cache/proxmox --content iso,vztmpl
+
+# remove isos and containers from default storage
+pvesm set local --content images,rootdir,backup
+
+# enable template download
+pveum role add TemplateDownload -privs "Sys.AccessNetwork"
+pveum role add TemplateUser -privs "Datastore.Allocate Datastore.AllocateTemplate Datastore.Audit"
+pveum acl modify /nodes --roles TemplateDownload -groups users,admins -propagate 1
+pveum acl modify /storage/local-vztmpl --roles TemplateUser -groups users,admins -propagate 1
 
 # see node debug infos and let users choose predefined custom cpu types
 pveum acl modify /nodes --roles PVEAuditor -groups users -propagate 1
