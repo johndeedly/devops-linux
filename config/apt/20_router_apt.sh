@@ -32,11 +32,16 @@ PXESETUP=(
   "dhcp-match=set:efi-x86,option:client-arch,6\n"
   "dhcp-match=set:bios,option:client-arch,0\n"
   "dhcp-match=set:ipxe,175\n"
+  "dhcp-match=set:http,option:vendor-class,HTTPClient\n"
 
-  "dhcp-boot=tag:efi-x86_64,efi64\/ipxe.efi\n"
-  "dhcp-boot=tag:efi-x86,efi32\/ipxe.efi\n"
-  "dhcp-boot=tag:bios,bios\/ipxe.lkrn\n"
-  "dhcp-boot=tag:ipxe,ipxe.cfg\/default"
+  "dhcp-boot=tag:efi-x86_64,tag:http,http:\/\/172.26.0.1\/efi64\/ipxe.efi\n"
+  "dhcp-boot=tag:efi-x86_64,tag:!http,efi64\/ipxe.efi\n"
+  "dhcp-boot=tag:efi-x86,tag:http,http:\/\/172.26.0.1\/efi32\/ipxe.efi\n"
+  "dhcp-boot=tag:efi-x86,tag:!http,efi32\/ipxe.efi\n"
+  "dhcp-boot=tag:bios,tag:http,http:\/\/172.26.0.1\/bios\/ipxe.lkrn\n"
+  "dhcp-boot=tag:bios,tag:!http,bios\/ipxe.lkrn\n"
+  "dhcp-boot=tag:ipxe,tag:http,http:\/\/172.26.0.1\/ipxe.cfg\/default\n"
+  "dhcp-boot=tag:ipxe,tag:!http,ipxe.cfg\/default"
 )
 
 # keep all interface names
@@ -106,17 +111,23 @@ sed -i '0,/^#\?server=.*/s//'"${DNS_SERVERS[*]}"'/' /etc/dnsmasq.conf
 # configure pxe folders
 mkdir -p /srv/pxe/{arch,debian,ubuntu}/x86_64
 
-# configure tftp
-mkdir -p /srv/tftp/{,bios,efi32,efi64}/ipxe.cfg
+# configure ipxe (tftp and http)
+mkdir -p /srv/{tftp,pxe}/{,bios,efi32,efi64}/ipxe.cfg
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/ipxe.lkrn /srv/tftp/bios/ipxe.lkrn
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/i386/ipxe.efi /srv/tftp/efi32/ipxe.efi
 rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/x86_64/ipxe.efi /srv/tftp/efi64/ipxe.efi
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/ipxe.lkrn /srv/pxe/bios/ipxe.lkrn
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/i386/ipxe.efi /srv/pxe/efi32/ipxe.efi
+rsync -av --chown=root:root --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fg=r,Fo=r /usr/share/ipxe/x86_64/ipxe.efi /srv/pxe/efi64/ipxe.efi
 tee /srv/tftp/ipxe.cfg/default <<EOF
 $(</var/lib/cloud/instance/provision/apt/20_router_apt/ipxe.cfg.default)
 EOF
 ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/bios/ipxe.cfg/default
 ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/efi32/ipxe.cfg/default
 ln -s /srv/tftp/ipxe.cfg/default /srv/tftp/efi64/ipxe.cfg/default
+ln -s /srv/pxe/ipxe.cfg/default /srv/pxe/bios/ipxe.cfg/default
+ln -s /srv/pxe/ipxe.cfg/default /srv/pxe/efi32/ipxe.cfg/default
+ln -s /srv/pxe/ipxe.cfg/default /srv/pxe/efi64/ipxe.cfg/default
 
 # configure http
 tee /etc/nginx/nginx.conf <<EOF
