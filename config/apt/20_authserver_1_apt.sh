@@ -67,10 +67,12 @@ olcDbDirectory: /var/lib/ldap/openldap-data
 #   The first ACL allows users to update (but not read) their passwords, anonymous users
 #   to authenticate against this attribute, and (implicitly) denying all access to others.
 olcAccess: to attrs=userPassword by self =xw by anonymous auth by * none
-#   The second ACL grants authentication against the rootdn only from the local machine.
+#   The second ACL grants authenticated users access to public attributes
+olcAccess: to attrs=uid,mail,cn,sn,displayName,memberOf,uidNumber,gidNumber,memberUid,member by self read by users read by * none
+#   The third ACL grants authentication against the rootdn only from the local machine.
 olcAccess: to dn.base="${LDAP_MGMT_DN}" by peername.regex=127\.0\.0\.1 auth by users none by * none
-#   The third ACL allows (implicitly) everyone and anyone read access to all other entries.
-olcAccess: to * by * read
+#   The fourth ACL (catch all) allows users to see all their info, but denies all access to others.
+olcAccess: to * by self read by * none
 # TODO: Create further indexes
 olcDbIndex: objectClass eq
 olcDbIndex: uid pres,eq
