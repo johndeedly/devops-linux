@@ -339,6 +339,7 @@ if [ -f /etc/pam.d/system-login ]; then
 auth       optional        pam_kwallet5.so
 session    optional        pam_kwallet5.so auto_start kwalletd=/usr/bin/ksecretd
 EOF
+fi
 
 # apply skeleton to all users
 getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
