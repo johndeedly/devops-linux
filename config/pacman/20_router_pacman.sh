@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+exec &> >(while IFS=$'\r' read -ra line; do [ ${#line[@]} -eq 0 ] && continue; TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 LC_ALL=C yes | LC_ALL=C pacman -S --noconfirm --needed net-tools dnsmasq iptraf-ng ntp step-ca step-cli nginx nfs-utils \
   samba nbd tgt nvmetcli rsync

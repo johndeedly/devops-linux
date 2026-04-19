@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+exec &> >(while IFS=$'\r' read -ra line; do [ ${#line[@]} -eq 0 ] && continue; TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 # wait online (not on rocky, as rocky does not have wait-online preinstalled)
 if [ -f /usr/lib/systemd/systemd-networkd-wait-online ]; then

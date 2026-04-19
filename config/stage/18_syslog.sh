@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+exec &> >(while IFS=$'\r' read -ra line; do [ ${#line[@]} -eq 0 ] && continue; TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 SYSLOG_ENABLED="$(yq -r '.setup.remote_log.enabled' /var/lib/cloud/instance/config/setup.yml)"
 SYSLOG_SERVER="$(yq -r '.setup.remote_log.syslog_server' /var/lib/cloud/instance/config/setup.yml)"

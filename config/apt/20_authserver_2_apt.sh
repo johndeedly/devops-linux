@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-exec &> >(while IFS=$'\r' read -ra line; do [ -z "${line[@]}" ] && line=( '' ); TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+exec &> >(while IFS=$'\r' read -ra line; do [ ${#line[@]} -eq 0 ] && continue; TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
 LDAP_BASE_DC="$(yq -r '.setup.authserver.base_dc' /var/lib/cloud/instance/config/setup.yml)"
 LDAP_BASE_DN="$(yq -r '.setup.authserver.base_dn' /var/lib/cloud/instance/config/setup.yml)"
