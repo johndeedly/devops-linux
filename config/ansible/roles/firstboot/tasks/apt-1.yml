@@ -1,16 +1,7 @@
 # ---------- #
 
-- name: Speedup apt on ubuntu and debian
+- name: Speedup apt downloads on ubuntu and debian
   shell: |
-    APT_CFGS=( /etc/apt/apt.conf.d/* )
-    for cfg in "${APT_CFGS[@]}"; do
-      sed -i 's/Acquire::Queue-Mode.*/Acquire::Queue-Mode "host";/g' "$cfg" || true
-      sed -i 's/Acquire::Retries.*/Acquire::Retries "3";/g' "$cfg" || true
-      sed -i 's/Acquire::http::Dl-Limit.*/Acquire::http::Dl-Limit "0";/g' "$cfg" || true
-      sed -i 's/Acquire::http::Timeout.*/Acquire::http::Timeout "10";/g' "$cfg" || true
-      sed -i 's/Acquire::https::Dl-Limit.*/Acquire::https::Dl-Limit "0";/g' "$cfg" || true
-      sed -i 's/Acquire::https::Timeout.*/Acquire::https::Timeout "10";/g' "$cfg" || true
-    done
     tee /etc/apt/apt.conf.d/85provision <<EOF
     Acquire::Queue-Mode "host";
     Acquire::Retries "3";
@@ -19,8 +10,6 @@
     Acquire::https::Dl-Limit "0";
     Acquire::https::Timeout "10";
     EOF
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
-    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
 
 - name: Ability to script the debconf database
   apt:
@@ -44,8 +33,8 @@
 - name: Backup modules of running kernel
   shell: |
     ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
-    echo -n "Kernel modules backup ($(uname -r)): "
-    stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
+    #echo -n "Kernel modules backup ($(uname -r)): "
+    #stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
 
 - name: Full system upgrade
   apt:

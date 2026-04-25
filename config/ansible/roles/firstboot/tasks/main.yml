@@ -8,7 +8,7 @@
 
 - name: Import cloud-init logs
   shell: |
-    tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
+    # tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
     sed -e '/DEBUG/d' /var/log/cloud-init.log | tee -a /cidata_log >/dev/null
 
 - name: Archlinux

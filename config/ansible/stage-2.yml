@@ -2,6 +2,20 @@
   hosts: all
   gather_facts: true
   strategy: free
+  pre_tasks:
+    - name: Disable fsync system-wide 1.)
+      apt:
+        update_cache: true
+        name: eatmydata
+        state: present
+      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+    - name: Disable fsync system-wide 2.)
+      lineinfile:
+        line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
+        path: /etc/ld.so.preload
+        state: present
+        create: true
+      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
   tasks:
     - name: Print ansible facts
       debug:
@@ -11,3 +25,12 @@
       debug:
         var: setup_facts
         verbosity: 2
+  post_tasks:
+    - name: Reenable fsync system-wide
+      lineinfile:
+        line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
+        path: /etc/ld.so.preload
+        state: absent
+      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+    - name: Sync everything to disk
+      shell: sync

@@ -11,7 +11,6 @@
       - nano
       - jq
       ###- yq // Ubuntu 22.04 is still around
-      - libxml2
       - openssh-server
       - openssh-client
       - systemd-container
@@ -47,7 +46,7 @@
       - xdg-utils
       # snapshots
       - snapper
-      ###- pacman-contrib // not available on Debian or Ubuntu
+      ###- pacman-contrib // Archlinux exclusive
       # logging
       - syslog-ng
       - logrotate
@@ -76,3 +75,12 @@
     tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
     mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
     chmod 0755 /usr/local/bin/yq
+
+- name: Reenable fsync system-wide
+  lineinfile:
+    line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
+    path: /etc/ld.so.preload
+    state: absent
+
+- name: Sync everything to disk
+  shell: sync

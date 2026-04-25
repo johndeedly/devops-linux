@@ -2,6 +2,11 @@
 
 exec &> >(while IFS=$'\r' read -ra line; do [ ${#line[@]} -eq 0 ] && continue; TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
 
+if [ -e /bin/apt ]; then
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y update
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install python3-venv
+fi
+
 pushd /root
 (
   python3 -m venv .venv
