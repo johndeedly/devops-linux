@@ -1,0 +1,70 @@
+# ---------- #
+
+- name: Basic system toolbelt
+  community.general.pacman:
+    name:
+      # system essentials
+      - kernel-modules-hook
+      - polkit
+      - curl
+      - wget
+      - nano
+      - jq
+      - yq
+      - libxml2
+      - openssh
+      ###- systemd-container // Archlinux default installation
+      ###- unattended-upgrades // missing on Archlinux
+      - ufw
+      # bash tools
+      - bash-completion
+      - ncdu
+      - viu
+      - pv
+      - mc
+      - ranger
+      - fzf
+      - moreutils
+      - htop
+      - btop
+      - lshw
+      - util-linux
+      - xkcdpass
+      - cryptsetup
+      - tmux
+      - elinks
+      # git tools
+      - git
+      - lazygit
+      # zipping and syncing
+      - zstd
+      - unzip
+      - p7zip
+      - rsync
+      # user directories
+      - xdg-user-dirs
+      - xdg-utils
+      # snapshots
+      - snapper
+      - pacman-contrib
+      # logging
+      - syslog-ng
+      - logrotate
+      # manuals
+      - core/man
+      - man-pages-de
+      # networking
+      - wireguard-tools
+      - gvfs
+      - gvfs-smb
+      - cifs-utils
+      # dev stuff
+      - python-pip
+      - base-devel
+      - npm
+      - fd
+      - neovim
+      # agents and system tools
+      - qemu-guest-agent
+      - kexec-tools
+    state: present

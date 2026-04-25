@@ -1,0 +1,61 @@
+# ---------- #
+
+- name: Download up to 5 pacman packages in parallel
+  lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#\?ParallelDownloads'
+    line: ParallelDownloads = 5
+
+- name: Initialize pacman keyring
+  community.general.pacman:
+    update_cache: true
+    name: archlinux-keyring
+    state: present
+
+- name: Enable multilib
+  command: sed -i '/^#\[multilib\]/,/^$/ s/^#//g' /etc/pacman.conf
+
+- name: Disable archlinux fallback initcpio
+  shell: |
+    find /etc/mkinitcpio.d -name "*.preset" | while read -r line; do
+      sed -i "s/[ ]*'fallback'//g" "$line"
+    done
+    find /boot -maxdepth 1 -name "*fallback*.img" | while read -r line; do
+      rm "$line"
+    done
+
+- name: Backup modules of running kernel
+  shell: |
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
+    echo -n "Kernel modules backup ($(uname -r)): "
+    stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
+
+- name: Full system upgrade
+  community.general.pacman:
+    update_cache: true
+    upgrade: true
+
+- name: Restore (still running) kernel modules
+  shell: |
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xkf /kernel-modules-backup.tar.zst &>/dev/null
+    rm /kernel-modules-backup.tar.zst
+
+- name: Generate locales
+  shell: |
+    if [ -f /etc/locale.gen ]; then
+      sed -i 's/^#\? \?de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen
+    else
+      echo "de_DE.UTF-8 UTF-8" > /etc/locale.gen
+    fi
+    echo "LANG=de_DE.UTF-8" > /etc/locale.conf
+    locale-gen
+
+- name: Configure timezone
+  shell: |
+    rm /etc/localtime || true
+    ln -s /usr/share/zoneinfo/Europe/Brussels /etc/localtime
+
+- name: Configure keyboard and console
+  shell: |
+    loadkeys de || true
+

@@ -1,0 +1,116 @@
+# ---------- #
+
+- name: Speedup apt on ubuntu and debian
+  shell: |
+    APT_CFGS=( /etc/apt/apt.conf.d/* )
+    for cfg in "${APT_CFGS[@]}"; do
+      sed -i 's/Acquire::Queue-Mode.*/Acquire::Queue-Mode "host";/g' "$cfg" || true
+      sed -i 's/Acquire::Retries.*/Acquire::Retries "3";/g' "$cfg" || true
+      sed -i 's/Acquire::http::Dl-Limit.*/Acquire::http::Dl-Limit "0";/g' "$cfg" || true
+      sed -i 's/Acquire::http::Timeout.*/Acquire::http::Timeout "10";/g' "$cfg" || true
+      sed -i 's/Acquire::https::Dl-Limit.*/Acquire::https::Dl-Limit "0";/g' "$cfg" || true
+      sed -i 's/Acquire::https::Timeout.*/Acquire::https::Timeout "10";/g' "$cfg" || true
+    done
+    tee /etc/apt/apt.conf.d/85provision <<EOF
+    Acquire::Queue-Mode "host";
+    Acquire::Retries "3";
+    Acquire::http::Dl-Limit "0";
+    Acquire::http::Timeout "10";
+    Acquire::https::Dl-Limit "0";
+    Acquire::https::Timeout "10";
+    EOF
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt update
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install eatmydata
+
+- name: Ability to script the debconf database
+  apt:
+    update_cache: true
+    name: debconf-utils
+    state: present
+
+- name: <Ubuntu> Install generic kernel and matching modules
+  shell: |
+    # switch from linux-virtual to linux-generic
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install linux-generic
+    # install current kernel modules before full system upgrade
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install linux-modules-$(uname -r) linux-modules-extra-$(uname -r)
+    ls -1 /lib/modules | while read -r line; do
+      depmod -a "$line"
+    done
+    LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
+    update-grub
+  when: ansible_facts["distribution"] in ['Ubuntu']
+
+- name: Backup modules of running kernel
+  shell: |
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf /kernel-modules-backup.tar.zst "/lib/modules/$(uname -r)/" &>/dev/null
+    echo -n "Kernel modules backup ($(uname -r)): "
+    stat -c "%n, %s bytes" /kernel-modules-backup.tar.zst
+
+- name: Full system upgrade
+  apt:
+    update_cache: true
+    upgrade: true
+
+- name: Restore (still running) kernel modules
+  shell: |
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xkf /kernel-modules-backup.tar.zst &>/dev/null
+    rm /kernel-modules-backup.tar.zst
+
+- name: Configure keyboard and console
+  apt:
+    name:
+      - locales-all
+      - keyboard-configuration
+      - console-setup
+      - console-data
+      - tzdata
+    state: present
+
+- name: Generate locales
+  shell: |
+    debconf-set-selections <<EOF
+    locales locales/default_environment_locale select de_DE.UTF-8
+    locales locales/locales_to_be_generated multiselect de_DE.UTF-8 UTF-8
+    EOF
+    dpkg-reconfigure --frontend=noninteractive locales
+    update-locale LANG=de_DE.UTF-8
+
+- name: Configure timezone
+  shell: |
+    debconf-set-selections <<EOF
+    tzdata tzdata/Areas select Europe
+    tzdata tzdata/Zones/Etc select UTC
+    tzdata tzdata/Zones/Europe select Brussels
+    EOF
+    dpkg-reconfigure --frontend=noninteractive tzdata
+
+- name: Configure keyboard and console
+  shell: |
+    debconf-set-selections <<EOF
+    keyboard-configuration keyboard-configuration/altgr select The default for the keyboard layout
+    keyboard-configuration keyboard-configuration/compose select No compose key
+    keyboard-configuration keyboard-configuration/switch select No temporary switch
+    keyboard-configuration keyboard-configuration/toggle select No toggling
+    keyboard-configuration keyboard-configuration/layoutcode string de
+    keyboard-configuration keyboard-configuration/model select Generic 105-key PC
+    keyboard-configuration keyboard-configuration/modelcode string pc105
+    keyboard-configuration keyboard-configuration/variant select German
+    keyboard-configuration keyboard-configuration/xkb-keymap select de
+    EOF
+    dpkg-reconfigure --frontend=noninteractive keyboard-configuration
+    debconf-set-selections <<EOF
+    console-setup console-setup/charmap47 select UTF-8
+    console-setup console-setup/codeset47 select # Latin2 - central Europe and Romanian
+    console-setup console-setup/codesetcode string Lat2
+    console-setup console-setup/fontface47 select Terminus
+    console-setup console-setup/fontsize string 8x16
+    console-setup console-setup/fontsize-fb47 select 8x16
+    console-setup console-setup/fontsize-text47 select 8x16
+    EOF
+    dpkg-reconfigure --frontend=noninteractive console-setup
+    mkdir -p /etc/systemd/system/console-setup.service.d
+    tee /etc/systemd/system/console-setup.service.d/override.conf <<EOF
+    [Service]
+    ExecStartPost=/bin/setupcon
+    EOF

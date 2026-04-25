@@ -1,0 +1,78 @@
+# ---------- #
+
+- name: Basic system toolbelt
+  apt:
+    name:
+      # system essentials
+      ###- kernel-modules-hook // Archlinux exclusive
+      - polkitd
+      - curl
+      - wget
+      - nano
+      - jq
+      ###- yq // Ubuntu 22.04 is still around
+      - libxml2
+      - openssh-server
+      - openssh-client
+      - systemd-container
+      - unattended-upgrades
+      - ufw
+      # bash tools
+      - bash-completion
+      ###- ncdu // Archlinux exclusive
+      ###- viu // Archlinux exclusive
+      - pv
+      - mc
+      - ranger
+      - fzf
+      - moreutils
+      - htop
+      ###- btop // missing on Debian
+      - lshw
+      - util-linux
+      - xkcdpass
+      - cryptsetup
+      - tmux
+      - elinks
+      # git tools
+      - git
+      - lazygit
+      # zipping and syncing
+      - zstd
+      - unzip
+      - p7zip
+      - rsync
+      # user directories
+      - xdg-user-dirs
+      - xdg-utils
+      # snapshots
+      - snapper
+      ###- pacman-contrib // not available on Debian or Ubuntu
+      # logging
+      - syslog-ng
+      - logrotate
+      # manuals
+      - man
+      - manpages-de
+      # networking
+      - wireguard-tools
+      - gvfs
+      - gvfs-backends
+      - cifs-utils
+      # dev stuff
+      - python3-pip
+      - build-essential
+      - npm
+      - fd-find
+      - neovim
+      # agents and system tools
+      - qemu-guest-agent
+      - kexec-tools
+    state: present
+
+- name: Download yq to /usr/local/bin
+  shell: |
+    curl --fail --silent --location --output /tmp/yq_linux_amd64.tar.gz 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64.tar.gz'
+    tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
+    mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
+    chmod 0755 /usr/local/bin/yq

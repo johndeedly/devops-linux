@@ -2,8 +2,6 @@
   hosts: all
   gather_facts: true
   strategy: free
-  vars:
-    setup_facts: "{{ lookup('file','../setup.yml') | from_yaml }}"
   tasks:
     - name: Print ansible facts
       debug:
