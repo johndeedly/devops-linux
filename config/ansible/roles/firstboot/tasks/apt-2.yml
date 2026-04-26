@@ -82,3 +82,30 @@
         tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
         mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
         chmod 0755 /usr/local/bin/yq
+
+- name: Enable system services
+  systemd_service:
+    name:
+      - "{{ item }}"
+    enabled: true
+  with_items:
+    - ssh
+    - ufw
+    - syslog-ng
+    - logrotate.timer
+    - systemd-networkd
+    - systemd-resolved
+    # Not present on some systems, thus ignoring errors
+    - systemd-homed
+  ignore_errors: true
+
+- name: Disable NetworkManager completely
+  systemd_service:
+    name:
+      - "{{ item }}"
+    enabled: false
+    masked: true
+  with_items:
+    - NetworkManager
+    - NetworkManager-wait-online
+    - NetworkManager-dispatcher

@@ -9,7 +9,7 @@ pushd /root
   export ANSIBLE_VERBOSITY=0
   export ANSIBLE_PIPELINING=True
   export ANSIBLE_PYTHON_INTERPRETER=/usr/bin/python3
-  export ANSIBLE_CALLBACKS_ENABLED=timer,profile_tasks,profile_roles
+  export ANSIBLE_CALLBACKS_ENABLED=profile_tasks,profile_roles
   export ANSIBLE_USE_PERSISTENT_CONNECTIONS=True
   export ANSIBLE_DEPRECATION_WARNINGS=False
   ansible-playbook -i inventory.yml /var/lib/cloud/instance/playbook/stage-2.yml

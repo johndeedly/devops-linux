@@ -7,9 +7,7 @@
     fi
 
 - name: Import cloud-init logs
-  shell: |
-    # tee -a /cidata_log <<<":: import cloud-init logs up to this point in time" >/dev/null
-    sed -e '/DEBUG/d' /var/log/cloud-init.log | tee -a /cidata_log >/dev/null
+  shell: sed -e '/DEBUG/d' /var/log/cloud-init.log | tee -a /cidata_log >/dev/null
 
 - name: Archlinux
   include_tasks: pacman-1.yml
@@ -47,17 +45,33 @@
       sed -i 's/^\(session.*pam_env.so\)/\1\nsession    required   pam_mkhomedir.so     skel=\/etc\/skel umask=0077/' /etc/pam.d/system-login
     fi
 
-- name: Load kernel modules on startup
-  shell: |
-    # enable ntfs3 kernel support for read/write/repair of partitions
-    echo "ntfs3" | tee /etc/modules-load.d/ntfs3.conf
-    tee /etc/udev/rules.d/50-ntfs.rules <<EOF
-    SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="ntfs", ENV{ID_FS_TYPE}="ntfs3"
-    EOF
-    # enable cifs kernel support for windows shares
-    echo "cifs" | tee /etc/modules-load.d/cifs.conf
-    # enable sg kernel support for dvd/bluray drives
-    echo "sg" | tee /etc/modules-load.d/sg.conf
+- name: Enable ntfs3 kernel support for read/write/repair of partitions
+  lineinfile:
+    line: ntfs3
+    path: /etc/modules-load.d/ntfs3.conf
+    state: present
+    create: true
+
+- name: Rewrite detected ntfs block devices to use the new module
+  lineinfile:
+    line: SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="ntfs", ENV{ID_FS_TYPE}="ntfs3"
+    path: /etc/udev/rules.d/50-ntfs.rules
+    state: present
+    create: true
+
+- name: Enable cifs kernel support for windows shares
+  lineinfile:
+    line: cifs
+    path: /etc/modules-load.d/cifs.conf
+    state: present
+    create: true
+
+- name: Enable sg kernel support for dvd/bluray drives
+  lineinfile:
+    line: sg
+    path: /etc/modules-load.d/sg.conf
+    state: present
+    create: true
 
 - name: User first time login script
   copy:
@@ -95,6 +109,108 @@
       EOX
       # force update font cache on first login
       fc-cache -fv
+
+- name: Create first time login service
+  copy:
+    dest: /etc/systemd/user/userlogin.service
+    mode: 0644
+    content: |
+      [Unit]
+      Description=Execute on first user login after boot
+      
+      [Service]
+      Type=simple
+      StandardInput=null
+      StandardOutput=journal
+      StandardError=journal
+      ExecStart=-/usr/local/bin/userlogin.sh
+      
+      [Install]
+      WantedBy=default.target
+
+- name: Enable first time login service globally
+  shell: systemctl --global enable userlogin.service
+
+- name: Modify all existing grub configs
+  shell: |
+    GRUB_CFGS=( /etc/default/grub $(find /etc/default/grub.d -type f -printf '%p ') )
+    for cfg in "${GRUB_CFGS[@]}"; do
+      sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/' "$cfg" || true
+      sed -i 's/^GRUB_CMDLINE_LINUX=/#GRUB_CMDLINE_LINUX=/' "$cfg" || true
+      sed -i 's/^GRUB_DEVICE_UUID=/#GRUB_DEVICE_UUID=/' "$cfg" || true
+      sed -i 's/^GRUB_DISABLE_LINUX_UUID=/#GRUB_DISABLE_LINUX_UUID=/' "$cfg" || true
+      sed -i 's/^GRUB_DISABLE_LINUX_PARTUUID=/#GRUB_DISABLE_LINUX_PARTUUID=/' "$cfg" || true
+      sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "$cfg" || true
+      sed -i 's/^GRUB_SERIAL_COMMAND=/#GRUB_SERIAL_COMMAND=/' "$cfg" || true
+      sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "$cfg" || true
+      sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "$cfg" || true
+      sed -i 's/^GRUB_TIMEOUT_STYLE=/#GRUB_TIMEOUT_STYLE=/' "$cfg" || true
+      sed -i 's/^GRUB_TIMEOUT=/#GRUB_TIMEOUT=/' "$cfg" || true
+      sed -i 's/^GRUB_COLOR_NORMAL=/#GRUB_COLOR_NORMAL=/' "$cfg" || true
+      sed -i 's/^GRUB_COLOR_HIGHLIGHT=/#GRUB_COLOR_HIGHLIGHT=/' "$cfg" || true
+    done
+
+- name: Provision default grub config settings
+  shell: |
+    GRUB_DEFAULT_CMDLINE="loglevel=3"
+    GRUB_GLOBAL_CMDLINE="console=ttyS0,115200 console=tty1 acpi=force acpi_osi=Linux"
+    GRUB_ROOT_UUID="$(lsblk -no MOUNTPOINT,UUID | sed -e '/^\/ /!d' | head -n 1 | awk '{ print $2 }')"
+    if findmnt -t btrfs -n /; then
+      GRUB_GLOBAL_CMDLINE="$GRUB_GLOBAL_CMDLINE rootflags=compress-force=zstd:4,noatime"
+    fi
+    GRUB_CFGS=( /etc/default/grub $(find /etc/default/grub.d -type f -printf '%p ') )
+    tee -a /etc/default/grub <<EOF
+
+    # provisioned
+    GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_DEFAULT_CMDLINE}"
+    GRUB_CMDLINE_LINUX="${GRUB_GLOBAL_CMDLINE}"
+    GRUB_DEVICE_UUID="${GRUB_ROOT_UUID}"
+    GRUB_DISABLE_LINUX_UUID=""
+    GRUB_DISABLE_LINUX_PARTUUID="true"
+    GRUB_TERMINAL="console serial"
+    GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"
+    GRUB_GFXMODE=auto
+    GRUB_GFXPAYLOAD_LINUX=keep
+    GRUB_TIMEOUT_STYLE=menu
+    GRUB_TIMEOUT=2
+    GRUB_COLOR_NORMAL="light-gray/black"
+    GRUB_COLOR_HIGHLIGHT="white/red"
+    EOF
+    tee /etc/grub.d/06_override <<EOF
+    #!/usr/bin/env bash
+    cat <<'EOS'
+    set menu_color_normal="light-gray/black"
+    set menu_color_highlight="white/red"
+    EOS
+    EOF
+    chmod +x /etc/grub.d/06_override
+    if [ -e /bin/apt ] || [ -e /bin/pacman ]; then
+      grub-mkconfig -o /boot/grub/grub.cfg
+      find /boot/efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+        grub-mkconfig -o "$line/grub.cfg"
+      done
+      find /efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+        grub-mkconfig -o "$line/grub.cfg"
+      done
+    elif [ -e /bin/yum ]; then
+      grub2-editenv - set "kernelopts=$GRUB_GLOBAL_CMDLINE"
+      if [ -e /sbin/grubby ]; then
+        grubby --update-kernel=ALL --args="$GRUB_GLOBAL_CMDLINE"
+      fi
+      grub2-mkconfig -o /boot/grub2/grub.cfg --update-bls-cmdline
+      find /boot/efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+        grub2-mkconfig -o "$line/grub.cfg" --update-bls-cmdline
+      done
+      find /efi/EFI -maxdepth 1 -type d -printf '%p\n' | while read -r line; do
+        grub2-mkconfig -o "$line/grub.cfg" --update-bls-cmdline
+      done
+    fi
+
+- name: Add modules to initcpio
+  shell: |
+    if [ -f /etc/mkinitcpio.conf ]; then
+      sed -i 's/^MODULES=.*/MODULES=(usbhid xhci_hcd vfat)/g' /etc/mkinitcpio.conf
+    fi
 
 - name: Archlinux
   include_tasks: pacman-2.yml
