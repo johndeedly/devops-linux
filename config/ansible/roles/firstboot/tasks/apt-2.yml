@@ -69,18 +69,16 @@
       - kexec-tools
     state: present
 
-- name: Download yq to /usr/local/bin
-  shell: |
-    curl --fail --silent --location --output /tmp/yq_linux_amd64.tar.gz 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64.tar.gz'
-    tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
-    mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
-    chmod 0755 /usr/local/bin/yq
-
-- name: Reenable fsync system-wide
-  lineinfile:
-    line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
-    path: /etc/ld.so.preload
-    state: absent
-
-- name: Sync everything to disk
-  shell: sync
+- name: Install yq with fallback (Ubuntu 22.04 fix)
+  block:
+    - name: Install yq via apt
+      apt:
+        name: yq
+        state: present
+  rescue:
+    - name: Download yq to /usr/local/bin
+      shell: |
+        curl --fail --silent --location --output /tmp/yq_linux_amd64.tar.gz 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64.tar.gz'
+        tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
+        mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
+        chmod 0755 /usr/local/bin/yq
