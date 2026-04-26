@@ -85,8 +85,7 @@
 
 - name: Enable system services
   systemd_service:
-    name:
-      - "{{ item }}"
+    name: "{{ item }}"
     enabled: true
   with_items:
     - ssh
@@ -101,9 +100,7 @@
 
 - name: Disable NetworkManager completely
   systemd_service:
-    name:
-      - "{{ item }}"
-    enabled: false
+    name: "{{ item }}"
     masked: true
   with_items:
     - NetworkManager

@@ -67,3 +67,26 @@
       - qemu-guest-agent
       - kexec-tools
     state: present
+
+- name: Enable system services
+  systemd_service:
+    name: "{{ item }}"
+    enabled: true
+  with_items:
+    - linux-modules-cleanup
+    - sshd
+    - ufw
+    - syslog-ng@default
+    - logrotate.timer
+    - systemd-networkd
+    - systemd-resolved
+    - systemd-homed
+
+- name: Disable NetworkManager completely
+  systemd_service:
+    name: "{{ item }}"
+    masked: true
+  with_items:
+    - NetworkManager
+    - NetworkManager-wait-online
+    - NetworkManager-dispatcher
