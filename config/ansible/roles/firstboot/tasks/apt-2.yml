@@ -67,6 +67,11 @@
       # agents and system tools
       - qemu-guest-agent
       - kexec-tools
+      # remote administration
+      - cockpit
+      - sscg
+      - cockpit-storaged
+      - cockpit-packagekit
     state: present
 
 - name: Install yq with fallback (Ubuntu 22.04 fix)
@@ -96,6 +101,7 @@
     - systemd-resolved
     # Not present on some systems, thus ignoring errors
     - systemd-homed
+    - cockpit.socket
   ignore_errors: true
 
 - name: Disable NetworkManager completely

@@ -66,6 +66,11 @@
       # agents and system tools
       - qemu-guest-agent
       - kexec-tools
+      # remote administration
+      - cockpit
+      - sscg
+      - cockpit-storaged
+      - cockpit-packagekit
     state: present
 
 - name: Enable system services
@@ -81,6 +86,7 @@
     - systemd-networkd
     - systemd-resolved
     - systemd-homed
+    - cockpit.socket
 
 - name: Disable NetworkManager completely
   systemd_service:
