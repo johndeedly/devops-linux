@@ -24,6 +24,7 @@ all:
         localhost:
           ansible_connection: local
           ansible_python_interpreter: /usr/bin/python3
+          ansible_shell_executable: /bin/bash
 EOF
   export ANSIBLE_VERBOSITY=0
   export ANSIBLE_PIPELINING=True
@@ -31,6 +32,7 @@ EOF
   export ANSIBLE_CALLBACKS_ENABLED=profile_tasks,profile_roles
   export ANSIBLE_USE_PERSISTENT_CONNECTIONS=True
   export ANSIBLE_DEPRECATION_WARNINGS=False
+  export ANSIBLE_SHELL_EXECUTABLE=/bin/bash
   ansible-playbook -i inventory.yml /var/lib/cloud/instance/playbook/stage-1.yml
 
   deactivate
