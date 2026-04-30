@@ -18,7 +18,7 @@
       - ufw
       # bash tools
       - bash-completion
-      ###- ncdu // Archlinux exclusive
+      - ncdu
       ###- viu // Archlinux exclusive
       - pv
       - mc

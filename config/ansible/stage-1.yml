@@ -13,7 +13,9 @@
     - name: <Debian,Ubuntu> Install libeatmydata
       apt:
         update_cache: true
-        name: libeatmydata1
+        name:
+          - eatmydata
+          - libeatmydata1
         state: present
       when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
     - name: <Archlinux> Disable fsync system-wide
