@@ -1,0 +1,18 @@
+# ---------- #
+
+- name: <Archlinux> Reenable fsync system-wide
+  lineinfile:
+    line: /usr/lib/libeatmydata.so
+    path: /etc/ld.so.preload
+    state: absent
+  when: ansible_facts["distribution"] in ['Archlinux']
+
+- name: <Debian,Ubuntu> Reenable fsync system-wide
+  lineinfile:
+    line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
+    path: /etc/ld.so.preload
+    state: absent
+  when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+
+- name: Sync all cached data to disk(s)
+  command: sync

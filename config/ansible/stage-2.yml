@@ -3,20 +3,10 @@
   gather_facts: true
   strategy: free
   pre_tasks:
-    - name: <Archlinux> Disable fsync system-wide
-      lineinfile:
-        line: /usr/lib/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: present
-        create: true
-      when: ansible_facts["distribution"] in ['Archlinux']
-    - name: <Debian,Ubuntu> Disable fsync system-wide
-      lineinfile:
-        line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: present
-        create: true
-      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+    - name: Prepare
+      include_role:
+        name: build
+        tasks_from: prepare
   tasks:
     - name: Print ansible facts
       debug:
@@ -27,17 +17,7 @@
         var: setup_facts
         verbosity: 2
   post_tasks:
-    - name: <Archlinux> Reenable fsync system-wide
-      lineinfile:
-        line: /usr/lib/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: absent
-      when: ansible_facts["distribution"] in ['Archlinux']
-    - name: <Debian,Ubuntu> Reenable fsync system-wide
-      lineinfile:
-        line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: absent
-      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
-    - name: Sync all cached data to disk(s)
-      command: sync
+    - name: Wrapup
+      include_role:
+        name: build
+        tasks_from: wrapup

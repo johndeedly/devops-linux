@@ -3,35 +3,10 @@
   gather_facts: true
   strategy: free
   pre_tasks:
-    - name: <Archlinux> Install libeatmydata
-      community.general.pacman:
-        # unsafe way, remember to perform a full system upgrade afterwards
-        update_cache: true
-        name: libeatmydata
-        state: present
-      when: ansible_facts["distribution"] in ['Archlinux']
-    - name: <Debian,Ubuntu> Install libeatmydata
-      apt:
-        update_cache: true
-        name:
-          - eatmydata
-          - libeatmydata1
-        state: present
-      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
-    - name: <Archlinux> Disable fsync system-wide
-      lineinfile:
-        line: /usr/lib/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: present
-        create: true
-      when: ansible_facts["distribution"] in ['Archlinux']
-    - name: <Debian,Ubuntu> Disable fsync system-wide
-      lineinfile:
-        line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: present
-        create: true
-      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+    - name: Prepare
+      include_role:
+        name: build
+        tasks_from: prepare
   tasks:
     - name: Print ansible facts
       debug:
@@ -44,18 +19,12 @@
     - name: First boot
       include_role:
         name: firstboot
+    - name: LDAP Client
+      include_role:
+        name: ldap
+      when: setup_facts.setup.ldapauth.enabled is truthy
   post_tasks:
-    - name: <Archlinux> Reenable fsync system-wide
-      lineinfile:
-        line: /usr/lib/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: absent
-      when: ansible_facts["distribution"] in ['Archlinux']
-    - name: <Debian,Ubuntu> Reenable fsync system-wide
-      lineinfile:
-        line: /usr/lib/x86_64-linux-gnu/libeatmydata.so
-        path: /etc/ld.so.preload
-        state: absent
-      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
-    - name: Sync all cached data to disk(s)
-      command: sync
+    - name: Wrapup
+      include_role:
+        name: build
+        tasks_from: wrapup
