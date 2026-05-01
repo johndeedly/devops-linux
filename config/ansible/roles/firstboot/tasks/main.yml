@@ -133,22 +133,23 @@
 
 - name: Modify all existing grub configs
   shell: |
-    GRUB_CFGS=( /etc/default/grub $(find /etc/default/grub.d -type f -printf '%p ') )
-    for cfg in "${GRUB_CFGS[@]}"; do
-      sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/' "$cfg" || true
-      sed -i 's/^GRUB_CMDLINE_LINUX=/#GRUB_CMDLINE_LINUX=/' "$cfg" || true
-      sed -i 's/^GRUB_DEVICE_UUID=/#GRUB_DEVICE_UUID=/' "$cfg" || true
-      sed -i 's/^GRUB_DISABLE_LINUX_UUID=/#GRUB_DISABLE_LINUX_UUID=/' "$cfg" || true
-      sed -i 's/^GRUB_DISABLE_LINUX_PARTUUID=/#GRUB_DISABLE_LINUX_PARTUUID=/' "$cfg" || true
-      sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "$cfg" || true
-      sed -i 's/^GRUB_SERIAL_COMMAND=/#GRUB_SERIAL_COMMAND=/' "$cfg" || true
-      sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "$cfg" || true
-      sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "$cfg" || true
-      sed -i 's/^GRUB_TIMEOUT_STYLE=/#GRUB_TIMEOUT_STYLE=/' "$cfg" || true
-      sed -i 's/^GRUB_TIMEOUT=/#GRUB_TIMEOUT=/' "$cfg" || true
-      sed -i 's/^GRUB_COLOR_NORMAL=/#GRUB_COLOR_NORMAL=/' "$cfg" || true
-      sed -i 's/^GRUB_COLOR_HIGHLIGHT=/#GRUB_COLOR_HIGHLIGHT=/' "$cfg" || true
-    done
+    sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=/#GRUB_CMDLINE_LINUX_DEFAULT=/' "{{ item }}" || true
+    sed -i 's/^GRUB_CMDLINE_LINUX=/#GRUB_CMDLINE_LINUX=/' "{{ item }}" || true
+    sed -i 's/^GRUB_DEVICE_UUID=/#GRUB_DEVICE_UUID=/' "{{ item }}" || true
+    sed -i 's/^GRUB_DISABLE_LINUX_UUID=/#GRUB_DISABLE_LINUX_UUID=/' "{{ item }}" || true
+    sed -i 's/^GRUB_DISABLE_LINUX_PARTUUID=/#GRUB_DISABLE_LINUX_PARTUUID=/' "{{ item }}" || true
+    sed -i 's/^GRUB_TERMINAL=/#GRUB_TERMINAL=/' "{{ item }}" || true
+    sed -i 's/^GRUB_SERIAL_COMMAND=/#GRUB_SERIAL_COMMAND=/' "{{ item }}" || true
+    sed -i 's/^GRUB_GFXMODE=/#GRUB_GFXMODE=/' "{{ item }}" || true
+    sed -i 's/^GRUB_GFXPAYLOAD_LINUX=/#GRUB_GFXPAYLOAD_LINUX=/' "{{ item }}" || true
+    sed -i 's/^GRUB_TIMEOUT_STYLE=/#GRUB_TIMEOUT_STYLE=/' "{{ item }}" || true
+    sed -i 's/^GRUB_TIMEOUT=/#GRUB_TIMEOUT=/' "{{ item }}" || true
+    sed -i 's/^GRUB_COLOR_NORMAL=/#GRUB_COLOR_NORMAL=/' "{{ item }}" || true
+    sed -i 's/^GRUB_COLOR_HIGHLIGHT=/#GRUB_COLOR_HIGHLIGHT=/' "{{ item }}" || true
+  loop: >-
+    {{ 
+      ['/etc/default/grub'] + (query('fileglob', '/etc/default/grub.d/*'))
+    }}
 
 - name: Provision default grub config settings
   shell: |

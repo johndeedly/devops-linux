@@ -1,0 +1,7 @@
+# ---------- #
+
+- name: Load the keyboard layout for the current session
+  shell: |
+    if [ -f /usr/lib/systemd/systemd-vconsole-setup ]; then
+      /usr/lib/systemd/systemd-vconsole-setup
+    fi
