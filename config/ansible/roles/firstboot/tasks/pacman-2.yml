@@ -13,6 +13,7 @@
       - yq
       - openssh
       ###- systemd-container // Archlinux default installation
+      ###- systemd-homed // Archlinux default installation
       ###- unattended-upgrades // missing on Archlinux
       - ufw
       # bash tools

@@ -14,6 +14,7 @@
       - openssh-server
       - openssh-client
       - systemd-container
+      - systemd-homed
       - unattended-upgrades
       - ufw
       # bash tools
@@ -99,10 +100,8 @@
     - logrotate.timer
     - systemd-networkd
     - systemd-resolved
-    # Not present on some systems, thus ignoring errors
     - systemd-homed
     - cockpit.socket
-  ignore_errors: true
 
 - name: Disable NetworkManager completely
   systemd_service:
