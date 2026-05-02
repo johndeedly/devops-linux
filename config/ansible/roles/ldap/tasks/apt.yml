@@ -1,0 +1,24 @@
+# ---------- #
+
+- name: Install basic packages
+  apt:
+    name:
+      - libnss-ldap
+      - libpam-ldap
+      - ldap-utils
+      - nslcd
+    state: present
+
+- name: Optional ldap pam and nss authentication
+  lineinfile:
+    regexp: '^Default:'
+    line: 'Default: yes'
+    path: '{{ item }}'
+    state: present
+  with_items:
+    - /usr/share/pam-configs/ldap
+    - /usr/share/pam-configs/systemd-homed
+
+- name: Update pam config
+  shell: |
+    DEBIAN_FRONTEND=noninteractive pam-auth-update --force

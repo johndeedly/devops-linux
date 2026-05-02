@@ -1,7 +1,118 @@
 # ---------- #
 
-- name: Load the keyboard layout for the current session
+- name: Archlinux
+  include_tasks: pacman.yml
+  when: ansible_facts["distribution"] in ['Archlinux']
+
+- name: Debian/Ubuntu
+  include_tasks: apt.yml
+  when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+
+- name: Sanity ldap check
+  stat:
+    path: /etc/nslcd.conf
+  register: config_file
+
+- name: Only execute if config file exists
+  block:
+    - name: Link passwd and group lists with ldap 1.)
+      lineinfile:
+        path: /etc/nslcd.conf
+        regexp: '^(uri .*)$'
+        line: |-
+          #\1
+          uri {{ setup_facts.setup.ldapauth.authserver }}
+          ssl {{ 'start_tls' if (setup_facts.setup.ldapauth.starttls) else 'off' }}
+          tls_reqcert {{ 'try' if (setup_facts.setup.ldapauth.trycertificate) else 'never' }}
+        backrefs: yes
+        firstmatch: yes
+    
+    - name: Link passwd and group lists with ldap 2.)
+      lineinfile:
+        path: /etc/nslcd.conf
+        regexp: '^(base .*)$'
+        line: |-
+          #\1
+          base   {{ setup_facts.setup.ldapauth.base }}
+          base   group  {{ setup_facts.setup.ldapauth.group }}
+          base   passwd {{ setup_facts.setup.ldapauth.passwd }}
+          base   shadow {{ setup_facts.setup.ldapauth.shadow }}
+        backrefs: yes
+        firstmatch: yes
+    
+    - name: Link passwd and group lists with ldap 3.)
+      lineinfile:
+        path: /etc/nslcd.conf
+        regexp: '^(ldapversion .*)$'
+        line: '#\1'
+        backrefs: yes
+        firstmatch: yes
+  when: config_file.stat.exists
+
+- name: Ubuntu ldap check
+  stat:
+    path: /etc/ldap.conf
+  register: ubuntu_config_file
+
+- name: Only execute on Ubuntu
+  block:
+    - name: <Ubuntu> Link passwd and group lists with ldap 1.)
+      lineinfile:
+        path: /etc/ldap.conf
+        regexp: '^(uri .*)$'
+        line: |-
+          #\1
+          uri {{ setup_facts.setup.ldapauth.authserver }}
+          ssl {{ 'start_tls' if (setup_facts.setup.ldapauth.starttls) else 'off' }}
+          tls_reqcert {{ 'try' if (setup_facts.setup.ldapauth.trycertificate) else 'never' }}
+        backrefs: yes
+        firstmatch: yes
+    
+    - name: <Ubuntu> Link passwd and group lists with ldap 2.)
+      lineinfile:
+        path: /etc/ldap.conf
+        regexp: '^(base .*)$'
+        line: |-
+          #\1
+          base   {{ setup_facts.setup.ldapauth.base }}
+        backrefs: yes
+        firstmatch: yes
+    
+    - name: <Ubuntu> Link passwd and group lists with ldap 3.)
+      lineinfile:
+        path: /etc/ldap.conf
+        regexp: '^(ldapversion .*)$'
+        line: '#\1'
+        backrefs: yes
+        firstmatch: yes
+  when: ubuntu_config_file.stat.exists
+
+- name: Prioritize ldap to be after everything else
   shell: |
-    if [ -f /usr/lib/systemd/systemd-vconsole-setup ]; then
-      /usr/lib/systemd/systemd-vconsole-setup
+    if [ -f /etc/nsswitch.conf ]; then
+      sed -i 's/^\(passwd.*\)/\1 ldap/' /etc/nsswitch.conf
+      sed -i 's/^\(group.*\)/\1 ldap/' /etc/nsswitch.conf
+      sed -i 's/^\(shadow.*\)/\1 ldap/' /etc/nsswitch.conf
     fi
+
+- name: Configure ldap client connection
+  shell: |
+    if [ -f /etc/openldap/ldap.conf ]; then
+      tee -a /etc/openldap/ldap.conf <<EOF
+    
+    BASE    {{ setup_facts.setup.ldapauth.base }}
+    URI     {{ setup_facts.setup.ldapauth.authserver }}
+    EOF
+    fi
+    if [ -f /etc/ldap/ldap.conf ]; then
+      tee -a /etc/ldap/ldap.conf <<EOF
+    
+    BASE    {{ setup_facts.setup.ldapauth.base }}
+    URI     {{ setup_facts.setup.ldapauth.authserver }}
+    EOF
+    fi
+
+- name: Enable system services
+  systemd_service:
+    name: 'nslcd.service'
+    enabled: true
