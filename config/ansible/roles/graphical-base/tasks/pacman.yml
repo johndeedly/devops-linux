@@ -1,0 +1,70 @@
+# ---------- #
+
+- name: Install basic packages
+  community.general.pacman:
+    name:
+      # amd drivers (old and new)
+      - xf86-video-ati
+      - xf86-video-amdgpu
+      - mesa
+      - vulkan-radeon
+      - libva-mesa-driver
+      - libva-utils
+      - opencl-mesa
+      # (open source) nvidia drivers
+      - xf86-video-nouveau
+      - vulkan-nouveau
+      # intel drivers
+      - xf86-video-intel
+      - vulkan-intel
+      - libva-intel-driver
+      # qxl drivers
+      - xf86-video-qxl
+      # virtio drivers
+      - vulkan-virtio
+      # tools
+      - nvtop
+    state: present
+
+- name: Load kms modules on startup
+  copy:
+    dest: /etc/modules-load.d/kms.conf
+    mode: 0644
+    content: |
+      amdgpu
+      radeon
+      nouveau
+      i915
+      virtio-gpu
+      vmwgfx
+
+- name: Enable auto configuration on startup
+  copy:
+    dest: /etc/modprobe.d/kms.conf
+    mode: 0644
+    content: |
+      options amdgpu modeset=1
+      options radeon modeset=1
+      options nouveau modeset=1
+      options i915 modeset=1
+      options virtio-gpu modeset=1
+      options vmwgfx modeset=1
+
+- name: Disable kms modules on initramfs rebuild
+  copy:
+    dest: /etc/initcpio/install/zz_omit
+    mode: 0755
+    content: |
+      #!/usr/bin/env bash
+      
+      build() {
+        for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do
+          find "${BUILDROOT}" -type f -wholename "*${x}*" -print | while read -r line; do
+            echo Remove mod/fw ${line#"$BUILDROOT"} && rm "${line}"
+          done
+        done
+      }
+      sed -i 's/^\(HOOKS=[^)]*\)/\1 zz_omit/' /etc/mkinitcpio.conf
+
+- name: Rebuild initramfs
+  shell: mkinitcpio -P

@@ -25,7 +25,7 @@ mount -t squashfs -o loop /var/tmp/sfs/rootfs.img /var/tmp/sfs/mnt
 
 # https://wiki.archlinux.org/title/Full_system_backup_with_tar
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
-TMP_OPTS=( "" $(yq -r '.setup.options[]' /var/lib/cloud/instance/config/setup.yml) )
+TMP_OPTS=( "" $(yq -r '.setup.shell_options[]' /var/lib/cloud/instance/config/setup.yml) )
 SETUP_OPTIONS=$(IFS='-'; echo "${TMP_OPTS[*]}")
 mkdir -p /srv/tar
 echo "[ ## ] Create tar image of squashfs root"

@@ -28,7 +28,7 @@ pushd devops-linux
 
   # archlinux base
   yq -y '(.setup.distro) = "archlinux"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/archlinux-base-x86_64-r${LOGCOUNT}.iso"
@@ -36,7 +36,7 @@ pushd devops-linux
 
   # archlinux mirror
   yq -y '(.setup.distro) = "archlinux"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/archlinux-mirror-x86_64-r${LOGCOUNT}.iso"
@@ -44,7 +44,7 @@ pushd devops-linux
 
   # archlinux kde
   yq -y '(.setup.distro) = "archlinux"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","kde"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","kde"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/archlinux-kde-x86_64-r${LOGCOUNT}.iso"
@@ -52,7 +52,7 @@ pushd devops-linux
 
   # archlinux kde pxe-image
   yq -y '(.setup.distro) = "archlinux"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","kde","pxe-image"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","kde","pxe-image"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/archlinux-kde-pxe-x86_64-r${LOGCOUNT}.iso"
@@ -60,7 +60,7 @@ pushd devops-linux
 
   # debian 12 base
   yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/debian-12-base-x86_64-r${LOGCOUNT}.iso"
@@ -68,7 +68,7 @@ pushd devops-linux
 
   # debian 12 mirror
   yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/debian-12-mirror-x86_64-r${LOGCOUNT}.iso"
@@ -76,7 +76,7 @@ pushd devops-linux
 
   # debian 12 kde
   yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","kde"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","kde"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/debian-12-kde-x86_64-r${LOGCOUNT}.iso"
@@ -84,7 +84,7 @@ pushd devops-linux
 
   # debian 12 kde pxe-image
   yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","kde","pxe-image"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","kde","pxe-image"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/debian-12-kde-pxe-x86_64-r${LOGCOUNT}.iso"
@@ -92,7 +92,7 @@ pushd devops-linux
 
   # debian 12 proxmox
   yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","proxmox","proxmox-devops"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","proxmox","proxmox-devops"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/debian-12-proxmox-x86_64-r${LOGCOUNT}.iso"
@@ -100,7 +100,7 @@ pushd devops-linux
 
   # debian 12 podman
   yq -y '(.setup.distro) = "debian-12"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","podman"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","podman"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/debian-12-podman-x86_64-r${LOGCOUNT}.iso"
@@ -108,7 +108,7 @@ pushd devops-linux
 
   # ubuntu 24 base
   yq -y '(.setup.distro) = "ubuntu-24"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/ubuntu-24-base-x86_64-r${LOGCOUNT}.iso"
@@ -116,7 +116,7 @@ pushd devops-linux
 
   # ubuntu 24 mirror
   yq -y '(.setup.distro) = "ubuntu-24"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["mirror"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/ubuntu-24-mirror-x86_64-r${LOGCOUNT}.iso"
@@ -124,7 +124,7 @@ pushd devops-linux
 
   # ubuntu 24 kde
   yq -y '(.setup.distro) = "ubuntu-24"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","kde"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","kde"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/ubuntu-24-kde-x86_64-r${LOGCOUNT}.iso"
@@ -132,7 +132,7 @@ pushd devops-linux
 
   # ubuntu 24 kde pxe-image
   yq -y '(.setup.distro) = "ubuntu-24"' config/setup.yml | sponge config/setup.yml
-  yq -y '(.setup.options) = ["base","kde","pxe-image"]' config/setup.yml | sponge config/setup.yml
+  yq -y '(.setup.shell_options) = ["base","kde","pxe-image"]' config/setup.yml | sponge config/setup.yml
   yq -y '(.setup.target) = "auto"' config/setup.yml | sponge config/setup.yml
   if ./cidata.sh --archiso; then
     mv archlinux-x86_64-cidata.iso "/deploy/ubuntu-24-kde-pxe-x86_64-r${LOGCOUNT}.iso"

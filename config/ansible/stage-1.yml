@@ -19,10 +19,14 @@
     - name: First boot
       include_role:
         name: firstboot
+    - name: Graphical base
+      include_role:
+        name: graphical-base
+      when: ('graphical-base' in setup_facts.setup.ansible_options)
     - name: LDAP Client
       include_role:
-        name: ldap
-      when: setup_facts.setup.ldapauth.enabled is truthy
+        name: ldap-auth
+      when: ('ldap-auth' in setup_facts.setup.ansible_options)
   post_tasks:
     - name: Wrapup
       include_role:

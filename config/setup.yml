@@ -18,7 +18,8 @@ packer:
   enable_ansible: false
 setup:
   distro: archlinux
-  options: []
+  shell_options: []
+  ansible_options: []
   target: auto
   raid_targets: []
   hostname: ""
@@ -351,9 +352,9 @@ images:
   rocky-8: Rocky-8-GenericCloud-Base.latest.x86_64.qcow2
 files:
   apt:
-    graphical-base:
-      - path: stage/15_graphical_base.sh
-        stage: 1
+    #graphical-base:
+    #  - path: stage/15_graphical_base.sh.disabled
+    #    stage: 1
     mirror:
       - path: apt/20_localmirror_apt.sh
         stage: 2
@@ -472,9 +473,9 @@ files:
     filesystems:
       - path: pacman/15_filesystems_pacman.sh
         stage: 1
-    graphical-base:
-      - path: stage/15_graphical_base.sh
-        stage: 1
+    #graphical-base:
+    #  - path: stage/15_graphical_base.sh.disabled
+    #    stage: 1
     mirror:
       - path: pacman/20_localmirror_pacman.sh
         stage: 2
@@ -605,9 +606,9 @@ files:
       - path: audit/80_lynis.sh
         stage: 2
   yum:
-    graphical-base:
-      - path: stage/15_graphical_base.sh
-        stage: 1
+    #graphical-base:
+    #  - path: stage/15_graphical_base.sh.disabled
+    #    stage: 1
     mirror:
       - path: yum/20_localmirror_yum.sh
         stage: 2

@@ -1,0 +1,91 @@
+# ---------- #
+
+- name: <Debian> Install firmware
+  apt:
+    name: firmware-linux-nonfree
+    state: present
+  when: ansible_facts["distribution"] in ['Debian']
+      
+- name: <Ubuntu> Install firmware
+  apt:
+    name: linux-firmware
+    state: present
+  when: ansible_facts["distribution"] in ['Ubuntu']
+      
+- name: Install basic packages
+  apt:
+    name:
+      # amd drivers (old and new)
+      - xserver-xorg-video-ati
+      - xserver-xorg-video-amdgpu
+      - mesa-vulkan-drivers
+      - mesa-va-drivers
+      - mesa-opencl-icd
+      # (open source) nvidia drivers
+      - xserver-xorg-video-nouveau
+      # intel drivers
+      - xserver-xorg-video-intel
+      # vmware drivers
+      - xserver-xorg-video-vmware
+      # qxl drivers
+      - xserver-xorg-video-qxl
+      # virtio drivers
+      ###- vulkan-virtio // not available for Debian/Ubuntu
+      # tools
+      - nvtop
+
+- name: Load kms modules on startup
+  copy:
+    dest: /etc/modules-load.d/kms.conf
+    mode: 0644
+    content: |
+      amdgpu
+      radeon
+      nouveau
+      i915
+      virtio-gpu
+      vmwgfx
+
+- name: Enable auto configuration on startup
+  copy:
+    dest: /etc/modprobe.d/kms.conf
+    mode: 0644
+    content: |
+      options amdgpu modeset=1
+      options radeon modeset=1
+      options nouveau modeset=1
+      options i915 modeset=1
+      options virtio-gpu modeset=1
+      options vmwgfx modeset=1
+
+- name: Disable mod/fw for kms modules on initramfs rebuild
+  copy:
+    dest: /etc/initramfs-tools/hooks/zz_omit
+    mode: 0755
+    content: |
+      #!/bin/sh
+      PREREQ=""
+      case $1 in
+      prereqs)
+        echo "$PREREQ"
+        exit 0
+        ;;
+      esac
+      . /usr/share/initramfs-tools/hook-functions
+      for x in amdgpu radeon nouveau i915 virtio-gpu vmwgfx ; do
+        find "${DESTDIR}" -type f -wholename "*${x}*" -print | while read -r line; do
+          echo Remove mod/fw ${line#"$DESTDIR"} && rm "${line}"
+        done
+      done
+
+- name: Recompile all kernel modules
+  shell: depmod -a {{ item | quote }}
+  loop: >-
+    {{ 
+      (query('fileglob', '/lib/modules/*'))
+    }}
+
+- name: Rebuild initramfs
+  shell: |
+    LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
+    update-grub

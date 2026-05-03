@@ -74,7 +74,7 @@ sync
 buildah umount worker
 
 DISTRO_NAME=$(yq -r '.setup.distro' /var/lib/cloud/instance/config/setup.yml)
-TMP_OPTS=( "" $(yq -r '.setup.options[]' /var/lib/cloud/instance/config/setup.yml) )
+TMP_OPTS=( "" $(yq -r '.setup.shell_options[]' /var/lib/cloud/instance/config/setup.yml) )
 SETUP_OPTIONS=$(IFS='-'; echo "${TMP_OPTS[*]}")
 buildah commit worker "devops-linux-${DISTRO_NAME}${SETUP_OPTIONS}"
 

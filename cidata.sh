@@ -185,7 +185,7 @@ EOF
             write_mime_params=( "${write_mime_params[@]}" "${_build}/$line:application/x-provision-file" )
         fi
     fi
-done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.config) | .path' ${_build}/setup.yml)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.shell_options[]][] | select(.config) | .path' ${_build}/setup.yml)"
 # deployment scripts stage 1
 if [ $_autoreboot -eq 1 ]; then
     write_mime_params=( "${write_mime_params[@]}" "config/99_autoreboot.sh:text/x-shellscript" )
@@ -196,7 +196,7 @@ while read -r line; do
             write_mime_params=( "${write_mime_params[@]}" "config/$line:text/x-shellscript" )
         fi
     fi
-done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==1) | .path' ${_build}/setup.yml)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.shell_options[]][] | select(.stage==1) | .path' ${_build}/setup.yml)"
 # deployment scripts stage 2
 if [ $_autoreboot -eq 1 ]; then
     write_mime_params=( "${write_mime_params[@]}" "config/98_lockdown.sh:application/x-second-stage" "config/99_autoreboot.sh:application/x-second-stage" )
@@ -207,7 +207,7 @@ while read -r line; do
             write_mime_params=( "${write_mime_params[@]}" "config/$line:application/x-second-stage" )
         fi
     fi
-done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.options[]][] | select(.stage==2) | .path' ${_build}/setup.yml)"
+done <<<"$(yq -r '.setup as $setup | .distros[$setup.distro] as $distro | .files[$distro][$setup.shell_options[]][] | select(.stage==2) | .path' ${_build}/setup.yml)"
 # additional custom scripts for stage 1
 write_mime_params=( "${write_mime_params[@]}" $( find config/stage/custom-1 -maxdepth 1 -type f -name "*.sh" -printf "config/stage/custom-1/%P:text/x-shellscript " ) )
 # additional custom scripts for stage 2
