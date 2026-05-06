@@ -4,16 +4,15 @@ exec &> >(while IFS=$'\r' read -ra line; do [ ${#line[@]} -eq 0 ] && continue; T
 
 if [ -e /bin/apt ]; then
   LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y update
-  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install python3-venv
+  LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt -y install ansible
+elif [ -e /bin/pacman ]; then
+  # "Sy" without "u" - really bad, but okay for python here - do a full system update afterwards
+  LC_ALL=C yes | LC_ALL=C pacman -Sy --noconfirm --needed ansible
 fi
 
 pushd /root
 (
-  python3 -m venv .venv
-  source .venv/bin/activate
-
-  python3 -m pip install ansible
-
+  # create ansible inventory file
   tee inventory.yml <<EOF
 all:
   children:
@@ -26,6 +25,7 @@ all:
           ansible_python_interpreter: /usr/bin/python3
           ansible_shell_executable: /bin/bash
 EOF
+
   export ANSIBLE_VERBOSITY=0
   export ANSIBLE_PIPELINING=True
   export ANSIBLE_PYTHON_INTERPRETER=/usr/bin/python3
@@ -34,8 +34,6 @@ EOF
   export ANSIBLE_DEPRECATION_WARNINGS=False
   export ANSIBLE_SHELL_EXECUTABLE=/bin/bash
   ansible-playbook -i inventory.yml /var/lib/cloud/instance/playbook/stage-1.yml
-
-  deactivate
 )
 popd
 
