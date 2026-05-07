@@ -27,7 +27,7 @@
       - fzf
       - moreutils
       - htop
-      ###- btop // missing on Debian
+      - btop
       - lshw
       - util-linux
       - xkcdpass
