@@ -89,6 +89,18 @@
         mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
         chmod 0750 /usr/local/bin/yq
 
+- name: Install viu with fallback (Debian/Ubuntu fix)
+  block:
+    - name: Install viu via apt
+      apt:
+        name: viu
+        state: present
+  rescue:
+    - name: Download viu to /usr/local/bin
+      shell: |
+        curl --fail --silent --location --output /usr/local/bin/viu 'https://www.github.com/atanunq/viu/releases/latest/download/viu-x86_64-unknown-linux-musl'
+        chmod 0750 /usr/local/bin/viu
+
 - name: Enable system services
   systemd_service:
     name: "{{ item }}"
