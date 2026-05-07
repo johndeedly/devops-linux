@@ -14,5 +14,16 @@
     state: absent
   when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
 
+- name: Apply skeleton to all users
+  shell: |
+    getent passwd | while IFS=: read -r username x uid gid gecos home shell; do
+      if [ -n "$home" ] && [ -d "$home" ] && [ "$home" != "/" ]; then
+        if [ "$uid" -eq 0 ] || [ "$uid" -ge 1000 ]; then
+          echo ":: apply skeleton to $home [$username $uid:$gid]"
+          rsync -a --chown=$uid:$gid /etc/skel/ "$home"
+        fi
+      fi
+    done
+
 - name: Sync all cached data to disk(s)
   command: sync
