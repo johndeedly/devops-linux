@@ -87,7 +87,7 @@
         curl --fail --silent --location --output /tmp/yq_linux_amd64.tar.gz 'https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64.tar.gz'
         tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
         mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
-        chmod 0755 /usr/local/bin/yq
+        chmod 0750 /usr/local/bin/yq
 
 - name: Enable system services
   systemd_service:
