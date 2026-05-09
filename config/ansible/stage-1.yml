@@ -27,6 +27,13 @@
       include_role:
         name: ldap-auth
       when: ('ldap-auth' in setup_facts.setup.ansible_options)
+    - name: Proxmox
+      include_role:
+        name: proxmox
+        tasks_from: stage-1
+      when:
+        - ('proxmox' in setup_facts.setup.ansible_options)
+        - ansible_facts["distribution"] in ['Debian']
   post_tasks:
     - name: Wrapup
       include_role:

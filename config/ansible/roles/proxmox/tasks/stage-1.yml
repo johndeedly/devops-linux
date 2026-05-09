@@ -1,0 +1,137 @@
+# ---------- #
+
+# https://www.tecmint.com/install-proxmox/
+- name: Install basic packages
+  apt:
+    name:
+      # certificate downloads
+      - curl
+      # enterprise repo
+      - apt-transport-https
+      - ca-certificates
+      - gnupg2
+
+- name: Download and enable Proxmox repository certificate
+  shell: |
+    curl -fsSL "https://enterprise.proxmox.com/debian/proxmox-release-{{ ansible_facts["distribution_release"] }}.gpg" | gpg --dearmor -o "/etc/apt/trusted.gpg.d/proxmox-release-{{ ansible_facts["distribution_release"] }}.gpg"
+    tee /etc/apt/sources.list.d/pve-install-repo.list <<EOF
+    deb [arch=amd64] http://download.proxmox.com/debian/pve {{ ansible_facts["distribution_release"] }} pve-no-subscription
+    EOF
+
+- name: Download and enable Hashicorp repository certificate
+  shell: |
+    curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/hashicorp-archive-keyring.gpg
+    tee /etc/apt/sources.list.d/hashicorp.list <<EOF
+    deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_facts["distribution_release"] }} main
+    EOF
+
+- name: Remove the nagging subscription missing popup on login (permanent solution)
+  shell: |
+    tee /etc/apt/apt.conf.d/90-no-more-nagging <<EOF
+    DPkg::Post-Invoke { "/usr/local/sbin/no_more_nagging"; };
+    EOF
+    tee /usr/local/sbin/no_more_nagging <<EOF
+    #!/usr/bin/env bash
+    if [ -f /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js ]; then
+      sed -i 's|\(checked_command: function\)|//replace-me-nag\n\1|' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+      sed -i '/checked_command: function/,/^$/d' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+      sed -i 's|//replace-me-nag|checked_command: function (orig_cmd) { orig_cmd(); },\n|' /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+    fi
+    EOF
+    chmod +x /usr/local/sbin/no_more_nagging
+
+- name: Full system upgrade
+  apt:
+    update_cache: true
+    upgrade: full
+
+- name: Preconfigure grub-pc
+  shell: |
+    debconf-set-selections <<EOF
+    grub-pc grub-pc/install_devices multiselect $(lsblk -no MOUNTPOINT,PKNAME | sed -e '/^\/ /!d' | head -n 1 | awk '{ print "/dev/"$2 }')
+    grub-pc grub-pc/install_devices_empty boolean false
+    grub-pc grub-pc/mixed_legacy_and_grub2 boolean true
+    EOF
+
+- name: Install Proxmox default kernel
+  apt:
+    name: proxmox-default-kernel
+    state: present
+
+- name: Install main Proxmox packages
+  apt:
+    name:
+      - proxmox-ve
+      - postfix
+      - open-iscsi
+      - chrony
+      - isc-dhcp-client
+    state: present
+
+- name: Install automation tools
+  apt:
+    name:
+      - packer
+      - cloud-image-utils
+      - xorriso
+      - ovmf
+      - ansible
+    state: present
+
+- name: Apply the new settings to grub
+  command: update-grub
+
+- name: Enable overcommit of vm memory
+  shell: |
+    sysctl -w vm.overcommit_memory=1
+    tee /etc/sysctl.d/90-overcommit-memory.conf <<EOF
+    vm.overcommit_memory=1
+    EOF
+
+- name: Disable enterprise repository
+  shell: |
+    if [ -f /etc/apt/sources.list.d/pve-enterprise.list ]; then
+      sed -i 's/^/# /g' /etc/apt/sources.list.d/pve-enterprise.list
+    fi
+    if [ -f /etc/apt/sources.list.d/pve-enterprise.sources ]; then
+      sed -i 's/\(Components:.*pve-enterprise.*\)/\1\nEnabled: false/' /etc/apt/sources.list.d/pve-enterprise.sources
+    fi
+
+- name: Do not wait for online interfaces
+  systemd_service:
+    name: "{{ item }}"
+    masked: true
+  with_items:
+    - systemd-networkd-wait-online
+    - NetworkManager-wait-online
+
+- name: Enable proxmox mDNS advertising
+  copy:
+    dest: /etc/systemd/dnssd/proxmox.dnssd
+    mode: 0644
+    content: |
+      [Service]
+      Name=%H
+      Type=_proxmox._tcp
+      Port=8006
+
+- name: Configure ufw - open up all Proxmox ports
+  shell: |
+    ufw disable
+    ufw allow log 8006/tcp comment 'allow proxmox web interface'
+    ufw allow 5900:5999/tcp comment 'allow proxmox vnc web console'
+    ufw allow 3128/tcp comment 'allow proxmox spice proxy'
+    ufw allow 111/udp comment 'allow proxmox rpcbind'
+    ufw allow 5405:5412/udp comment 'allow proxmox corosync cluster traffic'
+    ufw allow 60000:60050/tcp comment 'allow proxmox live migration'
+    ufw allow 6789/tcp comment 'allow ceph monitor'
+    ufw allow 3300/tcp comment 'allow ceph monitor'
+    ufw allow 6800:7300/tcp comment 'allow ceph osd'
+    ufw allow 873/tcp comment 'allow ceph rsync'
+
+- name: Enable ufw on next boot
+  lineinfile:
+    regexp: '^ENABLED='
+    line: ENABLED=yes
+    path: /etc/ufw/ufw.conf
+    state: present

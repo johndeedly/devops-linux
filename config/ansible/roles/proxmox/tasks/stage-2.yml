@@ -1,0 +1,257 @@
+# ---------- #
+
+- name: Remove all other debian kernels and os-prober
+  apt:
+    name: linux-image-*
+    state: absent
+
+- name: Remove os-prober
+  apt:
+    name: os-prober
+    state: absent
+
+- name: Apply the new settings to grub
+  command: update-grub
+
+- name: Setup loopback interface
+  copy:
+    dest: /etc/network/interfaces
+    mode: 0644
+    content: |
+      auto lo
+      iface lo inet loopback
+
+- name: One virtual bridge per interface, dhcp setup on the first one
+  blockinfile:
+    dest: /etc/network/interfaces
+    marker: '{mark} {{ item }}──vmbr{{ idx }}'
+    marker_begin: '\n# BEGIN'
+    marker_end: '# END'
+    block: |
+      iface {{ item }} inet manual
+
+      auto vmbr{{ idx }}
+      iface vmbr{{ idx }} inet {% if (idx == 0) %}dhcp{% else %}manual{% endif %}{{''}}
+          bridge-ports {{ item }}
+          bridge-stp off
+          bridge-fd 0
+          bridge-vlan-aware yes
+          bridge-vids 2-4094
+          post-up resolvectl mdns vmbr{{ idx }} yes
+  loop: "{{ ansible_interfaces | difference(['lo']) }}"
+  loop_control:
+    index_var: idx
+
+- name: Enable ifupdown2
+  shell: |
+    ifreload -a
+
+- name: Disable networkd completely
+  systemd_service:
+    name: "{{ item }}"
+    masked: true
+  with_items:
+    - systemd-networkd.service
+    - systemd-networkd.socket
+
+- name: Set hostname in /etc/hosts
+  shell: |
+    FQDNAME=$(</etc/hostname)
+    HOSTNAME=${FQDNAME%%.*}
+    tee /tmp/hosts_columns <<EOF
+    # IPv4/v6|FQDN|HOSTNAME
+    127.0.0.1|$FQDNAME|$HOSTNAME
+    ::1|$FQDNAME|$HOSTNAME
+    127.0.0.1|localhost.internal|localhost
+    ::1|localhost.internal|localhost
+    EOF
+    ip -f inet addr | awk '/inet / {print $2}' | cut -d'/' -f1 | while read -r PUB_IP_ADDR; do
+    tee -a /tmp/hosts_columns <<EOF
+    $PUB_IP_ADDR|$FQDNAME|$HOSTNAME
+    EOF
+    done
+    tee /etc/hosts <<EOF
+    # Static table lookup for hostnames.
+    # See hosts(5) for details.
+    
+    # https://www.icann.org/en/public-comment/proceeding/proposed-top-level-domain-string-for-private-use-24-01-2024
+    $(column /tmp/hosts_columns -t -s '|')
+    EOF
+    rm /tmp/hosts_columns
+
+- name: Basic privilege setup
+  shell: |
+    # create proxmox groups
+    pveum group add admins
+    pveum group add users
+    
+    # add default permissions to users and admins
+    pveum acl modify / --roles Administrator -groups admins -propagate 1
+    pveum acl modify /mapping --roles Administrator -groups admins -propagate 1
+    pveum acl modify /mapping --roles PVEMappingUser -groups users -propagate 1
+    pveum acl modify /storage --roles Administrator -groups admins -propagate 1
+    pveum acl modify /storage --roles PVEDatastoreUser -groups users -propagate 1
+    
+    # create dedicated path for isos and container templates
+    mkdir -p /var/cache/proxmox
+    pvesm add dir local-vztmpl --path /var/cache/proxmox --content iso,vztmpl
+    
+    # remove isos and containers from default storage
+    pvesm set local --content images,rootdir,backup
+    
+    # enable template download
+    pveum role add TemplateDownload -privs "Sys.AccessNetwork"
+    pveum role add TemplateUser -privs "Datastore.Allocate Datastore.AllocateTemplate Datastore.Audit"
+    pveum acl modify /nodes --roles Administrator -groups admins -propagate 1
+    pveum acl modify /nodes --roles TemplateDownload -groups users -propagate 1
+    pveum acl modify /storage/local-vztmpl --roles Administrator -groups admins -propagate 1
+    pveum acl modify /storage/local-vztmpl --roles TemplateUser -groups users -propagate 1
+    
+    # see node debug infos and let users choose predefined custom cpu types
+    pveum acl modify /nodes --roles Administrator -groups admins -propagate 1
+    pveum acl modify /nodes --roles PVEAuditor -groups users -propagate 1
+    
+    # create first pool pool0
+    pveum pool add pool0 || true
+    pveum acl modify /pool/pool0 --roles Administrator -groups admins -propagate 1
+    pveum acl modify /pool/pool0 --roles PVEPoolUser,PVETemplateUser -groups users -propagate 1
+
+- name: Network privilege setup
+  shell: |
+    pveum acl modify /sdn/zones/localnetwork/vmbr{{ idx }} --roles Administrator -groups admins -propagate 1
+    pveum acl modify /sdn/zones/localnetwork/vmbr{{ idx }} --roles PVESDNUser -groups users -propagate 1
+  loop: "{{ ansible_interfaces | difference(['lo']) }}"
+  loop_control:
+    index_var: idx
+
+- name: Update all admins and users in @pam
+  shell: |
+    getent group | while IFS=: read -r groupname x gid usernames; do
+      case "$groupname" in
+        admins)
+          for username in ${usernames//,/ }; do
+            # add pam admin to group admins
+            pveum user add "$username"@pam || true
+            echo "[ OK ] Created admin $username@pam"
+            pveum user modify "$username"@pam -append 1 -groups admins
+            echo "[ OK ] Added $username@pam to admin group"
+          done
+          ;;
+        users)
+          for username in ${usernames//,/ }; do
+            # add pam user to group users
+            pveum user add "$username"@pam || true
+            echo "[ OK ] Created user $username@pam"
+            pveum user modify "$username"@pam -append 1 -groups users
+            echo "[ OK ] Added $username@pam to user group"
+            # create user pool and interface
+            poolname="pool-$username"
+            pveum pool add "$poolname" || true
+            pveum acl modify "/pool/$poolname" --roles Administrator -groups admins -propagate 1 || true
+            pveum acl modify "/pool/$poolname" --roles PVEMappingUser,PVEPoolUser,PVETemplateUser,PVEVMAdmin -users "$username@pam" -propagate 1 || true
+            brname="br$username"
+            if ! grep -qE "$brname" /etc/network/interfaces; then
+              tee -a /etc/network/interfaces >/dev/null <<EOF
+    
+    auto $brname
+    iface $brname inet static
+        bridge-ports none
+        bridge-stp off
+        bridge-fd 0
+        bridge-vlan-aware yes
+        bridge-vids 2-4094
+        post-up resolvectl mdns $brname yes
+    EOF
+            fi
+            pveum acl modify "/sdn/zones/localnetwork/$brname" --roles Administrator -groups admins -propagate 1 || true
+            pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username@pam" -propagate 1 || true
+          done
+          ;;
+      esac
+    done
+
+- name: Scheduled task to update all admins and users in @pam
+  copy:
+    dest: /usr/local/bin/update-all-users.sh
+    mode: 0755
+    content: |
+      #!/usr/bin/env bash
+      
+      # update all admins and users in @pam
+      getent group | while IFS=: read -r groupname x gid usernames; do
+        case "$groupname" in
+          admins)
+            for username in ${usernames//,/ }; do
+              # add pam admin to group admins
+              pveum user add "$username"@pam || true
+              echo "[ OK ] Created admin $username@pam"
+              pveum user modify "$username"@pam -append 1 -groups admins
+              echo "[ OK ] Added $username@pam to admin group"
+            done
+            ;;
+          users)
+            for username in ${usernames//,/ }; do
+              # add pam user to group users
+              pveum user add "$username"@pam || true
+              echo "[ OK ] Created user $username@pam"
+              pveum user modify "$username"@pam -append 1 -groups users
+              echo "[ OK ] Added $username@pam to user group"
+              # create user pool and vlan
+              poolname="pool-$username"
+              pveum pool add "$poolname" || true
+              pveum acl modify "/pool/$poolname" --roles Administrator -groups admins -propagate 1 || true
+              pveum acl modify "/pool/$poolname" --roles PVEAdmin -users "$username@pam" -propagate 1 || true
+              brname="br$username"
+              if ! grep -qE "$brname" /etc/network/interfaces; then
+                tee -a /etc/network/interfaces >/dev/null <<EOX
+      
+      auto $brname
+      iface $brname inet static
+          bridge-ports none
+          bridge-stp off
+          bridge-fd 0
+          bridge-vlan-aware yes
+          bridge-vids 2-4094
+          post-up resolvectl mdns $brname yes
+      EOX
+              fi
+              pveum acl modify "/sdn/zones/localnetwork/$brname" --roles Administrator -groups admins -propagate 1 || true
+              pveum acl modify "/sdn/zones/localnetwork/$brname" --roles PVESDNUser -users "$username@pam" -propagate 1 || true
+            done
+            ;;
+        esac
+      done
+
+- name: Create service for scheduled task to update all admins and users in @pam
+  copy:
+    dest: /etc/systemd/system/update-all-users.service
+    mode: 0644
+    content: |
+      [Unit]
+      Description=Update all LXC containers
+      
+      [Service]
+      Type=simple
+      StandardInput=null
+      StandardOutput=journal
+      StandardError=journal
+      ExecStart=/usr/local/bin/update-all-users.sh
+
+- name: Create timer for scheduled task to update all admins and users in @pam
+  copy:
+    dest: /etc/systemd/system/update-all-users.timer
+    mode: 0644
+    content: |
+      [Unit]
+      Description=Scheduled update of all LXC containers
+      
+      [Timer]
+      OnCalendar=*-*-* 02:17
+      
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Enable timer for scheduled task to update all admins and users in @pam
+  systemd_service:
+    name: update-all-users.timer
+    enabled: true
