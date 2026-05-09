@@ -11,7 +11,6 @@ elif [ -e /bin/pacman ]; then
 fi
 
 pushd /root
-(
   # create ansible inventory file
   tee inventory.yml <<EOF
 all:
@@ -34,7 +33,6 @@ EOF
   export ANSIBLE_DEPRECATION_WARNINGS=False
   export ANSIBLE_SHELL_EXECUTABLE=/bin/bash
   ansible-playbook -i inventory.yml /var/lib/cloud/instance/playbook/stage-1.yml
-)
 popd
 
 # sync everything to disk
