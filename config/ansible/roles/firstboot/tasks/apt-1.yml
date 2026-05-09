@@ -2,7 +2,7 @@
 
 - name: Speedup apt downloads on ubuntu and debian
   shell: |
-    tee /etc/apt/apt.conf.d/85provision <<EOF
+    tee /etc/apt/apt.conf.d/85-provision <<EOF
     Acquire::Queue-Mode "host";
     Acquire::Retries "3";
     Acquire::http::Dl-Limit "0";
@@ -30,7 +30,7 @@
     update-grub
   when: ansible_facts["distribution"] in ['Ubuntu']
 
-- name: Full system upgrade
+- name: System upgrade
   apt:
     update_cache: true
     upgrade: true
