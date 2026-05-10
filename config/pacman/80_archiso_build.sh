@@ -58,6 +58,7 @@ vim
 wget
 yq
 xfsprogs
+ansible
 EOF
 sort -u -o /var/tmp/archlive/baseline/packages.x86_64 /var/tmp/archlive/baseline/packages.x86_64
 
