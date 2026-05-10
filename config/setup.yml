@@ -414,11 +414,11 @@ files:
     gitlab:
       - path: podman/40_gitlab_podman.sh
         stage: 2
-    proxmox:
-      - path: apt/20_proxmox_1_apt.sh
-        stage: 1
-      - path: apt/20_proxmox_2_apt.sh
-        stage: 2
+    #proxmox:
+    #  - path: apt/20_proxmox_1_apt.sh
+    #    stage: 1
+    #  - path: apt/20_proxmox_2_apt.sh
+    #    stage: 2
     proxmox-cluster-master:
       - path: apt/30_proxmox_master_1_apt.sh
         stage: 1
