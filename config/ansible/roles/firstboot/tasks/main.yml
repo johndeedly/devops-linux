@@ -455,8 +455,8 @@
     do
       LC_ALL=C yes | LC_ALL=C ufw delete "$i" 2>/dev/null
     done
-    # logs all blocked packets and packets matching logged rules
-    ufw logging low
+    # disable logs
+    ufw logging off
     # outgoing is always allowed, incoming and routed should be denied
     ufw default deny incoming
     ufw default deny routed
