@@ -463,6 +463,9 @@ files:
     debiso:
       - path: apt/80_debiso_build.sh
         stage: 2
+    liveiso:
+      - path: apt/80_liveiso_build.sh
+        stage: 2
     hardening:
       - path: audit/70_hardening.sh
         stage: 2
