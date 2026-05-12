@@ -22,7 +22,7 @@ LABEL="parttype_end"
 EOF
 udevadm control --reload-rules && udevadm trigger
 
-# enable ssh provision login -> disable root, allow provisioning account, password auth, use pam
+# enable ssh provision login and disable password auth for root
 sed -i 's/^#\? \?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 sed -i 's/^#\? \?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
 sed -i 's/^#\? \?\(KbdInteractiveAuthentication.*\)/#\1/' /etc/ssh/sshd_config
