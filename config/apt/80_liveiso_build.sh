@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+
+if grep -q Ubuntu /proc/version; then
+    [ -f "${0}" ] && rm -- "${0}"
+    exit 0
+fi
+
+exec &> >(while IFS=$'\r' read -ra line; do [ ${#line[@]} -eq 0 ] && continue; TS=$(</proc/uptime); echo -e "[${TS% *}] ${line[-1]}" | tee -a /cidata_log > /dev/tty1; done)
+
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install squashfs-tools
+
+EXCLUDE_PATHS=(
+  "boot/*" "cidata*" "dev/*" "efi/*" "etc/fstab*" "etc/crypttab*" "etc/systemd/system/cloud-*" "usr/lib/systemd/system/cloud-*"
+  "proc/*" "sys/*" "run/*" "mnt/*" "share/*" "srv/pxe/*" "srv/img/*" "srv/tar/*" "media/*" "tmp/*" "swap/*" "var/tmp/*" "var/log/*"
+  "var/cache/pacman/pkg/*" "var/cache/apt/*" "var/cache/dnf/*" "var/cache/yum/*" "var/lib/cloud/*" "etc/systemd/system/snapper-*"
+  "usr/lib/systemd/system/snapper-*" "etc/systemd/system/timers.target.wants/snapper-*"
+  "root/.ssh/authorized_keys"
+)
+mkdir -p /var/tmp/deblive/staging/live/
+sync
+echo "[ ## ] Create squashfs image of rootfs"
+( mksquashfs / /var/tmp/deblive/staging/live/filesystem.squashfs -comp zstd -Xcompression-level 4 -b 1M -progress -wildcards -e "${EXCLUDE_PATHS[@]}" ) &
+pid=$!
+wait $pid
+
+# build tools
+LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y install debootstrap squashfs-tools xorriso \
+  isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin mtools dosfstools \
+  linux-image-amd64 live-boot systemd-sysv
+
+# create folder structure
+mkdir -p /var/tmp/deblive/{staging/{EFI/BOOT,boot/grub/x86_64-efi,isolinux,live},tmp} /srv/liveiso
+
+# fingerprint
+tee -a /var/tmp/deblive/{chroot,staging}/devops-linux <<EOF
+$(date +%F)
+EOF
+
+# copy over kernel and initrd
+VMLINUZ=$(find /boot -maxdepth 1 -name 'vmlinuz*' | sort -Vru | head -n1)
+INITRD=$(find /boot -maxdepth 1 \( \( -name 'initramfs*' -a ! -name '*fallback*' -a ! -name '*pxe*' \) -o -name 'initrd*' \) | sort -Vru | head -n1)
+echo "[ OK ] Found next kernel '$VMLINUZ' and initramfs '$INITRD'"
+cp "$VMLINUZ" /var/tmp/deblive/staging/live/vmlinuz
+cp "$INITRD" /var/tmp/deblive/staging/live/initrd
+
+# boot menu for legacy boot
+tee /var/tmp/deblive/staging/isolinux/isolinux.cfg <<'EOF'
+UI vesamenu.c32
+
+MENU TITLE Boot Menu
+DEFAULT linux
+TIMEOUT 150
+MENU RESOLUTION 640 480
+MENU COLOR border       30;44   #40ffffff #a0000000 std
+MENU COLOR title        1;36;44 #9033ccff #a0000000 std
+MENU COLOR sel          7;37;40 #e0ffffff #20ffffff all
+MENU COLOR unsel        37;44   #50ffffff #a0000000 std
+MENU COLOR help         37;40   #c0ffffff #a0000000 std
+MENU COLOR timeout_msg  37;40   #80ffffff #00000000 std
+MENU COLOR timeout      1;37;40 #c0ffffff #00000000 std
+MENU COLOR msg07        37;40   #90ffffff #a0000000 std
+MENU COLOR tabmsg       31;40   #30ffffff #00000000 std
+
+LABEL linux
+  MENU LABEL Debian Live [BIOS/ISOLINUX]
+  MENU DEFAULT
+  KERNEL /live/vmlinuz
+  APPEND initrd=/live/initrd boot=live
+EOF
+
+# boot menu for uefi boot
+tee /var/tmp/deblive/staging/boot/grub/grub.cfg /var/tmp/deblive/staging/EFI/BOOT/grub.cfg <<'EOF'
+insmod part_gpt
+insmod part_msdos
+insmod fat
+insmod iso9660
+
+insmod all_video
+insmod font
+
+insmod echo
+insmod read
+insmod smbios
+set smbios_str=""
+
+smbios --type 0 --get-string 0x04 --set smbios_bios_vendor
+smbios --type 0 --get-string 0x05 --set smbios_bios_version
+smbios --type 0 --get-string 0x08 --set smbios_bios_release
+set smbios_str="${smbios_str}=== BIOS Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_bios_vendor}\n"
+set smbios_str="${smbios_str}Version: ${smbios_bios_version}\n"
+set smbios_str="${smbios_str}Release: ${smbios_bios_release}\n"
+
+smbios --type 1 --get-string 0x04 --set smbios_system_vendor
+smbios --type 1 --get-string 0x05 --set smbios_system_product
+smbios --type 1 --get-string 0x06 --set smbios_system_version
+smbios --type 1 --get-string 0x07 --set smbios_system_serial
+smbios --type 1 --get-string 0x19 --set smbios_system_sku
+set smbios_str="${smbios_str}=== System Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_system_vendor}\n"
+set smbios_str="${smbios_str}Product: ${smbios_system_product}\n"
+set smbios_str="${smbios_str}Version: ${smbios_system_version}\n"
+set smbios_str="${smbios_str}Serial: ${smbios_system_serial}\n"
+set smbios_str="${smbios_str}SKU: ${smbios_system_sku}\n"
+
+smbios --type 3 --get-string 0x04 --set smbios_chassis_vendor
+smbios --type 3 --get-string 0x06 --set smbios_chassis_version
+smbios --type 3 --get-string 0x07 --set smbios_chassis_serial
+smbios --type 3 --get-string 0x08 --set smbios_chassis_asset
+set smbios_str="${smbios_str}=== Chassis Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_chassis_vendor}\n"
+set smbios_str="${smbios_str}Version: ${smbios_chassis_version}\n"
+set smbios_str="${smbios_str}Serial: ${smbios_chassis_serial}\n"
+set smbios_str="${smbios_str}Asset Tag: ${smbios_chassis_asset}\n"
+
+smbios --type 4 --get-string 0x07 --set smbios_cpu_vendor
+smbios --type 4 --get-string 0x10 --set smbios_cpu_version
+smbios --type 4 --get-string 0x20 --set smbios_cpu_serial
+smbios --type 4 --get-string 0x21 --set smbios_cpu_asset
+set smbios_str="${smbios_str}=== CPU Information ===\n"
+set smbios_str="${smbios_str}Vendor: ${smbios_cpu_vendor}\n"
+set smbios_str="${smbios_str}Version: ${smbios_cpu_version}\n"
+set smbios_str="${smbios_str}Serial: ${smbios_cpu_serial}\n"
+set smbios_str="${smbios_str}Asset Tag: ${smbios_cpu_asset}\n"
+
+set default="0"
+set timeout=15
+
+menuentry "Debian Live [EFI/GRUB]" {
+    search --no-floppy --set=root --file /devops-linux
+    linux ($root)/live/vmlinuz boot=live
+    initrd ($root)/live/initrd
+}
+
+menuentry "[i] System Information" --hotkey=i {
+    echo -e -n "$smbios_str"
+    echo "Press any key to return..."
+    read
+}
+EOF
+
+tee /var/tmp/deblive/tmp/grub-embed.cfg <<'EOF'
+if ! [ -d "$cmdpath" ]; then
+    # On some firmware, GRUB has a wrong cmdpath when booted from an optical disc.
+    # https://gitlab.archlinux.org/archlinux/archiso/-/issues/183
+    if regexp --set=1:isodevice '^(\([^)]+\))\/?[Ee][Ff][Ii]\/[Bb][Oo][Oo][Tt]\/?$' "$cmdpath"; then
+        cmdpath="${isodevice}/EFI/BOOT"
+    fi
+fi
+configfile "${cmdpath}/grub.cfg"
+EOF
+
+# boot firmware
+cp /usr/lib/ISOLINUX/isolinux.bin /var/tmp/deblive/staging/isolinux/
+cp /usr/lib/syslinux/modules/bios/* /var/tmp/deblive/staging/isolinux/
+cp -r /usr/lib/grub/x86_64-efi/* /var/tmp/deblive/staging/boot/grub/x86_64-efi/
+
+# build grub for legacy and uefi
+grub-mkstandalone -O i386-efi \
+  --modules="part_gpt part_msdos fat iso9660" \
+  --locales="" \
+  --themes="" \
+  --fonts="" \
+  --output="/var/tmp/deblive/staging/EFI/BOOT/BOOTIA32.EFI" \
+  "boot/grub/grub.cfg=/var/tmp/deblive/tmp/grub-embed.cfg"
+grub-mkstandalone -O x86_64-efi \
+  --modules="part_gpt part_msdos fat iso9660" \
+  --locales="" \
+  --themes="" \
+  --fonts="" \
+  --output="/var/tmp/deblive/staging/EFI/BOOT/BOOTx64.EFI" \
+  "boot/grub/grub.cfg=/var/tmp/deblive/tmp/grub-embed.cfg"
+
+# fat16 partition for the boot process
+pushd /var/tmp/deblive/staging
+  dd if=/dev/zero of=efiboot.img bs=1M count=20
+  mkfs.vfat efiboot.img
+  mmd -i efiboot.img ::/EFI ::/EFI/BOOT
+  mcopy -vi efiboot.img \
+    /var/tmp/deblive/staging/EFI/BOOT/BOOTIA32.EFI \
+    /var/tmp/deblive/staging/EFI/BOOT/BOOTx64.EFI \
+    /var/tmp/deblive/staging/boot/grub/grub.cfg \
+    ::/EFI/BOOT/
+popd
+
+# pack together the iso
+xorriso \
+  -as mkisofs \
+  -iso-level 3 \
+  -o /srv/liveiso/debian-x86_64.iso \
+  -full-iso9660-filenames \
+  -volid DEBLIVE \
+  --mbr-force-bootable -partition_offset 16 \
+  -joliet -joliet-long -rational-rock \
+  -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin \
+  -eltorito-boot \
+    isolinux/isolinux.bin \
+    -no-emul-boot \
+    -boot-load-size 4 \
+    -boot-info-table \
+    --eltorito-catalog isolinux/isolinux.cat \
+  -eltorito-alt-boot \
+    -e --interval:appended_partition_2:all:: \
+    -no-emul-boot \
+    -isohybrid-gpt-basdat \
+  -append_partition 2 C12A7328-F81F-11D2-BA4B-00A0C93EC93B /var/tmp/deblive/staging/efiboot.img /var/tmp/deblive/staging
+
+# sync everything to disk
+sync
+
+# cleanup
+[ -f "${0}" ] && rm -- "${0}"
