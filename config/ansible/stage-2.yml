@@ -24,6 +24,12 @@
         - ('proxmox' in setup_facts.setup.ansible_options)
         - ansible_facts["distribution"] in ['Debian']
   post_tasks:
+    - name: Rootfs to squashfs
+      include_role:
+        name: rootfs-to-sfs
+      when: >-
+        ('pxe-image' in setup_facts.setup.ansible_options) or
+        ('tar-image' in setup_facts.setup.ansible_options)
     - name: Wrapup
       include_role:
         name: build
