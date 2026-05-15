@@ -1,0 +1,137 @@
+# ---------- #
+
+- name: <Archlinux> Install required packages
+  community.general.pacman:
+    name:
+      - fail2ban
+      - cracklib
+      - clamav
+    state: present
+  when: ansible_facts["distribution"] in ['Archlinux']
+
+- name: <Debian,Ubuntu> Install required packages
+  apt:
+    name:
+      - libpam-tmpdir
+      - needrestart
+      - fail2ban
+      - cracklib-runtime
+      - debsums
+      - apt-show-versions
+      - clamav
+      - rkhunter
+    state: present
+  when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+
+- name: Kernel hardening
+  ansible.posix.sysctl:
+    name: '{{ item[0] }}'
+    value: '{{ item[1] }}'
+    state: present
+    sysctl_set: true
+    reload: false
+  loop:
+    - ['dev.tty.ldisc_autoload', '0']
+    - ['fs.protected_fifos', '2']
+    - ['fs.protected_hardlinks', '1']
+    - ['fs.protected_regular', '2']
+    - ['fs.protected_symlinks', '1']
+    - ['fs.suid_dumpable', '0']
+    - ['kernel.core_pattern', '|/bin/false']
+    - ['kernel.core_uses_pid', '1']
+    - ['kernel.ctrl-alt-del', '0']
+    - ['kernel.dmesg_restrict', '1']
+    - ['kernel.kptr_restrict', '2']
+    # Firewall and other software relies on module loading
+    ###- ['kernel.modules_disabled', '1']
+    - ['kernel.perf_event_paranoid', '3']
+    - ['kernel.randomize_va_space', '2']
+    - ['kernel.sysrq', '0']
+    - ['kernel.unprivileged_bpf_disabled', '1']
+    - ['kernel.yama.ptrace_scope', '1']
+    - ['net.core.bpf_jit_harden', '2']
+    - ['net.ipv4.conf.all.accept_redirects', '0']
+    - ['net.ipv4.conf.all.accept_source_route', '0']
+    - ['net.ipv4.conf.all.bootp_relay', '0']
+    - ['net.ipv4.conf.all.forwarding', '0']
+    - ['net.ipv4.conf.all.log_martians', '1']
+    - ['net.ipv4.conf.all.mc_forwarding', '0']
+    - ['net.ipv4.conf.all.proxy_arp', '0']
+    - ['net.ipv4.conf.all.rp_filter', '1']
+    - ['net.ipv4.conf.all.send_redirects', '0']
+    - ['net.ipv4.conf.default.accept_redirects', '0']
+    - ['net.ipv4.conf.default.accept_source_route', '0']
+    - ['net.ipv4.conf.default.log_martians', '1']
+    - ['net.ipv4.icmp_echo_ignore_broadcasts', '1']
+    - ['net.ipv4.icmp_ignore_bogus_error_responses', '1']
+    - ['net.ipv4.tcp_syncookies', '1']
+    - ['net.ipv4.tcp_timestamps', '0 1']
+    - ['net.ipv6.conf.all.accept_redirects', '0']
+    - ['net.ipv6.conf.all.accept_source_route', '0']
+    - ['net.ipv6.conf.default.accept_redirects', '0']
+    - ['net.ipv6.conf.default.accept_source_route', '0']
+
+- name: Loop over sshd config files
+  include_tasks: sshd_inner.yml
+  loop:
+    - ['AllowTcpForwarding', 'no']
+    - ['ClientAliveCountMax', '2']
+    - ['Compression', 'no']
+    - ['LogLevel', 'verbose']
+    - ['MaxAuthTries', '3']
+    - ['MaxSessions', '2']
+    - ['TCPKeepAlive', 'no']
+    - ['X11Forwarding', 'no']
+    - ['AllowAgentForwarding', 'no']
+  loop_control:
+    loop_var: check
+
+- name: Prevent core dumps (KRNL-5820)
+  copy:
+    dest: /etc/security/limits.conf
+    mode: 0644
+    content: |
+      * hard core 0
+      * soft core 0
+
+- name: Disable dccp, sctp, rds and tipc (NETW-3200)
+  copy:
+    dest: /etc/modprobe.d/unused_protocols.conf
+    mode: 0644
+    content: |
+      install dccp /bin/true
+      install sctp /bin/true
+      install rds  /bin/true
+      install tipc /bin/true
+
+- name: Blacklist dccp, sctp, rds and tipc (NETW-3200)
+  copy:
+    dest: /etc/modprobe.d/blacklist_protocols.conf
+    mode: 0644
+    content: |
+      blacklist dccp
+      blacklist sctp
+      blacklist rds
+      blacklist tipc
+
+- name: Harden compilers to be only executable by root
+  shell: |
+    [ -e "/usr/bin/as" ]  && chmod 0700 "/usr/bin/as"
+    [ -e "/usr/bin/gcc" ] && chmod 0700 "/usr/bin/gcc"
+    [ -e "/usr/bin/gpp" ] && chmod 0700 "/usr/bin/gpp"
+    [ -e "/usr/bin/g++" ] && chmod 0700 "/usr/bin/g++"
+
+- name: Set umask best practice (AUTH-9328, https://github.com/CISOfy/lynis/issues/110)
+  copy:
+    dest: /etc/profile.d/umask.sh
+    mode: 0755
+    content: |
+      # By default, we want umask to get set. This sets it for login shell
+      # Current threshold for system reserved uid/gids is 200
+      # You could check uidgid reservation validity in
+      # /usr/share/doc/setup-*/uidgid file
+      if [ $UID -gt 199 ] && [ $UID -lt 1000 ]; then
+          umask 007
+      else
+          umask 027
+      fi

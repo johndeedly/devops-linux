@@ -24,6 +24,14 @@
         - ('proxmox' in setup_facts.setup.ansible_options)
         - ansible_facts["distribution"] in ['Debian']
   post_tasks:
+    - name: Harden kernel and system
+      include_role:
+        name: harden
+      when: ('harden' in setup_facts.setup.ansible_options)
+    - name: Audit kernel and system
+      include_role:
+        name: audit
+      when: ('audit' in setup_facts.setup.ansible_options)
     - name: Rootfs to squashfs
       include_role:
         name: rootfs-to-sfs

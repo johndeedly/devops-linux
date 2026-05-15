@@ -466,12 +466,12 @@ files:
     liveiso:
       - path: apt/80_liveiso_build.sh
         stage: 2
-    hardening:
-      - path: audit/70_hardening.sh
-        stage: 2
-    audit:
-      - path: audit/80_lynis.sh
-        stage: 2
+    #hardening:
+    #  - path: audit/70_hardening.sh
+    #    stage: 2
+    #audit:
+    #  - path: audit/80_lynis.sh
+    #    stage: 2
   pacman:
     filesystems:
       - path: pacman/15_filesystems_pacman.sh
@@ -602,12 +602,12 @@ files:
     archiso:
       - path: pacman/80_archiso_build.sh
         stage: 2
-    hardening:
-      - path: audit/70_hardening.sh
-        stage: 2
-    audit:
-      - path: audit/80_lynis.sh
-        stage: 2
+    #hardening:
+    #  - path: audit/70_hardening.sh
+    #    stage: 2
+    #audit:
+    #  - path: audit/80_lynis.sh
+    #    stage: 2
   yum:
     #graphical-base:
     #  - path: stage/15_graphical_base.sh.disabled
@@ -615,9 +615,9 @@ files:
     mirror:
       - path: yum/20_localmirror_yum.sh
         stage: 2
-    hardening:
-      - path: audit/70_hardening.sh
-        stage: 2
-    audit:
-      - path: audit/80_lynis.sh
-        stage: 2
+    #hardening:
+    #  - path: audit/70_hardening.sh
+    #    stage: 2
+    #audit:
+    #  - path: audit/80_lynis.sh
+    #    stage: 2

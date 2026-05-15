@@ -1,0 +1,20 @@
+# ---------- #
+
+- name: Set or append {{ check[0] }} to {{ check[1] }} in sshd_config (SSH-7408)
+  lineinfile:
+    regexp: '^[#]?{{ check[0] }} '
+    line: '{{ check[0] }} {{ check[1] }}'
+    path: /etc/ssh/sshd_config
+    state: present
+
+- name: When present, modify {{ check[0] }} to {{ check[1] }} in *.conf files (SSH-7408)
+  replace:
+    regexp: '^[#]?{{ check[0] }} .*'
+    replace: '{{ check[0] }} {{ check[1] }}'
+    path: '{{ file }}'
+  loop: >-
+    {{
+      query('fileglob', '/etc/ssh/sshd_config.d/*')
+    }}
+  loop_control:
+    loop_var: file
