@@ -3,7 +3,7 @@
 BUILD=(
     archlinux
     debian-13
-    ubuntu-24
+    ubuntu-26
 )
 SESSION=devops-linux-$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)
 echo "tmux session: $SESSION"
