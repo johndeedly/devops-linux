@@ -32,11 +32,10 @@
       include_role:
         name: audit
       when: ('audit' in setup_facts.setup.ansible_options)
-    - name: Rootfs to squashfs
+    - name: Rootfs to tar
       include_role:
-        name: rootfs-to-sfs
+        name: rootfs-to-tar
       when: >-
-        ('pxe-image' in setup_facts.setup.ansible_options) or
         ('tar-image' in setup_facts.setup.ansible_options)
     - name: Wrapup
       include_role:

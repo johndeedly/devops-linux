@@ -1,0 +1,44 @@
+# ---------- #
+
+- name: Check that squashfs exists
+  stat:
+    path: /var/tmp/sfs/rootfs.img
+  register: stat_result
+
+- name: Rootfs to squashfs
+  include_role:
+    name: rootfs-to-sfs
+  when: not stat_result.stat.exists
+
+- name: Create /var/tmp/sfs/mnt
+  file:
+    path: /var/tmp/sfs/mnt
+    state: directory
+    mode: '0755'
+
+- name: Mount squashfs read-only
+  ansible.posix.mount:
+    path: /var/tmp/sfs/mnt
+    src: /var/tmp/sfs/rootfs.img
+    fstype: squashfs
+    opts: loop
+    state: mounted
+
+- name: Create a tar snapshot based on rootfs
+  shell: |
+    sync
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf "/var/tmp/sfs/rootfs.tar.zst" -C /var/tmp/sfs/mnt .
+
+- name: Verify created tar image
+  shell: |
+    sync
+    ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -xOf "/var/tmp/sfs/rootfs.tar.zst" &> /dev/null
+
+- name: Unmount squashfs
+  ansible.posix.mount:
+    path: /var/tmp/sfs/mnt
+    state: unmounted
+
+- name: Tar successfully generated
+  stat:
+    path: /var/tmp/sfs/rootfs.tar.zst
