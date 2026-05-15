@@ -298,6 +298,7 @@ build {
 ( until [ "SubState=active" = "$(systemctl show cloud-init.target -p SubState)" ]; do sleep 5; done ) &
 pid=$!
 tail --pid=$pid -f /cidata_log
+cloud-init status --wait
 EOS
     ]
     valid_exit_codes = [0, 2]
@@ -336,6 +337,7 @@ EOS
 ( until [ "SubState=active" = "$(systemctl show cloud-init.target -p SubState)" ]; do sleep 5; done ) &
 pid=$!
 tail --pid=$pid -f /cidata_log
+cloud-init status --wait
 EOS
     ]
     valid_exit_codes = [0, 2]
