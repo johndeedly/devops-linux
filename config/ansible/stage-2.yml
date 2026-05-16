@@ -32,11 +32,16 @@
       include_role:
         name: audit
       when: ('audit' in setup_facts.setup.ansible_options)
-    - name: Rootfs to tar
+    - name: Create tar image
       include_role:
-        name: rootfs-to-tar
+        name: tar-image
       when: >-
         ('tar-image' in setup_facts.setup.ansible_options)
+    - name: Create pxe image
+      include_role:
+        name: pxe-image
+      when: >-
+        ('pxe-image' in setup_facts.setup.ansible_options)
     - name: Wrapup
       include_role:
         name: build

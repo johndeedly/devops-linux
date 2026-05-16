@@ -24,10 +24,16 @@
     opts: loop
     state: mounted
 
+- name: Check /var/tmp/sfs/rootfs.tar.zst has not been generated already
+  stat:
+    path: /var/tmp/sfs/rootfs.tar.zst
+  register: check_result
+
 - name: Create a tar snapshot based on rootfs
   shell: |
     sync
     ZSTD_CLEVEL=4 ZSTD_NBTHREADS=4 tar -I zstd -cf "/var/tmp/sfs/rootfs.tar.zst" -C /var/tmp/sfs/mnt .
+  when: not check_result.stat.exists
 
 - name: Verify created tar image
   shell: |
@@ -42,3 +48,5 @@
 - name: Tar successfully generated
   stat:
     path: /var/tmp/sfs/rootfs.tar.zst
+  register: stat_result
+  failed_when: not stat_result.stat.exists
