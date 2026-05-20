@@ -64,7 +64,10 @@
           done
         done
       }
-      sed -i 's/^\(HOOKS=[^)]*\)/\1 zz_omit/' /etc/mkinitcpio.conf
+
+- name: Enable zz_omit in initcpio builds
+  shell: |
+    sed -i 's/^\(HOOKS=[^)]*\)/\1 zz_omit/' /etc/mkinitcpio.conf
 
 - name: Rebuild initramfs
   shell: mkinitcpio -P
