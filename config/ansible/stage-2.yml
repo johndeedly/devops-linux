@@ -23,6 +23,10 @@
       when:
         - ('proxmox' in setup_facts.setup.ansible_options)
         - ansible_facts["distribution"] in ['Debian']
+    - name: kde desktop
+      include_role:
+        name: kde
+      when: ('kde' in setup_facts.setup.ansible_options)
   post_tasks:
     - name: Harden kernel and system
       include_role:

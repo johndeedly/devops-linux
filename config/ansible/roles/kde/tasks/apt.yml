@@ -1,0 +1,173 @@
+# ---------- #
+
+- name: KDE packages
+  apt:
+    name:
+      # Sound system
+      - pipewire
+      - pipewire-pulse
+      - pipewire-jack
+      - pipewire-alsa
+      - wireplumber
+      - pamixer
+      - pavucontrol
+      - playerctl
+      - alsa-utils
+      - qpwgraph
+      - rtkit
+      # Xorg legacy stuff
+      - xorg
+      - xinit
+      - x11-xserver-utils
+      - xclip
+      - xsel
+      - arandr
+      - libinput10
+      - xserver-xorg-input-libinput
+      - xinput
+      # clipboard
+      - wl-clipboard
+      # monitor brightness
+      - brightnessctl
+      # notifications
+      - dunst
+      - libnotify4
+      # archiver
+      - engrampa
+      # desktop entry execution
+      - dex
+      # display manager
+      - emptty
+      # icon theme
+      - elementary-icon-theme
+      # default, japanese, taiwanese, chinese fonts and emoji fonts
+      - fonts-dejavu
+      ###- ttf-dejavu-nerd
+      - fonts-liberation
+      - fonts-font-awesome
+      - fonts-ipafont
+      ###- ttf-jigmo
+      ###- ttf-hannom
+      - fonts-baekmuk
+      - fonts-noto-color-emoji
+      # printer setup
+      - cups
+      - ipp-usb
+      - ghostscript
+      - gsfonts
+      - foomatic-db-engine
+      - foomatic-db
+      - printer-driver-gutenprint
+      - hplip
+      # office
+      - libreoffice
+      - libreoffice-l10n-de
+      # photoshop
+      - krita
+      # remote desktop
+      - krdc
+      # graphical git
+      - gitg
+      # password manager
+      - keepassxc
+      # pdf presenter
+      - pdf-presenter-console
+      # bluetooth
+      - bluez
+      - blueman
+      # windows apps execution stack
+      - wine
+      - wine64
+      - winetricks
+      # movie player
+      - mpv
+      # picture viewer
+      - gpicview
+      # graph designer
+      ###- drawio-desktop
+      # coding
+      ###- code
+      # flatpak support
+      - flatpak
+      # graphical virtualization manager
+      - virt-manager
+      # pdf viewer and marker
+      - qpdf
+      # generate good looking documents
+      - texlive-latex-base
+      - texlive-latex-extra
+      - texlive-plain-generic
+      # kde desktop
+      - kde-standard
+      - plasma-workspace-wallpapers
+      - libpam-kwallet5
+      - kdegraphics
+      - kdeadmin
+      - kdeutils
+      - system-config-printer
+      - konsole
+    state: present
+
+- name: Ubuntu 24.04 wayland session fix
+  apt:
+    name: plasma-workspace-wayland
+    state: present
+  ignore_errors: true
+
+- name: Remove kde bloat
+  apt:
+    name: plasma-welcome
+    state: absent
+
+- name: Configure emptty display manager
+  copy:
+    dest: /etc/emptty/conf
+    mode: 0644
+    content: |
+      TTY_NUMBER=7
+      SWITCH_TTY=true
+      PRINT_ISSUE=true
+      PRINT_MOTD=true
+      AUTOLOGIN=false
+      DEFAULT_SESSION=0
+      DEFAULT_SESSION_ENV=wayland
+      DBUS_LAUNCH=true
+      XINITRC_LAUNCH=false
+      VERTICAL_SELECTION=false
+      ENABLE_NUMLOCK=true
+      IDENTITFY_ENVS=false
+
+- name: Create motd file for emptty
+  copy:
+    dest: /etc/emptty/motd
+    mode: 0644
+    content: |
+      █████  ██████ ██  ██  ████  █████   ████     ██     ██████ ██  ██ ██  ██ ██  ██ 
+      ██  ██ ██     ██  ██ ██  ██ ██  ██ ██        ██       ██   ███ ██ ██  ██  ████  
+      ██  ██ ████   ██  ██ ██  ██ █████   ████     ██       ██   ██ ███ ██  ██   ██   
+      ██  ██ ██      ████  ██  ██ ██         ██    ██       ██   ██  ██ ██  ██  ████  
+      █████  ██████   ██    ████  ██      ████     ██████ ██████ ██  ██  ████  ██  ██ 
+
+- name: Clear old display manager
+  shell: |
+    rm /etc/systemd/system/display-manager.service || true
+
+- name: Enable emptty display manager
+  systemd_service:
+    name: emptty@tty7
+    enabled: true
+
+- name: PAM kwallet configuration
+  shell: |
+    tee /usr/share/pam-configs/kwallet <<EOF  
+    Name: KDE Keyring Daemon - Login keyring management
+    Default: yes
+    Priority: 0
+    Auth-Type: Additional
+    Auth-Final:
+            optional        pam_kwallet5.so
+    Session-Type: Additional
+    Session-Final:
+            optional        pam_kwallet5.so auto_start kwalletd=/usr/bin/ksecretd
+    EOF
+    DEBIAN_FRONTEND=noninteractive pam-auth-update --force

@@ -1,0 +1,182 @@
+# ---------- #
+
+- name: KDE packages
+  community.general.pacman:
+    name:
+      # Sound system
+      - pipewire
+      - pipewire-pulse
+      - pipewire-jack
+      - pipewire-alsa
+      - wireplumber
+      - pamixer
+      - pavucontrol
+      - playerctl
+      - alsa-utils
+      - qpwgraph
+      - rtkit
+      # Xorg legacy stuff
+      - xorg-server
+      - xorg-xinit
+      - xorg-xrandr
+      - xclip
+      - xsel
+      - arandr
+      - libinput
+      - xf86-input-libinput
+      - xorg-xinput
+      # clipboard
+      - wl-clipboard
+      # monitor brightness
+      - brightnessctl
+      # notifications
+      - dunst
+      - libnotify
+      # archiver
+      - engrampa
+      # desktop entry execution
+      - dex
+      # display manager
+      - emptty
+      # icon theme
+      - elementary-icon-theme
+      # default, japanese, taiwanese, chinese fonts and emoji fonts
+      - ttf-dejavu
+      - ttf-dejavu-nerd
+      - ttf-liberation
+      - ttf-font-awesome
+      - otf-ipafont
+      - ttf-jigmo
+      - ttf-hannom
+      - ttf-baekmuk
+      - noto-fonts-emoji
+      # printer setup
+      - cups
+      - ipp-usb
+      - ghostscript
+      - gsfonts
+      - foomatic-db-engine
+      - foomatic-db
+      - foomatic-db-nonfree
+      - foomatic-db-ppds
+      - foomatic-db-nonfree-ppds
+      - gutenprint
+      - foomatic-db-gutenprint-ppds
+      - hplip
+      # office
+      - libreoffice-fresh
+      - libreoffice-fresh-de
+      # photoshop
+      - krita
+      # remote desktop
+      - krdc
+      # graphical git
+      - gitg
+      # password manager
+      - keepassxc
+      # pdf presenter
+      - pdfpc
+      # bluetooth
+      - bluez
+      - blueman
+      # windows apps execution stack
+      - wine
+      - winetricks
+      # movie player
+      - mpv
+      # picture viewer
+      - gpicview
+      # graph designer
+      - drawio-desktop
+      # coding
+      - code
+      # flatpak support
+      - flatpak
+      # graphical virtualization manager
+      - virt-manager
+      # pdf viewer and marker
+      - qpdf
+      # generate good looking documents
+      - texlive-latex
+      - texlive-latexextra
+      - texlive-plaingeneric
+      # kde desktop
+      - plasma-meta
+      - xdg-desktop-portal
+      - xdg-desktop-portal-kde
+      - kwallet-pam
+      - kde-graphics-meta
+      - kde-system-meta
+      - kde-utilities-meta
+      - system-config-printer
+      - konsole
+    state: present
+
+- name: Remove meta-packages to be able to remove single entries
+  community.general.pacman:
+    name:
+      - plasma-meta
+      - kde-graphics-meta
+      - kde-system-meta
+      - kde-utilities-meta
+    state: absent
+
+- name: Remove kde bloat
+  community.general.pacman:
+    name:
+      - plasma-welcome
+      - kongress
+      - kteatime
+      - telly-skout
+      - kalm
+      - yakuake
+    state: absent
+
+- name: Configure emptty display manager
+  copy:
+    dest: /etc/emptty/conf
+    mode: 0644
+    content: |
+      TTY_NUMBER=7
+      SWITCH_TTY=true
+      PRINT_ISSUE=true
+      PRINT_MOTD=true
+      AUTOLOGIN=false
+      DEFAULT_SESSION=0
+      DEFAULT_SESSION_ENV=wayland
+      DBUS_LAUNCH=true
+      XINITRC_LAUNCH=false
+      VERTICAL_SELECTION=false
+      ENABLE_NUMLOCK=true
+      IDENTITFY_ENVS=false
+
+- name: Create motd file for emptty
+  copy:
+    dest: /etc/emptty/motd
+    mode: 0644
+    content: |
+      █████  ██████ ██  ██  ████  █████   ████     ██     ██████ ██  ██ ██  ██ ██  ██ 
+      ██  ██ ██     ██  ██ ██  ██ ██  ██ ██        ██       ██   ███ ██ ██  ██  ████  
+      ██  ██ ████   ██  ██ ██  ██ █████   ████     ██       ██   ██ ███ ██  ██   ██   
+      ██  ██ ██      ████  ██  ██ ██         ██    ██       ██   ██  ██ ██  ██  ████  
+      █████  ██████   ██    ████  ██      ████     ██████ ██████ ██  ██  ████  ██  ██ 
+
+- name: Clear old display manager
+  shell: |
+    rm /etc/systemd/system/display-manager.service || true
+
+- name: Enable emptty display manager
+  systemd_service:
+    name: emptty
+    enabled: true
+
+- name: PAM kwallet configuration
+  shell: |
+    if [ -f /etc/pam.d/system-login ]; then
+      tee -a /etc/pam.d/system-login <<EOF
+    
+    # unlock kwallet on login
+    auth       optional        pam_kwallet5.so
+    session    optional        pam_kwallet5.so auto_start kwalletd=/usr/bin/ksecretd
+    EOF
+    fi
