@@ -16,17 +16,19 @@
       debug:
         var: setup_facts
         verbosity: 2
-    - name: First boot
-      include_role:
-        name: firstboot
-    - name: Graphical base
-      include_role:
-        name: graphical-base
-      when: (setup_facts.setup.ansible_options | intersect(['graphical-base', 'kde', 'proxmox'])) | length > 0
-    - name: LDAP Client
-      include_role:
-        name: ldap-auth
-      when: ('ldap-auth' in setup_facts.setup.ansible_options)
+    - name: Bootstrapping the initial base
+      block:
+        - name: First boot
+          include_role:
+            name: firstboot
+        - name: Graphical base
+          include_role:
+            name: graphical-base
+          when: (setup_facts.setup.ansible_options | intersect(['graphical-base', 'kde', 'proxmox'])) | length > 0
+        - name: LDAP Client
+          include_role:
+            name: ldap-auth
+          when: ('ldap-auth' in setup_facts.setup.ansible_options)
     - name: Proxmox
       include_role:
         name: proxmox

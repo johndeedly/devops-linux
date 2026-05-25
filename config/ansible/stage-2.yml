@@ -23,29 +23,33 @@
       when:
         - ('proxmox' in setup_facts.setup.ansible_options)
         - ansible_facts["distribution"] in ['Debian']
-    - name: kde desktop
+    - name: KDE desktop
       include_role:
         name: kde
       when: ('kde' in setup_facts.setup.ansible_options)
   post_tasks:
-    - name: Harden kernel and system
-      include_role:
-        name: harden
-      when: ('harden' in setup_facts.setup.ansible_options)
-    - name: Audit kernel and system
-      include_role:
-        name: audit
-      when: ('audit' in setup_facts.setup.ansible_options)
-    - name: Create tar image
-      include_role:
-        name: tar-image
-      when: >-
-        ('tar-image' in setup_facts.setup.ansible_options)
-    - name: Create pxe image
-      include_role:
-        name: pxe-image
-      when: >-
-        ('pxe-image' in setup_facts.setup.ansible_options)
+    - name: Securing the system for production use
+      block:
+        - name: Harden kernel and system
+          include_role:
+            name: harden
+          when: ('harden' in setup_facts.setup.ansible_options)
+        - name: Audit kernel and system
+          include_role:
+            name: audit
+          when: ('audit' in setup_facts.setup.ansible_options)
+    - name: System is ready for imaging
+      block:
+        - name: Create tar image
+          include_role:
+            name: tar-image
+          when: >-
+            ('tar-image' in setup_facts.setup.ansible_options)
+        - name: Create pxe image
+          include_role:
+            name: pxe-image
+          when: >-
+            ('pxe-image' in setup_facts.setup.ansible_options)
     - name: Wrapup
       include_role:
         name: build

@@ -1,6 +1,6 @@
 # ---------- #
 
-- name: Remove all other debian kernels and os-prober
+- name: Remove all other debian kernels
   apt:
     name: linux-image-*
     state: absent
