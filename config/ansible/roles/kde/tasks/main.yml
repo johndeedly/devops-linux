@@ -301,3 +301,12 @@
 - name: Configure cups to allow admin group
   shell: |
     sed -i 's|\(SystemGroup .*\)|\1 admins|' /etc/cups/cups-files.conf
+
+- name: Configure polkit-1 to allow admin group
+  copy:
+    dest: /etc/polkit-1/rules.d/50-default.rules
+    mode: 0644
+    content: |
+      polkit.addAdminRule(function(action, subject) {
+          return ["unix-group:admins"];
+      });
