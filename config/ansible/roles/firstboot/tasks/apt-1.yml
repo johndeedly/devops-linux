@@ -17,6 +17,21 @@
     name: debconf-utils
     state: present
 
+- name: Remove dracut
+  apt:
+    name:
+      - dracut
+      - dracut-core
+      - dracut-network
+    state: absent
+
+- name: Switch back to initramfs-tools
+  apt:
+    name:
+      - initramfs-tools
+      - initramfs-tools-core
+    state: present
+
 - name: <Ubuntu> Install generic kernel and matching modules
   shell: |
     # switch from linux-virtual to linux-generic
@@ -26,7 +41,7 @@
     ls -1 /lib/modules | while read -r line; do
       depmod -a "$line"
     done
-    LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -u
+    LC_ALL=C DEBIAN_FRONTEND=noninteractive update-initramfs -c -k all
     update-grub
   when: ansible_facts["distribution"] in ['Ubuntu']
 
