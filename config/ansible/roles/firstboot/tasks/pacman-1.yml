@@ -3,7 +3,7 @@
 - name: Download up to 5 pacman packages in parallel
   lineinfile:
     path: /etc/pacman.conf
-    regexp: '^#\?ParallelDownloads'
+    regexp: '^[#]?ParallelDownloads'
     line: ParallelDownloads = 5
 
 - name: Initialize pacman keyring
