@@ -139,6 +139,9 @@
     content: |
       #!/bin/sh
       [ -f ~/.bash_profile ] && . ~/.bash_profile
+  when:
+    - ansible_facts["distribution"] in ['Debian']
+    - ansible_facts["distribution_major_version"]|int <= 13
 
 - name: X11 menu key is super key (for laptops)
   copy:
@@ -146,6 +149,9 @@
     mode: 0644
     content: |
       keysym Menu = Super_R
+  when:
+    - ansible_facts["distribution"] in ['Debian']
+    - ansible_facts["distribution_major_version"]|int <= 13
 
 - name: Prepare firefox flatpak policies
   set_fact:

@@ -15,16 +15,6 @@
       - alsa-utils
       - qpwgraph
       - rtkit
-      # Xorg legacy stuff
-      - xorg
-      - xinit
-      - x11-xserver-utils
-      - xclip
-      - xsel
-      - arandr
-      - libinput10
-      - xserver-xorg-input-libinput
-      - xinput
       # clipboard
       - wl-clipboard
       # monitor brightness
@@ -107,6 +97,24 @@
       - system-config-printer
       - konsole
     state: present
+
+- name: Debian 13 xorg session fix
+  apt:
+    name:
+      # Xorg legacy stuff
+      - xorg
+      - xinit
+      - x11-xserver-utils
+      - xclip
+      - xsel
+      - arandr
+      - libinput10
+      - xserver-xorg-input-libinput
+      - xinput
+    state: present
+  when:
+    - ansible_facts["distribution"] in ['Debian']
+    - ansible_facts["distribution_major_version"]|int <= 13
 
 - name: Ubuntu 24.04 wayland session fix
   apt:

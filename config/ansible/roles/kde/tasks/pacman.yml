@@ -15,16 +15,6 @@
       - alsa-utils
       - qpwgraph
       - rtkit
-      # Xorg legacy stuff
-      - xorg-server
-      - xorg-xinit
-      - xorg-xrandr
-      - xclip
-      - xsel
-      - arandr
-      - libinput
-      - xf86-input-libinput
-      - xorg-xinput
       # clipboard
       - wl-clipboard
       # monitor brightness
