@@ -26,29 +26,36 @@
       - nvtop
     state: present
 
-- name: Load kms modules on startup
+- name: Create a service for loading the kms modules late at boot time
   copy:
-    dest: /etc/modules-load.d/kms.conf
+    dest: /etc/systemd/system/late-kms-init.service
     mode: 0644
     content: |
-      amdgpu
-      radeon
-      nouveau
-      i915
-      virtio-gpu
-      vmwgfx
+      [Unit]
+      Description=Late loading kms modules
+      After=sysinit.target
+      Before=network.target
+      
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      StandardInput=null
+      StandardOutput=journal
+      StandardError=journal
+      ExecStart=-/sbin/modprobe amdgpu modeset=1
+      ExecStart=-/sbin/modprobe radeon modeset=1
+      ExecStart=-/sbin/modprobe nouveau modeset=1
+      ExecStart=-/sbin/modprobe i915 modeset=1
+      ExecStart=-/sbin/modprobe virtio-gpu modeset=1
+      ExecStart=-/sbin/modprobe vmwgfx modeset=1
+      
+      [Install]
+      WantedBy=multi-user.target
 
-- name: Enable auto configuration on startup
-  copy:
-    dest: /etc/modprobe.d/kms.conf
-    mode: 0644
-    content: |
-      options amdgpu modeset=1
-      options radeon modeset=1
-      options nouveau modeset=1
-      options i915 modeset=1
-      options virtio-gpu modeset=1
-      options vmwgfx modeset=1
+- name: Enable late kms init service
+  systemd_service:
+    name: late-kms-init
+    enabled: true
 
 - name: Disable kms modules on initramfs rebuild
   copy:
