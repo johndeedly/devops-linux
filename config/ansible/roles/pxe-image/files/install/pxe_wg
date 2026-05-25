@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+build() {
+    add_module "wireguard"
+
+    add_runscript
+
+    add_binary wg
+
+    [ -d /etc/wireguard ] && \
+        add_dir /etc/wireguard
+
+    [ -e /etc/wireguard/client.ip.initramfs ] && \
+        add_file /etc/wireguard/client.ip.initramfs /etc/wireguard/client.ip || \
+        echo "WARNING: no client.ip -> boot parameter is required" 1>&2
+    [ -e /etc/wireguard/client.key.initramfs ] && \
+        add_file /etc/wireguard/client.key.initramfs /etc/wireguard/client.key || \
+        echo "WARNING: no client.key -> boot parameter is required" 1>&2
+    [ -e /etc/wireguard/server.ip.initramfs ] && \
+        add_file /etc/wireguard/server.ip.initramfs /etc/wireguard/server.ip || \
+        echo "WARNING: no server.ip -> boot parameter is required" 1>&2
+    [ -e /etc/wireguard/server.pub.initramfs ] && \
+        add_file /etc/wireguard/server.pub.initramfs /etc/wireguard/server.pub || \
+        echo "WARNING: no server.pub -> boot parameter is required" 1>&2
+}
+
+help() {
+    cat <<HELPEOF
+This hook loads the necessary modules to connect to a wireguard endpoint before booting via PXE.
+HELPEOF
+}

@@ -1,0 +1,52 @@
+#!/bin/sh -e
+
+pxe_nfs_hook() {
+    # parse kernel cmdline args
+    for x in $(cat /proc/cmdline); do
+        case $x in
+            pxe_nfs_srv=*)
+                export pxe_nfs_srv=${x#pxe_nfs_srv=}
+                ;;
+            pxe_nfs_opt=*)
+                export pxe_nfs_opt=${x#pxe_nfs_opt=}
+                ;;
+        esac
+    done
+
+    if [ -n "${ip}" ] && [ -n "${pxe_nfs_srv}" ]; then
+        modprobe nfs 2>/dev/null
+        modprobe sunrpc 2>/dev/null
+
+        export pxe_nfs_srv=$(eval echo "${pxe_nfs_srv}")
+
+        pxe_nfs_mount_handler
+    fi
+}
+
+pxe_nfs_mount_handler() {
+    echo ":: Boot PXE over NFS"
+
+    # mount the nfs directly as boot mount
+    echo ":: Mount NFS share '${pxe_nfs_srv}'"
+    mkdir -p "${boot_mnt}"
+    local mount_status
+    echo ":: trying nfs 4"
+    if [ -n "${pxe_nfs_opt}" ]; then
+        timeout 15 mount.nfs4 -o "${pxe_nfs_opt}" "${pxe_nfs_srv}" "${boot_mnt}"
+    else
+        timeout 15 mount.nfs4 "${pxe_nfs_srv}" "${boot_mnt}"
+    fi
+    mount_status=$?
+    if [ "$mount_status" -gt 0 ]; then
+        echo ":: trying nfs 3"
+        if [ -n "${pxe_nfs_opt}" ]; then
+            timeout 15 mount.nfs -o "${pxe_nfs_opt}" "${pxe_nfs_srv}" "${boot_mnt}"
+        else
+            timeout 15 mount.nfs "${pxe_nfs_srv}" "${boot_mnt}"
+        fi
+        mount_status=$?
+    fi
+    if [ "$mount_status" -gt 0 ]; then
+        panic "!! ERROR: failed to mount '${pxe_nfs_srv}'"
+    fi
+}

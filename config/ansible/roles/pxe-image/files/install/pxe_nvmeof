@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+build() {
+    add_module "nvme_tcp"
+
+    add_runscript
+
+    add_binary nvme
+    add_binary uuidgen
+
+    add_dir /etc/nvme
+}
+
+help() {
+    cat <<HELPEOF
+This hook loads the necessary modules for boot via PXE and NVMe.
+HELPEOF
+}

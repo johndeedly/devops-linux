@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+build() {
+    add_module "cifs"
+    add_module "nls_utf8"
+
+    add_runscript
+}
+
+help() {
+    cat <<HELPEOF
+This hook loads the necessary modules for boot via PXE and CIFS.
+HELPEOF
+}

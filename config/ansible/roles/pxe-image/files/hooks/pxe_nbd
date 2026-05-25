@@ -1,0 +1,66 @@
+#!/usr/bin/ash
+
+run_earlyhook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_nbd_srv}" ]; then
+        # Module autoloading
+        modprobe nbd 2>/dev/null
+        modprobe btrfs 2>/dev/null
+    fi
+}
+
+run_hook() {
+    if [ -n "${ip}" ] && [ -n "${pxe_nbd_srv}" ]; then
+        pxe_nbd_srv=$(eval echo "${pxe_nbd_srv}")
+
+        # enable chained nbd mount handler
+        export mount_handler="pxe_nbd_mount_handler"
+    fi
+}
+
+pxe_nbd_mount_handler() {
+    newroot="${1}"
+    local nbd_boot="/dev/nbd0"
+    
+    msg ":: Boot PXE over NBD"
+
+    # 1st: wait for the boot device
+    msg ":: Wait for boot device"
+    if ! poll_device ${nbd_boot} 30; then
+        echo "!! ERROR: boot device '${nbd_boot}' didn't show up after 30 seconds"
+        launch_interactive_shell
+    fi
+
+    # 2nd: setup the nbd filesystem to the nbd boot device
+    msg ":: Setup NBD from '${pxe_nbd_srv}' to '${nbd_boot}'"
+    if [ "${copytoram}" = "y" ]; then
+        nbd-client "${pxe_nbd_srv}" -N pxe "${nbd_boot}"
+    else
+        nbd-client "${pxe_nbd_srv}" -N pxe -systemd-mark -persist "${nbd_boot}"
+    fi
+
+    # 3rd: check the copy to RAM filesystem is present
+    if ! mountpoint -q "${copytoram_mnt}"; then
+        msg ":: Mount ${copytoram_mnt} (tmpfs) filesystem, size=${copytoram_size}"
+        mount --mkdir -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram "${copytoram_mnt}"
+    fi
+
+    # 4th: place the nbd filesystem as softlink inside the RAM filesystem
+    mkdir -p "${copytoram_mnt}/arch/x86_64"
+    ln -s "${nbd_boot}" "${copytoram_mnt}/arch/x86_64/pxeboot.img"
+
+    # 5th: mount the RAM filesystem as boot mount
+    msg ":: Bindmount '${copytoram_mnt}' as '${boot_mnt}'"
+    if ! mount --mkdir -o bind "${copytoram_mnt}" "${boot_mnt}"; then
+        echo "!! ERROR: failed to mount '${copytoram_mnt}'"
+        launch_interactive_shell
+    fi
+
+    pxe_mount_handler "${newroot}"
+
+    # last: when the image is copied to RAM, the NBD needs to be
+    #       closed as the boot process will hang (#bug)
+    if [ "${copytoram}" = "y" ]; then
+        msg ":: Disconnect NBD from '${pxe_nbd_srv}' at '${nbd_boot}'"
+        nbd-client -d "${nbd_boot}"
+    fi
+}

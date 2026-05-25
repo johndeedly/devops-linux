@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+build() {
+    add_runscript
+
+    add_binary ssh-keygen
+    add_binary sshpass
+    add_binary scp
+    add_binary /usr/bin/ssh
+}
+
+help() {
+    cat <<HELPEOF
+This hook loads the necessary modules for boot via PXE and SCP.
+HELPEOF
+}

@@ -1,0 +1,95 @@
+# ---------- #
+
+- name: Packages needed to build pxe bootstrap
+  apt:
+    name:
+      - make
+      - git
+      - coreutils
+      - busybox
+      - pv
+      - cifs-utils
+      - nfs-common
+    state: present
+
+- name: Reinstall linux image for current kernel
+  shell: |
+    LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive eatmydata apt -y reinstall linux-image-$(uname -r)
+
+- name: Copy pxe hook
+  copy:
+    src: "{{ role_path }}/files/apt/hook"
+    dest: /etc/initramfs-tools/hooks/pxe
+    mode: 0755
+
+- name: Append pxe modules to initramfs
+  blockinfile:
+    path: /etc/initramfs-tools/modules
+    block: |
+      af_packet
+      loop
+      squashfs
+      overlay
+
+- name: Set content files for pxe script
+  set_fact:
+    pxe_scripts:
+      - "{{ role_path }}/files/apt/pxe"
+      - "{{ role_path }}/files/apt/pxe-http"
+      - "{{ role_path }}/files/apt/pxe-iso"
+      - "{{ role_path }}/files/apt/pxe-nfs"
+      - "{{ role_path }}/files/apt/pxe-cifs"
+
+- name: Read contents of local pxe scripts
+  command: awk 1 {{ pxe_scripts | join(' ') }}
+  register: pxe_script_contents
+
+- name: Copy pxe script
+  copy:
+    dest: /etc/initramfs-tools/scripts/pxe
+    mode: 0755
+    content: "{{ pxe_script_contents.stdout_lines | join('\n') }}"
+
+- name: Update initramfs
+  shell: |
+    update-initramfs -c -k $(uname -r)
+
+- name: Find remote vmlinuz
+  shell: |
+    find /boot -name "vmlinuz*$(uname -r)*" | sort | head -n 1
+  register: vmlinuz_remote
+
+- name: Find remote initrd
+  shell: |
+    find /boot -name "initrd*$(uname -r)*" | sort | head -n 1
+  register: initrd_remote
+
+- name: Copy remote vmlinuz
+  copy:
+    remote_src: yes
+    src: "{{ vmlinuz_remote.stdout_lines[0] }}"
+    dest: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/vmlinuz"
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Copy remote initrd
+  copy:
+    remote_src: yes
+    src: "{{ initrd_remote.stdout_lines[0] }}"
+    dest: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/initrd.img"
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Vmlinuz successfully generated
+  stat:
+    path: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/vmlinuz"
+  register: vmlinuz_result
+  failed_when: not vmlinuz_result.stat.exists
+
+- name: Initrd successfully generated
+  stat:
+    path: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/initrd.img"
+  register: initrd_result
+  failed_when: not initrd_result.stat.exists

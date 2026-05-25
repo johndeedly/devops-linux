@@ -10,18 +10,41 @@
     name: rootfs-to-sfs
   when: not stat_result.stat.exists
 
-- name: Create /srv/pxe
+- name: Create /srv/pxe/*/x86_64/
   file:
-    path: /srv/pxe
+    path: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64"
     state: directory
     mode: '0755'
 
 - name: Set preparation facts
   set_fact:
-    target_path: "/srv/pxe/{{ setup_facts.setup.distro|default('devops-linux')|lower }}{{ ([''] + setup_facts.setup.shell_options)|join('-')|lower }}{{ ([''] + setup_facts.setup.ansible_options)|difference(['pxe-image','tar-image'])|join('-')|lower }}.img"
+    target_path: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/pxeboot.img"
 
 - name: "Move /var/tmp/sfs/rootfs.img to {{ target_path }}"
   command:
     cmd: "mv /var/tmp/sfs/rootfs.img {{ target_path | quote }}"
     removes: /var/tmp/sfs/rootfs.img
     creates: "{{ target_path }}"
+
+- name: Configure iSCSI
+  shell: |
+    sed -e 's/^node.conn[0].timeo.noop_out_interval.*/node.conn[0].timeo.noop_out_interval = 0/' \
+        -e 's/^node.conn[0].timeo.noop_out_timeout.*/node.conn[0].timeo.noop_out_timeout = 0/' \
+        -e 's/^node.session.timeo.replacement_timeout.*/node.session.timeo.replacement_timeout = 86400/' -i /etc/iscsi/iscsid.conf
+    tee /etc/udev/rules.d/50-iscsi.rules <<'EOF'
+    ACTION=="add", SUBSYSTEM=="scsi" , ATTR{type}=="0|7|14", RUN+="/bin/sh -c 'echo Y > /sys$$DEVPATH/timeout'"
+    EOF
+
+- name: Archlinux
+  include_tasks: pacman.yml
+  when: ansible_facts["distribution"] in ['Archlinux']
+
+- name: Debian/Ubuntu
+  include_tasks: apt.yml
+  when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+
+- name: PXE rootfs successfully generated
+  stat:
+    path: "{{ target_path }}"
+  register: target_result
+  failed_when: not target_result.stat.exists

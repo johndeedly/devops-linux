@@ -1,0 +1,47 @@
+#!/bin/sh -e
+
+pxe_cifs_hook() {
+    # parse kernel cmdline args
+    for x in $(cat /proc/cmdline); do
+        case $x in
+            pxe_cifs_srv=*)
+                export pxe_cifs_srv=${x#pxe_cifs_srv=}
+                ;;
+            pxe_cifs_opt=*)
+                export pxe_cifs_opt=${x#pxe_cifs_opt=}
+                ;;
+        esac
+    done
+
+    if [ -n "${ip}" ] && [ -n "${pxe_cifs_srv}" ]; then
+        modprobe cifs 2>/dev/null
+        modprobe md4 2>/dev/null
+        modprobe des_generic 2>/dev/null
+        modprobe nls_utf8 2>/dev/null
+
+        export pxe_cifs_srv=$(eval echo "${pxe_cifs_srv}")
+
+        pxe_cifs_mount_handler
+    fi
+}
+
+pxe_cifs_mount_handler() {
+    echo ":: Boot PXE over CIFS"
+
+    # mount the cifs directly as boot mount
+    echo ":: Mount '${pxe_cifs_srv}'"
+    local mount_status
+    if [ -n "${pxe_cifs_opt}" ]; then
+        mkdir -p "${boot_mnt}"
+        mount.cifs "${pxe_cifs_srv}" "${boot_mnt}" -o"${pxe_cifs_opt}"
+        mount_status=$?
+    else
+        mkdir -p "${boot_mnt}"
+        mount.cifs "${pxe_cifs_srv}" "${boot_mnt}" -oguest,file_mode=0444,dir_mode=0555,ro,vers=2.1
+        mount_status=$?
+    fi
+    if [ "$mount_status" -gt 0 ]; then
+        panic "!! ERROR: failed to mount '${pxe_cifs_srv}'"
+        launch_interactive_shell
+    fi
+}

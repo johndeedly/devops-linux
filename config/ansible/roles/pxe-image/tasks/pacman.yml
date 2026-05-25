@@ -1,0 +1,115 @@
+# ---------- #
+
+- name: Packages needed to build pxe bootstrap
+  community.general.pacman:
+    name:
+      - linux-firmware
+      - sshpass
+      - mkinitcpio-nfs-utils
+      - curl
+      - ca-certificates-utils
+      - cifs-utils
+      - nfs-utils
+      - nbd
+      - open-iscsi
+      - nvme-cli
+      - wireguard-tools
+    state: present
+
+- name: Create /etc/initcpio/install
+  file:
+    path: /etc/initcpio/install
+    state: directory
+    mode: '0755'
+
+- name: Set preparation facts
+  set_fact:
+    arch_pxe_scripts:
+      - pxe
+      - pxe_cifs
+      - pxe_http
+      - pxe_iscsi
+      - pxe_iso
+      - pxe_nbd
+      - pxe_nfs
+      - pxe_nvmeof
+      - pxe_scp
+      - pxe_wg
+
+- name: Copy pxe install scripts
+  copy:
+    src: "{{ role_path }}/files/install/{{ item }}"
+    dest: /etc/initcpio/install/
+    mode: 0755
+  loop: "{{ arch_pxe_scripts }}"
+
+- name: Create /etc/initcpio/hooks
+  file:
+    path: /etc/initcpio/hooks
+    state: directory
+    mode: '0755'
+
+- name: Copy pxe hooks
+  copy:
+    src: "{{ role_path }}/files/hooks/{{ item }}"
+    dest: /etc/initcpio/hooks/
+    mode: 0755
+  loop: "{{ arch_pxe_scripts }}"
+
+- name: Copy pxe config
+  copy:
+    src: "{{ role_path }}/files/pxe.conf"
+    dest: /etc/
+    mode: 0644
+
+- name: Create /etc/mkinitcpio.d
+  file:
+    path: /etc/mkinitcpio.d
+    state: directory
+    mode: '0755'
+
+- name: Copy pxe preset
+  copy:
+    src: "{{ role_path }}/files/pxe.preset"
+    dest: /etc/mkinitcpio.d/
+    mode: 0644
+
+- name: Create /var/tmp/mkinitcpio
+  file:
+    path: /var/tmp/mkinitcpio
+    state: directory
+    mode: '0755'
+
+- name: Create pxe initcpio
+  shell: |
+    mkinitcpio -p pxe -t /var/tmp/mkinitcpio
+
+- name: Copy remote vmlinuz
+  copy:
+    remote_src: yes
+    src: /boot/vmlinuz-linux
+    dest: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/"
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Copy remote initrd
+  copy:
+    remote_src: yes
+    src: /boot/initramfs-linux-pxe.img
+    dest: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/"
+    mode: 0644
+    owner: root
+    group: root
+
+- name: Vmlinuz successfully generated
+  stat:
+    path: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/vmlinuz-linux"
+  register: vmlinuz_result
+  failed_when: not vmlinuz_result.stat.exists
+
+- name: Initrd successfully generated
+  stat:
+    path: "/srv/pxe/{{ ansible_facts['distribution'] | lower }}/x86_64/initramfs-linux-pxe.img"
+  register: initrd_result
+  failed_when: not initrd_result.stat.exists
