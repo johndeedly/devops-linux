@@ -147,65 +147,90 @@
     content: |
       keysym Menu = Super_R
 
-- name: Provision firefox flatpak
-  shell: |
-    mkdir -p /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies
-    (
-      jq -Rs '{"policies":{"DontCheckDefaultBrowser":true,"SkipTermsOfUse":true,"DisableAppUpdate":true,"OverrideFirstRunPage":"","OverridePostUpdatePage":"","ShowHomeButton":true,"DisableRemoteImprovements":true,"DisableFirefoxStudies":true,"Extensions":{"Install":split("\n")|map(if index(" ") then split(" ")|"https://addons.mozilla.org/firefox/downloads/latest/"+.[0]+"/" else empty end),"Locked":split("\n")|map(if index(" ") then split(" ")|.[1] else empty end)}}}' <<'EOF'
-    adguard-adblocker adguardadblocker@adguard.com
-    ghostery firefox@ghostery.com
-    single-file {531906d3-e22f-4a6c-a102-8057b88a1a63}
-    EOF
-    ) | tee /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies/policies.json
+- name: Prepare firefox flatpak policies
+  set_fact:
+    firefox_policies:
+      policies:
+        DontCheckDefaultBrowser: yes
+        SkipTermsOfUse: yes
+        DisableAppUpdate: yes
+        OverrideFirstRunPage: ""
+        OverridePostUpdatePage: ""
+        ShowHomeButton: yes
+        DisableRemoteImprovements: yes
+        DisableFirefoxStudies: yes
+        Extensions:
+          Install:
+            - https://addons.mozilla.org/firefox/downloads/latest/adguard-adblocker
+            - https://addons.mozilla.org/firefox/downloads/latest/ghostery
+            - https://addons.mozilla.org/firefox/downloads/latest/single-file
+          Locked:
+            - adguardadblocker@adguard.com
+            - firefox@ghostery.com
+            - "{531906d3-e22f-4a6c-a102-8057b88a1a63}"
 
-- name: Provision chromium flatpak
-  shell: |
-    mkdir -p /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed
-    tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/adblock.json <<'EOF'
-    {
-        "BlockThirdPartyCookies": true,
-        "AdsSettingForIntrusiveAdsSites": 2,
-        "DNSInterceptionChecksEnabled": false,
-        "DnsOverHttpsMode": "off"
-    }
-    EOF
-    tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/default-settings.json <<'EOF'
-    {
-        "ShowHomeButton": true,
-        "DefaultBrowserSettingEnabled": false,
-        "HardwareAccelerationModeEnabled": true
-    }
-    EOF
-    (
-    jq -Rs '{"ExtensionInstallForcelist":split("\n")|map(if match(".") then .+";https://clients2.google.com/service/update2/crx" else empty end)}' <<'EOF'
-    bgnkhhnnamicmpeenaelnjfhikgbkllg
-    mlomiejdfkolichcflejclcbmpeaniij
-    mpiodijhokgodhhofbcjdecpffjipkle
-    EOF
-    ) | tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/extensions-default.json
-    tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/telemetry-off.json <<'EOF'
-    {
-        "MetricsReportingEnabled": false,
-        "SafeBrowsingProtectionLevel": 0,
-        "AbusiveExperienceInterventionEnforce": false,
-        "GoogleSearchSidePanelEnabled": false,
-        "AdvancedProtectionAllowed": false,
-        "BrowserSignin": 0
-    }
-    EOF
-    tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/searchprovider.json <<'EOF'
-    {
-        "DefaultSearchProviderEnabled": true,
-        "DefaultSearchProviderName": "Google",
-        "DefaultSearchProviderSearchURL": "https://google.com/search?sourceid=chrome&q={searchTerms}",
-        "DefaultSearchProviderSuggestURL": "https://google.com/complete/search?output=chrome&q={searchTerms}"
-    }
-    EOF
-    tee /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/restore-session.json <<'EOF'
-    {
-        "RestoreOnStartup": 1
-    }
-    EOF
+- name: Ensure firefox policies folder exists
+  file:
+    path: /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies
+    state: directory
+
+- name: Provision firefox flatpak policies
+  copy:
+    dest: /var/lib/flatpak/extension/org.mozilla.firefox.systemconfig/x86_64/stable/policies/policies.json
+    mode: 0644
+    content: "{{ firefox_policies | to_json(indent=4, sort_keys=True) }}"
+
+- name: Prepare chromium flatpak policies
+  set_fact:
+    chromium_adblock:
+      BlockThirdPartyCookies: yes
+      AdsSettingForIntrusiveAdsSites: 2
+      DNSInterceptionChecksEnabled: no
+      DnsOverHttpsMode: "off"
+    chromium_default_settings:
+      ShowHomeButton: yes
+      DefaultBrowserSettingEnabled: no
+      HardwareAccelerationModeEnabled: yes
+      RestoreOnStartup: 1
+    chromium_default_extensions:
+      ExtensionInstallForcelist:
+        - bgnkhhnnamicmpeenaelnjfhikgbkllg;https://clients2.google.com/service/update2/crx
+        - mlomiejdfkolichcflejclcbmpeaniij;https://clients2.google.com/service/update2/crx
+        - mpiodijhokgodhhofbcjdecpffjipkle;https://clients2.google.com/service/update2/crx
+    chromium_telemetry:
+      MetricsReportingEnabled: no
+      SafeBrowsingProtectionLevel: 0
+      AbusiveExperienceInterventionEnforce: no
+      GoogleSearchSidePanelEnabled: no
+      AdvancedProtectionAllowed: no
+      BrowserSignin: 0
+    chromium_search_provider:
+      DefaultSearchProviderEnabled: yes
+      DefaultSearchProviderName: Google
+      DefaultSearchProviderSearchURL: "https://google.com/search?sourceid=chrome&q={searchTerms}"
+      DefaultSearchProviderSuggestURL: "https://google.com/complete/search?output=chrome&q={searchTerms}"
+
+- name: Ensure chromium policies folder exists
+  file:
+    path: /var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed
+    state: directory
+
+- name: Provision chromium flatpak policies
+  copy:
+    dest: "/var/lib/flatpak/extension/org.chromium.Chromium.Extension.system-policies/x86_64/1/policies/managed/{{ item.dest }}"
+    mode: 0644
+    content: "{{ item.var | to_json(indent=4, sort_keys=True) }}"
+  loop:
+    - dest: adblock.json
+      var: "{{ chromium_adblock }}"
+    - dest: default-settings.json
+      var: "{{ chromium_default_settings }}"
+    - dest: default-extensions.json
+      var: "{{ chromium_default_extensions }}"
+    - dest: telemetry.json
+      var: "{{ chromium_telemetry }}"
+    - dest: searchprovider.json
+      var: "{{ chromium_search_provider }}"
 
 - name: Configure application mime type defaults
   shell: |
