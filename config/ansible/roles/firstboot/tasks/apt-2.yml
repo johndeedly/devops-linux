@@ -36,7 +36,7 @@
       - elinks
       # git tools
       - git
-      - lazygit
+      ###- lazygit
       # zipping and syncing
       - zstd
       - unzip
@@ -88,6 +88,17 @@
         tar -xzof /tmp/yq_linux_amd64.tar.gz -C /usr/local/bin/
         mv /usr/local/bin/yq_linux_amd64 /usr/local/bin/yq
         chmod 0750 /usr/local/bin/yq
+
+- name: Install lazygit with fallback (Ubuntu 22.04 fix)
+  block:
+    - name: Install lazygit via apt
+      apt:
+        name: lazygit
+        state: present
+  rescue:
+    - name: Skip lazygit
+      shell: |
+        true
 
 - name: Install viu with fallback (Debian/Ubuntu fix)
   block:
