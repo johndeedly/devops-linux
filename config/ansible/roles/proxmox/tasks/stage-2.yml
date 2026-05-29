@@ -255,3 +255,16 @@
   systemd_service:
     name: update-all-users.timer
     enabled: true
+
+- name: Modify iSCSI storage timeouts
+  lineinfile:
+    line: node.session.timeo.replacement_timeout = 15
+    path: /etc/iscsi/iscsid.conf
+    state: present
+
+- name: Install multipath tools
+  apt:
+    name:
+      - multipath-tools
+      - multipath-tools-boot
+    state: present
