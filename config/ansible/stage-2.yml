@@ -50,6 +50,16 @@
             name: pxe-image
           when: >-
             ('pxe-image' in setup_facts.setup.ansible_options)
+        - name: Create archiso image
+          include_role:
+            name: archiso-image
+          when: >-
+            ('archiso' in setup_facts.setup.ansible_options)
+        - name: Create debiso image
+          include_role:
+            name: debiso-image
+          when: >-
+            ('debiso' in setup_facts.setup.ansible_options)
     - name: Wrapup
       include_role:
         name: build

@@ -1,0 +1,256 @@
+# ---------- #
+
+- name: Squashfs tools to generate minimal system image
+  block:
+    - name: <Archlinux> Squashfs tools to generate minimal system image
+      community.general.pacman:
+        name:
+          - squashfs-tools
+          - arch-install-scripts
+          - archiso
+          - mkinitcpio-archiso
+        state: present
+      when: ansible_facts["distribution"] in ['Archlinux']
+    
+    - name: <Debian/Ubuntu> Squashfs tools to generate minimal system image
+      apt:
+        name:
+          - squashfs-tools
+          - debootstrap
+        state: present
+      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+
+- name: Create /var/tmp/sfs/chroot
+  file:
+    path: /var/tmp/sfs/chroot
+    state: directory
+    mode: '0755'
+
+- name: Bootstrap minimal environment
+  block:
+    - name: <Archlinux> Bootstrap minimal environment
+      shell: |
+        pacstrap -K /var/tmp/sfs/chroot base cloud-init hyperv linux mkinitcpio openssh pv qemu-guest-agent syslinux virtualbox-guest-utils-nox \
+          arch-install-scripts bcachefs-tools btrfs-progs dosfstools e2fsprogs efibootmgr elinks exfatprogs \
+          f2fs-tools gpart gptfdisk grub jfsutils jq kexec-tools libguestfs libisoburn lvm2 mkinitcpio \
+          mkinitcpio-archiso mkinitcpio-nfs-utils mtools nano nbd nfs-utils nilfs-utils open-iscsi \
+          open-vm-tools partclone parted partimage qemu-base rsync systemd-resolvconf terminus-font tmux \
+          udftools vim wget yq xfsprogs ansible
+      when: ansible_facts["distribution"] in ['Archlinux']
+    
+    - name: <Debian/Ubuntu> Bootstrap minimal environment
+      shell: |
+        debootstrap --arch=amd64 --variant=minbase {{ ansible_facts["distribution_release"] | quote }} /var/tmp/sfs/chroot https://eu.mirror.ionos.com/linux/distributions/debian/debian
+      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+
+    - name: Set chroot hostname
+      copy:
+        dest: /var/tmp/sfs/chroot/etc/hostname
+        mode: 0644
+        content: |
+          {{ ansible_facts["distribution"] | lower }}-live
+
+    - name: <Archlinux> Configure the chroot environment
+      shell: |
+        mount --rbind --make-rslave /dev /var/tmp/sfs/chroot/dev
+        mount --rbind --make-rslave /sys /var/tmp/sfs/chroot/sys
+        mount --rbind --make-rslave /proc /var/tmp/sfs/chroot/proc
+        mount --rbind --make-rslave /run /var/tmp/sfs/chroot/run
+        mount --rbind --make-rslave /tmp /var/tmp/sfs/chroot/tmp
+        chroot /var/tmp/sfs/chroot <<EOF
+        systemctl disable network-manager
+        systemctl enable systemd-networkd
+        systemctl enable systemd-resolved
+        EOF
+        umount -R /var/tmp/sfs/chroot/tmp
+        umount -R /var/tmp/sfs/chroot/run
+        umount -R /var/tmp/sfs/chroot/proc
+        umount -R /var/tmp/sfs/chroot/sys
+        umount -R /var/tmp/sfs/chroot/dev
+      when: ansible_facts["distribution"] in ['Archlinux']
+
+    - name: <Debian/Ubuntu> Configure the chroot environment
+      shell: |
+        mount --rbind --make-rslave /dev /var/tmp/sfs/chroot/dev
+        mount --rbind --make-rslave /sys /var/tmp/sfs/chroot/sys
+        mount --rbind --make-rslave /proc /var/tmp/sfs/chroot/proc
+        mount --rbind --make-rslave /run /var/tmp/sfs/chroot/run
+        mount --rbind --make-rslave /tmp /var/tmp/sfs/chroot/tmp
+        chroot /var/tmp/sfs/chroot <<EOF
+        LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get -y update
+        LC_ALL=C yes | LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
+          linux-image-amd64 live-boot systemd-sysv \
+          locales-all systemd-resolved cloud-init eatmydata openssh-server pv qemu-guest-agent syslinux \
+          bcache-tools btrfs-progs dosfstools e2fsprogs efibootmgr exfatprogs f2fs-tools gpart gdisk \
+          jfsutils jq libguestfs-tools xorriso lvm2 mtools nano nbd-client nfs-common nilfs-tools open-iscsi \
+          open-vm-tools partclone parted partimage qemu-system-common qemu-user rsync fonts-terminus udftools \
+          vim wget yq xfsprogs kexec-tools elinks tmux ansible
+        systemctl disable network-manager
+        systemctl enable systemd-networkd
+        systemctl enable systemd-resolved
+        EOF
+        umount -R /var/tmp/sfs/chroot/tmp
+        umount -R /var/tmp/sfs/chroot/run
+        umount -R /var/tmp/sfs/chroot/proc
+        umount -R /var/tmp/sfs/chroot/sys
+        umount -R /var/tmp/sfs/chroot/dev
+      when: ansible_facts["distribution"] in ['Debian', 'Ubuntu']
+
+    - name: "<Archlinux> Copy /usr/share/archiso/configs/baseline/airootfs/* to /var/tmp/sfs/chroot/"
+      shell: |
+        cp -r /usr/share/archiso/configs/baseline/airootfs/* /var/tmp/sfs/chroot/
+      when: ansible_facts["distribution"] in ['Archlinux']
+
+    - name: "<Archlinux> Copy /usr/lib/initcpio/hooks/* to /var/tmp/sfs/chroot/etc/initcpio/hooks/"
+      shell: |
+        cp /usr/lib/initcpio/hooks/* /var/tmp/sfs/chroot/etc/initcpio/hooks/
+      when: ansible_facts["distribution"] in ['Archlinux']
+
+    - name: "<Archlinux> Copy /usr/lib/initcpio/install/* to /var/tmp/sfs/chroot/etc/initcpio/install/"
+      shell: |
+        cp /usr/lib/initcpio/install/* /var/tmp/sfs/chroot/etc/initcpio/install/
+      when: ansible_facts["distribution"] in ['Archlinux']
+
+    - name: "<Archlinux> Renew initcpio"
+      shell: |
+        mount --rbind --make-rslave /dev /var/tmp/sfs/chroot/dev
+        mount --rbind --make-rslave /sys /var/tmp/sfs/chroot/sys
+        mount --rbind --make-rslave /proc /var/tmp/sfs/chroot/proc
+        mount --rbind --make-rslave /run /var/tmp/sfs/chroot/run
+        mount --rbind --make-rslave /tmp /var/tmp/sfs/chroot/tmp
+        chroot /var/tmp/sfs/chroot <<EOF
+        mkinitcpio -P
+        EOF
+        umount -R /var/tmp/sfs/chroot/tmp
+        umount -R /var/tmp/sfs/chroot/run
+        umount -R /var/tmp/sfs/chroot/proc
+        umount -R /var/tmp/sfs/chroot/sys
+        umount -R /var/tmp/sfs/chroot/dev
+      when: ansible_facts["distribution"] in ['Archlinux']
+
+    - name: Create /var/tmp/sfs/chroot/etc/systemd/network
+      file:
+        path: /var/tmp/sfs/chroot/etc/systemd/network
+        state: directory
+        mode: '0755'
+
+    - name: All ethernet devices perform a DHCP lookup
+      copy:
+        dest: /var/tmp/sfs/chroot/etc/systemd/network/05-wired.network
+        mode: 0644
+        content: |
+          [Match]
+          Name=en* eth*
+          Type=ether
+          
+          [Network]
+          DHCP=yes
+          MulticastDNS=yes
+          
+          [DHCPv4]
+          RouteMetric=10
+          
+          [IPv6AcceptRA]
+          RouteMetric=10
+          
+          [DHCPPrefixDelegation]
+          RouteMetric=10
+          
+          [IPv6Prefix]
+          RouteMetric=10
+
+    - name: Create /var/tmp/sfs/chroot/etc/systemd/system/systemd-networkd-wait-online.service.d
+      file:
+        path: /var/tmp/sfs/chroot/etc/systemd/system/systemd-networkd-wait-online.service.d
+        state: directory
+        mode: '0755'
+    
+    - name: Do not wait too long for network to start (systemd-networkd)
+      copy:
+        dest: /var/tmp/sfs/chroot/etc/systemd/system/systemd-networkd-wait-online.service.d/wait-online-any.conf
+        mode: 0644
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=-/usr/lib/systemd/systemd-networkd-wait-online --operational-state=routable --any --timeout=10
+
+    - name: Create /var/tmp/sfs/chroot/etc/systemd/system/NetworkManager-wait-online.service.d
+      file:
+        path: /var/tmp/sfs/chroot/etc/systemd/system/NetworkManager-wait-online.service.d
+        state: directory
+        mode: '0755'
+    
+    - name: Do not wait too long for network to start (nm)
+      copy:
+        dest: /var/tmp/sfs/chroot/etc/systemd/system/NetworkManager-wait-online.service.d/wait-online-any.conf
+        mode: 0644
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=-/usr/bin/nm-online -x -q -t 10
+
+    - name: Fingerprint
+      copy:
+        dest: /var/tmp/sfs/chroot/devops-linux
+        mode: 0644
+        content: |
+          {{ lookup("pipe", "date +%F") }}
+
+    - name: Modify cloud config to use iso mount as nocloud datasource (ventoy boot bugfix)
+      block:
+        - name: Create automount service
+          copy:
+            dest: /var/tmp/sfs/chroot/etc/systemd/system/cidata.mount
+            mode: 0644
+            content: |
+              [Unit]
+              Description=CIDATA datasource (/cidata)
+              Before=cloud-init.service
+              
+              [Mount]
+              What=/dev/disk/by-label/CIDATA
+              Where=/cidata
+              Options=X-mount.mkdir
+              
+              [Install]
+              WantedBy=cloud-init.target
+
+        - name: Enable cidata.mount service inside chroot
+          shell: |
+            chroot /var/tmp/sfs/chroot <<EOF
+            systemctl enable cidata.mount
+            EOF
+
+        - name: Create /var/tmp/sfs/chroot/etc/cloud/cloud.cfg.d
+          file:
+            path: /var/tmp/sfs/chroot/etc/cloud/cloud.cfg.d
+            state: directory
+            mode: '0755'
+        
+        - name: Set cloud init datasource to local path
+          copy:
+            dest: /var/tmp/sfs/chroot/etc/cloud/cloud.cfg.d/10_nocloud.cfg
+            mode: 0644
+            content: |
+              datasource_list: ["NoCloud"]
+              datasource:
+                NoCloud:
+                  seedfrom: file:///cidata/
+
+- name: Check /var/tmp/sfs/rootfs.img has not been generated already
+  stat:
+    path: /var/tmp/sfs/rootfs.img
+  register: check_result
+
+- name: Create a squashfs snapshot based on rootfs
+  shell: |
+    mkdir -p /var/tmp/sfs
+    sync
+    mksquashfs /var/tmp/sfs/chroot /var/tmp/sfs/rootfs.img -comp zstd -Xcompression-level 4 -b 1M -progress
+  when: not check_result.stat.exists
+
+- name: Squashfs successfully generated
+  stat:
+    path: /var/tmp/sfs/rootfs.img
+  register: stat_result
+  failed_when: not stat_result.stat.exists
