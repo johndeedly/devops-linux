@@ -1,6 +1,6 @@
 # ---------- #
 
-- name: KDE packages
+- name: Window manager packages
   apt:
     name:
       # Sound system
@@ -87,6 +87,11 @@
       - texlive-latex-base
       - texlive-latex-extra
       - texlive-plain-generic
+    state: present
+
+- name: KDE packages
+  apt:
+    name:
       # kde desktop
       - kde-standard
       - plasma-workspace-wallpapers

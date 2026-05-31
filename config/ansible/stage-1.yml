@@ -24,7 +24,7 @@
         - name: Graphical base
           include_role:
             name: graphical-base
-          when: (setup_facts.setup.ansible_options | intersect(['graphical-base', 'kde', 'proxmox'])) | length > 0
+          when: (setup_facts.setup.ansible_options | intersect(['graphical-base', 'kde', 'cosmic', 'proxmox'])) | length > 0
         - name: LDAP Client
           include_role:
             name: ldap-auth

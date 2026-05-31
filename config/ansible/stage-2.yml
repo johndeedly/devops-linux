@@ -23,10 +23,10 @@
       when:
         - ('proxmox' in setup_facts.setup.ansible_options)
         - ansible_facts["distribution"] in ['Debian']
-    - name: KDE desktop
+    - name: Window manager
       include_role:
-        name: kde
-      when: ('kde' in setup_facts.setup.ansible_options)
+        name: window-manager
+      when: (setup_facts.setup.ansible_options | intersect(['kde', 'cosmic'])) | length > 0
   post_tasks:
     - name: Securing the system for production use
       block:

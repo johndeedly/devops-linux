@@ -1,6 +1,6 @@
 # ---------- #
 
-- name: KDE packages
+- name: Window manager packages
   community.general.pacman:
     name:
       # Sound system
@@ -90,6 +90,11 @@
       - texlive-latex
       - texlive-latexextra
       - texlive-plaingeneric
+    state: present
+
+- name: KDE packages
+  community.general.pacman:
+    name:
       # kde desktop
       - plasma-meta
       - xdg-desktop-portal
@@ -101,6 +106,19 @@
       - system-config-printer
       - konsole
     state: present
+  when: ('kde' in setup_facts.setup.ansible_options)
+
+- name: KDE packages
+  community.general.pacman:
+    name:
+      # cosmic desktop
+      - cosmic
+      - xdg-desktop-portal
+      - xdg-desktop-portal-cosmic
+      - kwallet-pam
+      - system-config-printer
+    state: present
+  when: ('cosmic' in setup_facts.setup.ansible_options)
 
 - name: Remove meta-packages to be able to remove single entries
   community.general.pacman:
@@ -110,6 +128,7 @@
       - kde-system-meta
       - kde-utilities-meta
     state: absent
+  when: ('kde' in setup_facts.setup.ansible_options)
 
 - name: Remove kde bloat
   community.general.pacman:
@@ -121,6 +140,7 @@
       - kalm
       - yakuake
     state: absent
+  when: ('kde' in setup_facts.setup.ansible_options)
 
 - name: Configure emptty display manager
   copy:
